@@ -22,6 +22,15 @@ def isolated_project(runner):
         yield Path.cwd()
 
 
+@pytest.fixture
+def air_project(runner, isolated_project):
+    """Create an initialized AIR project for testing."""
+    result = runner.invoke(main, ["init", "test-project", "--mode=mixed"])
+    assert result.exit_code == 0
+    project_dir = isolated_project / "test-project"
+    return project_dir
+
+
 class TestInitCommand:
     """Tests for air init command."""
 
@@ -675,3 +684,298 @@ class TestInitInExistingProject:
 
         assert result.exit_code == 1
         assert "Directory not empty" in result.output
+
+
+class TestLinkCommand:
+    """Tests for air link commands."""
+
+    def test_link_add_review_resource(self, runner, isolated_project):
+        """Test adding a review resource."""
+        # Create AIR project
+        runner.invoke(main, ["init", "link-project", "--mode=mixed"])
+        project_dir = isolated_project / "link-project"
+
+        # Create source directory to link
+        source_dir = isolated_project / "service-a"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("Service A")
+
+        # Change to project directory
+        import os
+        os.chdir(project_dir)
+
+        # Add resource
+        result = runner.invoke(
+            main,
+            ["link", "add", f"service-a:{source_dir}", "--review"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked review resource: service-a" in result.output
+
+        # Verify symlink created
+        link_path = project_dir / "review/service-a"
+        assert link_path.exists()
+        assert link_path.is_symlink()
+        assert link_path.resolve() == source_dir
+
+        # Verify config updated
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["name"] == "service-a"
+        assert config["resources"]["review"][0]["type"] == "implementation"
+        assert config["resources"]["review"][0]["relationship"] == "review-only"
+
+    def test_link_add_collaborate_resource(self, runner, isolated_project):
+        """Test adding a collaborative resource."""
+        # Create AIR project
+        runner.invoke(main, ["init", "collab-project", "--mode=mixed"])
+        project_dir = isolated_project / "collab-project"
+
+        # Create source directory
+        source_dir = isolated_project / "docs"
+        source_dir.mkdir()
+        (source_dir / "index.md").write_text("Documentation")
+
+        import os
+        os.chdir(project_dir)
+
+        # Add resource
+        result = runner.invoke(
+            main,
+            ["link", "add", f"docs:{source_dir}", "--collaborate", "--type=documentation"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked collaborate resource: docs" in result.output
+
+        # Verify symlink
+        link_path = project_dir / "collaborate/docs"
+        assert link_path.exists()
+        assert link_path.is_symlink()
+
+        # Verify config
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["collaborate"]) == 1
+        assert config["resources"]["collaborate"][0]["name"] == "docs"
+        assert config["resources"]["collaborate"][0]["type"] == "documentation"
+        assert config["resources"]["collaborate"][0]["relationship"] == "contributor"
+
+    def test_link_add_default_review_mode(self, runner, isolated_project):
+        """Test that default mode is review when no flag specified."""
+        runner.invoke(main, ["init", "default-project", "--mode=mixed"])
+        project_dir = isolated_project / "default-project"
+
+        source_dir = isolated_project / "lib"
+        source_dir.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["link", "add", f"lib:{source_dir}"])
+
+        assert result.exit_code == 0
+        assert "Defaulting to review mode" in result.output
+        assert "Linked review resource: lib" in result.output
+
+    def test_link_add_invalid_format(self, runner, isolated_project):
+        """Test error when NAME:PATH format is invalid."""
+        runner.invoke(main, ["init", "error-project"])
+        project_dir = isolated_project / "error-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["link", "add", "invalid-format"])
+
+        assert result.exit_code == 1
+        assert "Invalid format" in result.output
+
+    def test_link_add_nonexistent_path(self, runner, isolated_project):
+        """Test error when source path doesn't exist."""
+        runner.invoke(main, ["init", "path-error"])
+        project_dir = isolated_project / "path-error"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(
+            main,
+            ["link", "add", "missing:/nonexistent/path", "--review"]
+        )
+
+        assert result.exit_code == 1
+        assert "Path does not exist" in result.output
+
+    def test_link_add_duplicate_name(self, runner, isolated_project):
+        """Test error when resource name already exists."""
+        runner.invoke(main, ["init", "dup-project"])
+        project_dir = isolated_project / "dup-project"
+
+        source1 = isolated_project / "source1"
+        source1.mkdir()
+        source2 = isolated_project / "source2"
+        source2.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        # Add first resource
+        runner.invoke(main, ["link", "add", f"repo:{source1}", "--review"])
+
+        # Try to add with same name
+        result = runner.invoke(main, ["link", "add", f"repo:{source2}", "--review"])
+
+        assert result.exit_code == 1
+        assert "already linked" in result.output
+
+    def test_link_list_empty(self, runner, isolated_project):
+        """Test listing when no resources linked."""
+        runner.invoke(main, ["init", "empty-project"])
+        project_dir = isolated_project / "empty-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["link", "list"])
+
+        assert result.exit_code == 0
+        assert "No resources linked" in result.output
+
+    def test_link_list_human_format(self, runner, isolated_project):
+        """Test listing resources in human-readable format."""
+        runner.invoke(main, ["init", "list-project", "--mode=mixed"])
+        project_dir = isolated_project / "list-project"
+
+        # Create and link resources
+        review_src = isolated_project / "review-repo"
+        review_src.mkdir()
+        collab_src = isolated_project / "collab-repo"
+        collab_src.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"review-repo:{review_src}", "--review"])
+        runner.invoke(main, ["link", "add", f"collab-repo:{collab_src}", "--collaborate"])
+
+        result = runner.invoke(main, ["link", "list"])
+
+        assert result.exit_code == 0
+        assert "Review Resources (Read-Only)" in result.output
+        assert "Collaborative Resources" in result.output
+        assert "review-repo" in result.output
+        assert "collab-repo" in result.output
+        assert "Total: 2 resources" in result.output
+
+    def test_link_list_json_format(self, runner, isolated_project):
+        """Test listing resources in JSON format."""
+        runner.invoke(main, ["init", "json-project", "--mode=mixed"])
+        project_dir = isolated_project / "json-project"
+
+        source_dir = isolated_project / "api"
+        source_dir.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"api:{source_dir}", "--review", "--type=service"])
+
+        result = runner.invoke(main, ["link", "list", "--format=json"])
+
+        assert result.exit_code == 0
+
+        output_data = json.loads(result.output)
+        assert "review" in output_data
+        assert "collaborate" in output_data
+        assert len(output_data["review"]) == 1
+        assert output_data["review"][0]["name"] == "api"
+        assert output_data["review"][0]["type"] == "service"
+
+    def test_link_remove(self, runner, isolated_project):
+        """Test removing a linked resource."""
+        runner.invoke(main, ["init", "remove-project"])
+        project_dir = isolated_project / "remove-project"
+
+        source_dir = isolated_project / "to-remove"
+        source_dir.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        # Add resource
+        runner.invoke(main, ["link", "add", f"to-remove:{source_dir}", "--review"])
+
+        link_path = project_dir / "review/to-remove"
+        assert link_path.exists()
+
+        # Remove resource
+        result = runner.invoke(main, ["link", "remove", "to-remove"])
+
+        assert result.exit_code == 0
+        assert "Removed resource: to-remove" in result.output
+
+        # Verify symlink removed
+        assert not link_path.exists()
+
+        # Verify config updated
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 0
+
+    def test_link_remove_keep_link(self, runner, isolated_project):
+        """Test removing resource but keeping symlink."""
+        runner.invoke(main, ["init", "keep-project"])
+        project_dir = isolated_project / "keep-project"
+
+        source_dir = isolated_project / "keep-link"
+        source_dir.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        # Add and remove with --keep-link
+        runner.invoke(main, ["link", "add", f"keep-link:{source_dir}", "--review"])
+        result = runner.invoke(main, ["link", "remove", "keep-link", "--keep-link"])
+
+        assert result.exit_code == 0
+        assert "Keeping symlink" in result.output
+
+        # Verify symlink still exists
+        link_path = project_dir / "review/keep-link"
+        assert link_path.exists()
+
+        # But config updated
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 0
+
+    def test_link_remove_nonexistent(self, runner, isolated_project):
+        """Test error when removing non-existent resource."""
+        runner.invoke(main, ["init", "notfound-project"])
+        project_dir = isolated_project / "notfound-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["link", "remove", "nonexistent"])
+
+        assert result.exit_code == 1
+        assert "Resource not found" in result.output
+
+    def test_link_not_in_air_project(self, runner, isolated_project):
+        """Test error when running link command outside AIR project."""
+        result = runner.invoke(main, ["link", "list"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
