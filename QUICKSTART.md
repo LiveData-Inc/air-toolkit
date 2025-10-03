@@ -1,6 +1,6 @@
-# AIR Toolkit - Quick Start
+# AIR Toolkit - Quick Start (v0.2.0)
 
-Get started with AIR in 5 minutes.
+Get started with AIR in 5 minutes - complete workflow now available!
 
 ## Installation
 
@@ -20,13 +20,22 @@ air --version
 
 ```bash
 # Create a new assessment project
-air init my-review --mode=review
+air init my-review --mode=mixed
 
 # Change to project directory
 cd my-review
 
+# Link a repository to review
+air link add myapp:~/repos/myapp --review
+
+# Create your first task
+air task new "analyze architecture"
+
 # Validate project structure
 air validate
+
+# Check status
+air status
 ```
 
 You now have a complete AIR project:
@@ -44,29 +53,40 @@ my-review/
 └── scripts/             # Helper scripts
 ```
 
-## Quick Commands
+## Quick Commands (v0.2.0)
+
+### Repository Linking
+```bash
+air link add NAME:PATH [OPTIONS]        # Link repository
+air link add service:~/repos/service --review
+air link add docs:~/docs --collaborate --type=documentation
+air link list                           # List resources
+air link remove NAME                    # Remove resource
+```
+
+### Task Management
+```bash
+air task new "DESCRIPTION"              # Create task
+air task new "fix bug" --prompt "Fix login issue"
+air task list                           # List active tasks
+air task list --all                     # Include archived
+air task archive --all                  # Archive all tasks
+air task restore ID                     # Restore task
+```
+
+### Summary Generation
+```bash
+air summary                             # Rich markdown to terminal
+air summary --format=json               # JSON for AI
+air summary --output=REPORT.md          # Save to file
+air summary --since=2025-10-01          # Recent tasks only
+```
 
 ### Check Status
 ```bash
 air status                  # View project info
 air status --format=json    # JSON output for AI
-```
-
-### Validate Structure
-```bash
 air validate                # Check project structure
-air validate --format=json  # JSON output
-```
-
-### Task Management
-```bash
-# List tasks
-air task list               # Active tasks
-air task list --all         # Include archived
-
-# Archive old tasks
-air task archive --before=2025-09-01    # Archive before date
-air task archive --all --dry-run        # Preview archiving
 ```
 
 ## Common Workflows
@@ -79,45 +99,28 @@ air task archive --all --dry-run        # Preview archiving
    cd code-review
    ```
 
-2. **Link resources** (TODO: `air link` coming soon):
+2. **Link resources:**
    ```bash
-   # Manually create symlink for now
-   ln -s ~/repos/target-project review/target-project
+   air link add target:~/repos/target-project --review
+   air link add comparison:~/repos/comparison-project --review
    ```
 
-3. **Create task file** (AI assistants do this automatically):
-   ```python
-   from datetime import datetime, timezone
-   from pathlib import Path
-
-   timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-   task_file = f".air/tasks/{timestamp}-analyze-architecture.md"
-
-   Path(task_file).write_text(f"""# Task: Analyze Architecture
-
-   ## Date
-   {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
-
-   ## Prompt
-   Analyze the architecture of target-project
-
-   ## Actions Taken
-   1.
-
-   ## Files Changed
-   -
-
-   ## Outcome
-   ⏳ In Progress
-   """)
+3. **Create task:**
+   ```bash
+   air task new "analyze architecture" --prompt "Compare service architectures"
    ```
 
 4. **Analyze and document:**
-   - Read code in `review/target-project/`
-   - Write analysis to `analysis/assessments/target-project.md`
-   - Create comparison if reviewing multiple projects
+   - Read code in `review/target/`
+   - Write analysis to `analysis/assessments/target.md`
+   - Create comparison documents
 
-5. **Archive task when done:**
+5. **Generate summary:**
+   ```bash
+   air summary --output=ANALYSIS-REPORT.md
+   ```
+
+6. **Archive tasks:**
    ```bash
    air task archive --all
    ```
@@ -132,23 +135,28 @@ air task archive --all --dry-run        # Preview archiving
 
 2. **Link documentation repositories:**
    ```bash
-   # Manually link for now
-   ln -s ~/repos/docs-project collaborate/docs-project
+   air link add docs:~/repos/docs-project --collaborate --type=documentation
    ```
 
-3. **Identify improvements:**
-   - Review docs in `collaborate/docs-project/`
-   - Document gaps in `analysis/improvements/`
+3. **Create task:**
+   ```bash
+   air task new "improve API documentation" --prompt "Add missing examples"
+   ```
 
 4. **Create contributions:**
-   - Place improved docs in `contributions/docs-project/`
+   - Review docs in `collaborate/docs/`
+   - Place improved docs in `contributions/docs/`
    - Follow original structure
-   - Include clear explanations
 
-5. **Submit** (TODO: `air pr` coming soon):
+5. **Generate report:**
+   ```bash
+   air summary --output=IMPROVEMENTS.md
+   ```
+
+6. **Submit** (coming soon: `air pr`):
    ```bash
    # Manual PR for now
-   cd collaborate/docs-project
+   cd collaborate/docs
    git checkout -b improve-docs
    # Copy contributions, commit, push
    gh pr create
@@ -270,18 +278,20 @@ cat docs/COMMANDS.md
 https://github.com/LiveData-Inc/air-toolkit/issues
 ```
 
-## Quick Reference
+## Quick Reference (v0.2.0)
 
 | Command | Description |
 |---------|-------------|
-| `air init <name>` | Create new project |
+| `air init [NAME]` | Create or initialize project |
+| `air link add NAME:PATH` | Link repository |
+| `air link list` | List linked resources |
+| `air task new DESC` | Create task file |
+| `air task list` | List active tasks |
+| `air summary` | Generate summary |
 | `air validate` | Validate project structure |
 | `air status` | Show project status |
-| `air task list` | List active tasks |
-| `air task list --all` | Include archived tasks |
 | `air task archive --all` | Archive all tasks |
 | `air task restore <id>` | Restore archived task |
-| `air task archive-status` | Show archive stats |
 
 ---
 
