@@ -73,7 +73,7 @@ def extract_description(filename):
 
 
 def main():
-    task_dir = Path(".ai/tasks")
+    task_dir = Path(".air/tasks")
 
     if not task_dir.exists():
         print(f"Error: Task directory not found at {task_dir}")

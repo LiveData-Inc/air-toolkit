@@ -10,7 +10,7 @@ console = Console()
 def task() -> None:
     """Manage AI task files.
 
-    Create, list, and manage task files in .ai/tasks/
+    Create, list, and manage task files in .air/tasks/
     """
     pass
 
@@ -33,11 +33,11 @@ def task_new(description: str, prompt: str | None) -> None:
 
     # TODO: Implement task creation
     # - Generate timestamp filename: YYYYMMDD-HHMM-description.md
-    # - Use template from .ai/templates/
+    # - Use template from .air/templates/
     # - Populate with description and prompt
-    # - Write to .ai/tasks/
+    # - Write to .air/tasks/
 
-    console.print("[green]✓[/green] Task file created: .ai/tasks/20251003-1200-implement-feature-x.md")
+    console.print("[green]✓[/green] Task file created: .air/tasks/20251003-1200-implement-feature-x.md")
 
 
 @task.command("list")
@@ -58,7 +58,7 @@ def task_list(status: str) -> None:
     console.print("[bold]AI Tasks[/bold]\n")
 
     # TODO: Implement task listing
-    # - Read .ai/tasks/*.md
+    # - Read .air/tasks/*.md
     # - Parse status from each file
     # - Filter by status if specified
     # - Display in table or list format

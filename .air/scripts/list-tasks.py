@@ -60,7 +60,7 @@ def main():
             print(f"Error: Invalid count '{sys.argv[1]}'")
             sys.exit(1)
 
-    task_dir = Path(".ai/tasks")
+    task_dir = Path(".air/tasks")
 
     if not task_dir.exists():
         print(f"Error: Task directory not found at {task_dir}")

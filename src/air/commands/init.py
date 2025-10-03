@@ -27,7 +27,7 @@ from air.utils.console import error, info, success
 @click.option(
     "--track/--no-track",
     default=True,
-    help="Initialize .ai/ task tracking",
+    help="Initialize .air/ task tracking",
 )
 def init(name: str, mode: str, track: bool) -> None:
     """Create new AIR assessment project.
@@ -110,11 +110,11 @@ def init(name: str, mode: str, track: bool) -> None:
         # Create context files
         for context_type in ["architecture", "language"]:
             context_content = get_context_template(context_type)
-            context_path = project_dir / f".ai/context/{context_type}.md"
+            context_path = project_dir / f".air/context/{context_type}.md"
             create_file(context_path, context_content, overwrite=True)
 
         # Create templates directory
-        templates_dir = project_dir / ".ai/templates"
+        templates_dir = project_dir / ".air/templates"
         create_directory(templates_dir)
 
     success(f"Project created successfully: {project_dir}")

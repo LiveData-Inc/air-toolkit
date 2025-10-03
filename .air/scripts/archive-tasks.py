@@ -130,8 +130,8 @@ def main():
         sys.exit(1)
 
     archive_name = sys.argv[1]
-    task_dir = Path(".ai/tasks")
-    archive_dir = Path(f".ai/archives/{archive_name}")
+    task_dir = Path(".air/tasks")
+    archive_dir = Path(f".air/archives/{archive_name}")
 
     if not task_dir.exists():
         print(f"Error: Task directory not found at {task_dir}")
@@ -166,7 +166,7 @@ def main():
         print("✅ Archive complete!")
         print(f"   Archived tasks are in: {archive_dir}")
         print("")
-        print("💡 Tip: Update .ai/AI_CHANGELOG.md to reference this archive")
+        print("💡 Tip: Update .air/AI_CHANGELOG.md to reference this archive")
 
     except (EOFError, KeyboardInterrupt):
         print("\nArchive cancelled")

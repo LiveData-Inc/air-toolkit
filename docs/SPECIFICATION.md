@@ -65,14 +65,14 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 
 **Automatic Task Files**
 - AI creates task files as work progresses
-- Format: `.ai/tasks/YYYYMMDD-HHMM-description.md`
+- Format: `.air/tasks/YYYYMMDD-HHMM-description.md`
 - Zero friction - no user action required
 - Structured markdown format
 
 **Context Management**
-- `.ai/context/architecture.md` - System design
-- `.ai/context/language.md` - Language conventions
-- `.ai/context/decisions.md` - Key decisions
+- `.air/context/architecture.md` - System design
+- `.air/context/language.md` - Language conventions
+- `.air/context/decisions.md` - Key decisions
 
 ## 3. Features
 
@@ -87,12 +87,12 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 - Set up directory structure based on mode
 - Initialize git repository
 - Create README.md, CLAUDE.md, .gitignore
-- Optionally initialize .ai/ tracking
+- Optionally initialize .air/ tracking
 - Generate air-config.json
 
 **Options:**
 - `--mode=review|collaborate|mixed` - Project mode (default: mixed)
-- `--track/--no-track` - Initialize .ai/ tracking (default: true)
+- `--track/--no-track` - Initialize .air/ tracking (default: true)
 
 **Output Structure (Mixed Mode):**
 ```
@@ -107,7 +107,7 @@ project-name/
 │   ├── assessments/      # About review resources
 │   └── improvements/     # About collaborative resources
 ├── contributions/         # Proposed improvements
-├── .ai/                  # Task tracking
+├── .air/                  # Task tracking
 │   ├── README.md
 │   ├── tasks/
 │   ├── context/
@@ -229,7 +229,7 @@ collaborate:architecture:~/repos/architecture-docs
 
 **Capabilities:**
 - Create timestamped task file
-- Use template from `.ai/templates/task.md`
+- Use template from `.air/templates/task.md`
 - Pre-populate with description and optional prompt
 - Auto-open in editor (optional)
 
@@ -267,7 +267,7 @@ YYYY-MM-DD HH:MM
 **Command:** `air task list [options]`
 
 **Capabilities:**
-- List all task files in `.ai/tasks/`
+- List all task files in `.air/tasks/`
 - Parse and display status
 - Filter by status or date
 - Sort by creation time
@@ -307,7 +307,7 @@ AI Tasks (5 total)
 **Command:** `air track init [options]`
 
 **Capabilities:**
-- Add `.ai/` structure to any existing project
+- Add `.air/` structure to any existing project
 - Copy templates
 - Create README.md with instructions
 - Optionally create CLAUDE.md
@@ -317,7 +317,7 @@ AI Tasks (5 total)
 
 **Creates:**
 ```
-.ai/
+.air/
 ├── README.md              # System documentation
 ├── tasks/                 # Task files
 ├── context/               # Context files
@@ -333,7 +333,7 @@ AI Tasks (5 total)
 **Command:** `air track status`
 
 **Displays:**
-- Whether `.ai/` exists
+- Whether `.air/` exists
 - Task count and breakdown by status
 - Recent tasks
 - Context files present
@@ -567,7 +567,7 @@ choco install air-toolkit # Windows
 - ✅ Tool installs on macOS, Linux, Windows
 - ✅ Can create assessment project in < 1 minute
 - ✅ Can link repositories and validate structure
-- ✅ Can initialize .ai/ tracking in any project
+- ✅ Can initialize .air/ tracking in any project
 - ✅ Can create and list task files
 - ✅ Documentation complete and clear
 

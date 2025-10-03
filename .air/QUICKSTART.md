@@ -1,6 +1,6 @@
 # AI Assistant Quick Start Guide
 
-**Read this first! Also see: `CLAUDE.md` and `.ai/README.md`**
+**Read this first! Also see: `CLAUDE.md` and `.air/README.md`**
 
 ## 🚨 Critical Rules - AUTOMATIC TRACKING
 
@@ -14,7 +14,7 @@
 
 ## 📝 Task File Format
 
-**Filename**: `YYYYMMDD-HHMM-description.md` in `.ai/tasks/`
+**Filename**: `YYYYMMDD-HHMM-description.md` in `.air/tasks/`
 
 **Example**: `20250101-1430-add-user-authentication.md`
 
@@ -23,7 +23,7 @@
 **AI assistants should use the library mode:**
 ```python
 import sys
-sys.path.insert(0, '.ai/scripts')
+sys.path.insert(0, '.air/scripts')
 from new_task import create_task
 
 # Silently create task file
@@ -75,24 +75,24 @@ YYYY-MM-DD HH:MM
 Before starting work:
 ```bash
 # Check recent tasks
-python .ai/scripts/list-tasks.py 5
+python .air/scripts/list-tasks.py 5
 
 # Read project context
-cat .ai/context/architecture.md
-cat .ai/context/language.md
+cat .air/context/architecture.md
+cat .air/context/language.md
 
 # Check backlog
-cat .ai/tasks/TASKS.md
+cat .air/tasks/TASKS.md
 
 # Search for related work
-python .ai/scripts/search-tasks.py "authentication"
+python .air/scripts/search-tasks.py "authentication"
 ```
 
 ## ✅ Session Checklist
 
 - [ ] Read this QUICKSTART.md
-- [ ] Check `.ai/tasks/` for recent work
-- [ ] Review `.ai/context/` files
+- [ ] Check `.air/tasks/` for recent work
+- [ ] Review `.air/context/` files
 - [ ] Create task file BEFORE coding
 - [ ] Follow protocol for ALL changes
 
@@ -118,29 +118,29 @@ Update the current task file to note the correction. If you've already marked a 
 
 ```bash
 # Create new task
-python .ai/scripts/new-task.py "implement user login"
+python .air/scripts/new-task.py "implement user login"
 
 # List recent tasks
-python .ai/scripts/list-tasks.py 10
+python .air/scripts/list-tasks.py 10
 
 # Search tasks
-python .ai/scripts/search-tasks.py "database"
+python .air/scripts/search-tasks.py "database"
 
 # View statistics
-python .ai/scripts/task-stats.py
+python .air/scripts/task-stats.py
 
 # Validate all tasks
-python .ai/scripts/validate-tasks.py
+python .air/scripts/validate-tasks.py
 
 # Archive old tasks
-python .ai/scripts/archive-tasks.py 2024-Q4
+python .air/scripts/archive-tasks.py 2024-Q4
 ```
 
 ## 📚 Need More Info?
 
-- **Full documentation**: `.ai/README.md`
-- **Task template**: `.ai/templates/task-template.md`
-- **Project patterns**: `.ai/context/`
+- **Full documentation**: `.air/README.md`
+- **Task template**: `.air/templates/task-template.md`
+- **Project patterns**: `.air/context/`
 - **Change history**: `AI_CHANGELOG.md`
 
 ---

@@ -76,7 +76,7 @@ def check_outcome_status(filepath):
 
 
 def main():
-    task_dir = Path(".ai/tasks")
+    task_dir = Path(".air/tasks")
     total_errors = 0
     total_warnings = 0
 

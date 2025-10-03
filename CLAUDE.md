@@ -1,8 +1,8 @@
 # CLAUDE.md
 
-**CRITICAL: After reading this file, read `.ai/README.md` for complete system documentation.**
+**CRITICAL: After reading this file, read `.air/README.md` for complete system documentation.**
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.air/code) when working with code in this repository.
 
 ## AI Task Tracking Protocol
 
@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 When a user gives you a prompt to modify code or create files, you MUST automatically:
 
 1. **Immediately create a task file** - Don't ask, just do it
-   - Use Python to create: `.ai/tasks/YYYYMMDD-HHMM-description.md`
+   - Use Python to create: `.air/tasks/YYYYMMDD-HHMM-description.md`
    - Derive description from the user's prompt
    - Pre-populate all known information
 
@@ -72,7 +72,7 @@ from pathlib import Path
 
 timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
 description = "user-task-description"  # kebab-case from user prompt
-filename = f".ai/tasks/{timestamp}-{description}.md"
+filename = f".air/tasks/{timestamp}-{description}.md"
 
 # Create from template and populate
 ...
@@ -80,10 +80,10 @@ filename = f".ai/tasks/{timestamp}-{description}.md"
 
 Or use the helper script:
 ```bash
-python .ai/scripts/new-task.py "description"
+python .air/scripts/new-task.py "description"
 ```
 
-See `.ai/README.md` for complete documentation.
+See `.air/README.md` for complete documentation.
 
 ---
 
@@ -153,9 +153,9 @@ AIR (AI Review) is a Python CLI toolkit for AI-assisted development and multi-pr
 **Status**: v0.1.0 - Core structure complete, most commands need implementation
 
 Review these before starting:
-- `.ai/context/architecture.md` - System architecture (needs updating)
-- `.ai/context/language.md` - Python conventions
-- `.ai/tasks/` - Recent work and decisions
+- `.air/context/architecture.md` - System architecture (needs updating)
+- `.air/context/language.md` - Python conventions
+- `.air/tasks/` - Recent work and decisions
 - `docs/ARCHITECTURE.md` - Complete technical design (13KB)
 - `PROJECT-STATUS.md` - Current implementation status
 
@@ -256,7 +256,7 @@ project-name/
 ├── README.md              # Project overview
 ├── CLAUDE.md              # AI guidance
 ├── .gitignore
-├── .ai/                   # Task tracking
+├── .air/                   # Task tracking
 │   ├── tasks/            # YYYYMMDD-HHMM-description.md
 │   ├── context/          # Architecture, conventions
 │   └── templates/        # Task templates

@@ -111,7 +111,7 @@ def render_ai_templates() -> dict[str, str]:
         Dictionary mapping filenames to rendered content
     """
     templates = {
-        ".ai/README.md": render_template("ai/README.md.j2", {}),
+        ".air/README.md": render_template("ai/README.md.j2", {}),
     }
 
     return templates

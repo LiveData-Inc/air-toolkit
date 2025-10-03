@@ -5,7 +5,7 @@ This directory tracks all AI-assisted development work for this project.
 ## Structure
 
 ```
-.ai/
+.air/
 ├── tasks/           # Task files (one per piece of work)
 ├── context/         # Project context for AI
 │   ├── architecture.md
@@ -15,9 +15,9 @@ This directory tracks all AI-assisted development work for this project.
 
 ## Task Files
 
-Format: `.ai/tasks/YYYYMMDD-HHMM-description.md`
+Format: `.air/tasks/YYYYMMDD-HHMM-description.md`
 
-Example: `.ai/tasks/20251003-1430-review-service-architecture.md`
+Example: `.air/tasks/20251003-1430-review-service-architecture.md`
 
 ### Task File Format
 
@@ -57,7 +57,7 @@ from pathlib import Path
 
 timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
 description = "task-description"  # kebab-case
-filename = f".ai/tasks/{timestamp}-{description}.md"
+filename = f".air/tasks/{timestamp}-{description}.md"
 
 content = f\"\"\"# Task: {description.replace('-', ' ').title()}
 
@@ -125,13 +125,13 @@ Document language-specific conventions (Python, TypeScript, etc.).
 
 ```bash
 # List all tasks
-ls -la .ai/tasks/
+ls -la .air/tasks/
 
 # View recent tasks
-ls -lt .ai/tasks/ | head -10
+ls -lt .air/tasks/ | head -10
 
 # Search tasks
-grep -r "keyword" .ai/tasks/
+grep -r "keyword" .air/tasks/
 
 # Generate summary
 air summary

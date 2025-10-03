@@ -63,7 +63,7 @@ def main():
         sys.exit(1)
 
     search_term = sys.argv[1]
-    task_dir = Path(".ai/tasks")
+    task_dir = Path(".air/tasks")
 
     if not task_dir.exists():
         print(f"Error: Task directory not found at {task_dir}")

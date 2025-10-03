@@ -78,4 +78,4 @@ Brief description of major milestone and the tasks that contributed to it.
 3. **Monthly**: Add summary to statistics section
 4. **At milestones**: Create milestone entry linking related tasks
 
-This file provides high-level overview. Detailed information is in individual task files in `.ai/tasks/`.
+This file provides high-level overview. Detailed information is in individual task files in `.air/tasks/`.

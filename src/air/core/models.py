@@ -180,7 +180,7 @@ class ProjectStructure(BaseModel):
         Returns:
             ProjectStructure for that mode
         """
-        base_dirs = [".ai", ".ai/tasks", ".ai/context", ".ai/templates", "scripts", "analysis"]
+        base_dirs = [".air", ".air/tasks", ".air/context", ".air/templates", "scripts", "analysis"]
         base_files = ["README.md", "CLAUDE.md", "air-config.json", ".gitignore"]
         optional_files = ["repos-to-link.txt"]
 

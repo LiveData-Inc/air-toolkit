@@ -107,7 +107,7 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
                 analysis_files.append(str(file.relative_to(project_root)))
 
     # Count task files
-    task_dir = project_root / ".ai/tasks"
+    task_dir = project_root / ".air/tasks"
     task_count = 0
     if task_dir.exists():
         task_count = len(list(task_dir.glob("*.md")))

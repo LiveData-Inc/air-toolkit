@@ -3,10 +3,10 @@ name: Validate AI Task Files
 on:
   push:
     paths:
-      - '.ai/tasks/**/*.md'
+      - '.air/tasks/**/*.md'
   pull_request:
     paths:
-      - '.ai/tasks/**/*.md'
+      - '.air/tasks/**/*.md'
 
 jobs:
   validate:
@@ -21,7 +21,7 @@ jobs:
           echo "Checking task file naming conventions..."
           invalid_files=0
 
-          for file in .ai/tasks/*.md; do
+          for file in .air/tasks/*.md; do
             # Skip TASKS.md
             if [[ "$(basename "$file")" == "TASKS.md" ]]; then
               continue
@@ -59,7 +59,7 @@ jobs:
             "## Outcome"
           )
 
-          for file in .ai/tasks/*.md; do
+          for file in .air/tasks/*.md; do
             # Skip TASKS.md
             if [[ "$(basename "$file")" == "TASKS.md" ]]; then
               continue
@@ -96,7 +96,7 @@ jobs:
           echo "Checking for placeholder content..."
           warnings=0
 
-          for file in .ai/tasks/*.md; do
+          for file in .air/tasks/*.md; do
             # Skip TASKS.md
             if [[ "$(basename "$file")" == "TASKS.md" ]]; then
               continue
@@ -128,8 +128,8 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v14
         with:
           globs: |
-            .ai/tasks/*.md
-            !.ai/tasks/TASKS.md
+            .air/tasks/*.md
+            !.air/tasks/TASKS.md
           config: |
             {
               "MD013": false,

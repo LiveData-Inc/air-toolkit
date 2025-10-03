@@ -42,9 +42,9 @@ class TestInitCommand:
         assert (project_dir / ".gitignore").exists()
 
         # Check directories
-        assert (project_dir / ".ai").exists()
-        assert (project_dir / ".ai/tasks").exists()
-        assert (project_dir / ".ai/context").exists()
+        assert (project_dir / ".air").exists()
+        assert (project_dir / ".air/tasks").exists()
+        assert (project_dir / ".air/context").exists()
         assert (project_dir / "review").exists()
         assert (project_dir / "analysis").exists()
 
@@ -95,8 +95,8 @@ class TestInitCommand:
         assert result.exit_code == 0
 
         project_dir = isolated_project / "no-track"
-        # .ai directory should still exist but without some files
-        assert (project_dir / ".ai").exists()
+        # .air directory should still exist but without some files
+        assert (project_dir / ".air").exists()
 
     def test_init_config_content(self, runner, isolated_project):
         """Test air init creates valid config file."""

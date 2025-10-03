@@ -127,10 +127,10 @@ def test_render_ai_templates():
     """Test rendering AI task tracking templates."""
     templates = render_ai_templates()
 
-    assert ".ai/README.md" in templates
+    assert ".air/README.md" in templates
 
     # Check README content
-    readme = templates[".ai/README.md"]
+    readme = templates[".air/README.md"]
     assert "Task Tracking" in readme
     assert "YYYYMMDD-HHMM" in readme
     assert "Outcome" in readme

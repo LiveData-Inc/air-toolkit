@@ -50,7 +50,7 @@ air status
 ### AI Task Tracking
 
 ```bash
-# Initialize .ai/ tracking in any project
+# Initialize .air/ tracking in any project
 cd ~/my-project
 air track init
 
@@ -113,7 +113,7 @@ air classify             # Classify resource types
 air pr [resource]        # Create pull request
 
 # Task tracking commands
-air track init           # Initialize .ai/ tracking
+air track init           # Initialize .air/ tracking
 air task new [desc]      # Create task file
 air task list            # List all tasks
 air summary              # Generate task summary

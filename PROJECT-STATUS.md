@@ -214,7 +214,7 @@ air version 0.1.0
 - `air task new` - Create task files
 - `air task list` - List and parse tasks
 - `air task complete` - Update task status
-- `air track init` - Initialize .ai/ tracking
+- `air track init` - Initialize .air/ tracking
 - `air summary` - Generate summaries
 
 **Requirements:**

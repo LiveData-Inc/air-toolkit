@@ -41,9 +41,9 @@ AI assistants perform analysis but the work is ephemeral - lost when the chat en
 **AIR Solution:**
 ```bash
 # AI automatically creates task files as it works
-.ai/tasks/20251003-1200-review-ehr-inbound.md
-.ai/tasks/20251003-1315-compare-services.md
-.ai/tasks/20251003-1430-create-integration-plan.md
+.air/tasks/20251003-1200-review-ehr-inbound.md
+.air/tasks/20251003-1315-compare-services.md
+.air/tasks/20251003-1430-create-integration-plan.md
 ```
 
 **AI Workflow:**
@@ -119,7 +119,7 @@ air summary --output=analysis/SUMMARY.md
 ```
 ```
 
-### 2.3 .ai/README.md: Task System Documentation
+### 2.3 .air/README.md: Task System Documentation
 
 **Purpose:** Teach AI the task tracking protocol.
 
@@ -130,7 +130,7 @@ air summary --output=analysis/SUMMARY.md
 - Outcome statuses
 
 **AI reads this to learn:**
-- I should create `.ai/tasks/YYYYMMDD-HHMM-description.md`
+- I should create `.air/tasks/YYYYMMDD-HHMM-description.md`
 - I should document actions as I take them
 - I should mark outcome when complete
 
@@ -200,7 +200,7 @@ air link --review service-b:~/repos/service-b
 
 # 2. Human starts AI session
 # AI reads CLAUDE.md
-# AI reads .ai/README.md
+# AI reads .air/README.md
 
 # 3. AI creates task
 # (AI internally): air task new "compare services"
@@ -351,7 +351,7 @@ AI: Reads task files, sees what was done, continues
 
 1. When user gives you work to do, IMMEDIATELY create task file:
    ```
-   File: .ai/tasks/YYYYMMDD-HHMM-brief-description.md
+   File: .air/tasks/YYYYMMDD-HHMM-brief-description.md
    ```
 
 2. Document actions AS YOU TAKE THEM:
@@ -408,7 +408,7 @@ air classify            # Classify resources
 ## For AI Assistants
 
 Read these files in order:
-1. `.ai/README.md` - Task tracking protocol
+1. `.air/README.md` - Task tracking protocol
 2. `CLAUDE.md` - Project-specific instructions
 3. `README.md` (this file) - Project goals
 
@@ -420,7 +420,7 @@ Your goals for this project:
 Deliverables expected:
 - [ ] `analysis/assessments/[specific-analysis].md`
 - [ ] `analysis/SUMMARY.md`
-- [ ] `.ai/tasks/` - Complete task files
+- [ ] `.air/tasks/` - Complete task files
 
 Use `air status` to check your progress.
 ```
@@ -445,8 +445,8 @@ Use `air status` to check your progress.
 ```
 User: /init
 
-Claude: Reading .ai/README.md and CLAUDE.md...
-Claude: Creating task file: .ai/tasks/20251003-1200-review-repos.md
+Claude: Reading .air/README.md and CLAUDE.md...
+Claude: Creating task file: .air/tasks/20251003-1200-review-repos.md
 Claude: Reading repos/service-a/...
 Claude: Reading repos/service-b/...
 Claude: Creating analysis/assessments/comparison.md...
@@ -547,7 +547,7 @@ Agent 3 (Integration Planner):
   - Creates integration plan
   - Generates SUMMARY.md
 
-All tracked in .ai/tasks/
+All tracked in .air/tasks/
 Human reviews: air status && air summary
 ```
 
@@ -560,7 +560,7 @@ Human reviews: air status && air summary
 - ✅ Provide clear goals in README.md
 - ✅ Review CLAUDE.md before starting AI
 - ✅ Use `air status` to check AI progress
-- ✅ Read `.ai/tasks/` to understand what AI did
+- ✅ Read `.air/tasks/` to understand what AI did
 
 **Don't:**
 - ❌ Skip project initialization
@@ -571,7 +571,7 @@ Human reviews: air status && air summary
 ### 8.2 For AI Agents
 
 **Do:**
-- ✅ Read .ai/README.md FIRST
+- ✅ Read .air/README.md FIRST
 - ✅ Read CLAUDE.md for project instructions
 - ✅ Create task files IMMEDIATELY
 - ✅ Update task files as you work

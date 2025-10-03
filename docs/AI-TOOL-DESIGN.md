@@ -60,14 +60,14 @@ from pathlib import Path
 
 timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
 description = "task-description"
-filename = f".ai/tasks/{timestamp}-{description}.md"
+filename = f".air/tasks/{timestamp}-{description}.md"
 Path(filename).write_text(content)
 ```
 
 **For Human Users:**
 ```bash
 air task new "implement feature X"
-# Creates: .ai/tasks/20251003-1200-implement-feature-x.md
+# Creates: .air/tasks/20251003-1200-implement-feature-x.md
 ```
 
 **Rationale:**
@@ -140,7 +140,7 @@ def handle_error(msg: str, hint: str | None = None) -> None:
 
 **Detection Methods:**
 1. Check for `air-config.json` in current/parent directories
-2. Check for `.ai/` directory structure
+2. Check for `.air/` directory structure
 3. Check if `air` command is available: `which air`
 
 **AI Behavior:**
@@ -225,7 +225,7 @@ else:
 ```bash
 # AI checks context
 ls -la
-# Sees: air-config.json, .ai/
+# Sees: air-config.json, .air/
 
 # AI checks availability
 which air
@@ -252,7 +252,7 @@ from datetime import datetime, timezone
 
 # Create task file directly
 timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-Path(f".ai/tasks/{timestamp}-review-services.md").write_text(content)
+Path(f".air/tasks/{timestamp}-review-services.md").write_text(content)
 
 # AI hints to user
 print("💡 Tip: Install air-toolkit for enhanced workflow: pip install air-toolkit")

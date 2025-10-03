@@ -45,7 +45,7 @@ def create_task(
     kebab_description = to_kebab_case(description)
 
     # Create filename
-    filename = f".ai/tasks/{timestamp}-{kebab_description}.md"
+    filename = f".air/tasks/{timestamp}-{kebab_description}.md"
 
     # Get current date for file content
     current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
@@ -74,8 +74,8 @@ def create_task(
 [Optional: Decisions, blockers, follow-up needed]
 """
 
-    # Ensure .ai/tasks directory exists
-    Path(".ai/tasks").mkdir(parents=True, exist_ok=True)
+    # Ensure .air/tasks directory exists
+    Path(".air/tasks").mkdir(parents=True, exist_ok=True)
 
     # Write task file
     with open(filename, 'w') as f:

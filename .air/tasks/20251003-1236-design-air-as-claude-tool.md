@@ -20,7 +20,7 @@ Design finalized with 6 key decisions for making AIR a first-class Claude Code t
 ## Notes
 ## Design Principles Identified
 
-1. **Auto-Discovery**: Claude should detect AIR projects by presence of air-config.json or .ai/ directory
+1. **Auto-Discovery**: Claude should detect AIR projects by presence of air-config.json or .air/ directory
 2. **Machine-Readable Output**: All commands need --format=json option for AI parsing
 3. **Idempotent Commands**: Safe to run repeatedly (validate, status are read-only)
 4. **Self-Documenting**: Rich --help with examples and related commands
@@ -39,7 +39,7 @@ Design finalized with 6 key decisions for making AIR a first-class Claude Code t
    - --format=json: Structured data for AI
 
 3. **Task Creation**: ✅ Option B (Python direct) + air task new for humans
-   - Claude uses Python directly: Path(f".ai/tasks/{timestamp}-desc.md").write_text(content)
+   - Claude uses Python directly: Path(f".air/tasks/{timestamp}-desc.md").write_text(content)
    - Faster, zero friction, no subprocess overhead
    - Provide air task new command for human users
 
@@ -54,7 +54,7 @@ Design finalized with 6 key decisions for making AIR a first-class Claude Code t
    - Graceful degradation when air not available
 
 6. **Auto-Detection**: ✅ Check for air availability
-   - Detect air-config.json or .ai/ directory
+   - Detect air-config.json or .air/ directory
    - If air installed: use it automatically
    - If not installed: include hint in error messages
 

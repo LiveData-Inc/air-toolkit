@@ -57,7 +57,7 @@ air init [NAME] [OPTIONS]
   - `review` - Review-only mode
   - `collaborate` - Collaborative mode
   - `mixed` - Both review and collaborative
-- `--track / --no-track` - Initialize .ai/ tracking (default: enabled)
+- `--track / --no-track` - Initialize .air/ tracking (default: enabled)
 
 #### Examples
 
@@ -89,7 +89,7 @@ project-name/
 ├── review/
 ├── analysis/
 │   └── assessments/
-├── .ai/
+├── .air/
 └── scripts/
 ```
 
@@ -104,7 +104,7 @@ project-name/
 ├── analysis/
 │   └── improvements/
 ├── contributions/
-├── .ai/
+├── .air/
 └── scripts/
 ```
 
@@ -122,7 +122,7 @@ project-name/
 │   ├── assessments/
 │   └── improvements/
 ├── contributions/
-├── .ai/
+├── .air/
 └── scripts/
 ```
 
@@ -599,7 +599,7 @@ air task new "fix bug Y" --prompt "Fix the login redirect issue"
 
 #### Output
 
-Creates file: `.ai/tasks/YYYYMMDD-HHMM-description.md`
+Creates file: `.air/tasks/YYYYMMDD-HHMM-description.md`
 
 ```markdown
 # Task: Implement feature X
@@ -730,7 +730,7 @@ Updates task file outcome to `✅ Success`.
 
 ### air track
 
-Initialize and manage .ai/ tracking system.
+Initialize and manage .air/ tracking system.
 
 #### Usage
 
@@ -740,14 +740,14 @@ air track SUBCOMMAND [OPTIONS]
 
 #### Subcommands
 
-- `init` - Initialize .ai/ tracking
+- `init` - Initialize .air/ tracking
 - `status` - Show tracking status
 
 ---
 
 #### air track init
 
-Initialize .ai/ tracking in current directory.
+Initialize .air/ tracking in current directory.
 
 #### Usage
 
@@ -771,10 +771,10 @@ air track init --minimal
 
 #### Output
 
-Creates `.ai/` structure:
+Creates `.air/` structure:
 
 ```
-.ai/
+.air/
 ├── README.md              # Documentation
 ├── tasks/                 # Task files directory
 ├── context/               # Context files
@@ -788,19 +788,19 @@ Creates `.ai/` structure:
 #### Output
 
 ```
-[i] Initializing .ai/ tracking...
+[i] Initializing .air/ tracking...
 
 Created:
-  ✓ .ai/README.md
-  ✓ .ai/tasks/
-  ✓ .ai/context/
-  ✓ .ai/templates/
+  ✓ .air/README.md
+  ✓ .air/tasks/
+  ✓ .air/context/
+  ✓ .air/templates/
 
-[✓] .ai/ tracking initialized
+[✓] .air/ tracking initialized
 
 Next steps:
-  1. Review .ai/README.md
-  2. Update .ai/context/ files
+  1. Review .air/README.md
+  2. Update .air/context/ files
   3. Start using: air task new 'description'
 ```
 
@@ -808,7 +808,7 @@ Next steps:
 
 #### air track status
 
-Show .ai/ tracking status.
+Show .air/ tracking status.
 
 #### Usage
 
@@ -825,7 +825,7 @@ air track status
 #### Output
 
 ```
-.ai/ Tracking Status
+.air/ Tracking Status
 ====================
 
 Status: Initialized

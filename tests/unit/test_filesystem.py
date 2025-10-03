@@ -181,7 +181,7 @@ def test_validate_project_structure_valid(tmp_path):
     (tmp_path / ".gitignore").write_text("")
 
     # Create directories
-    for dir_name in [".ai", ".ai/tasks", ".ai/context", ".ai/templates",
+    for dir_name in [".ai", ".air/tasks", ".air/context", ".air/templates",
                       "scripts", "analysis", "review", "analysis/assessments"]:
         (tmp_path / dir_name).mkdir(parents=True, exist_ok=True)
 

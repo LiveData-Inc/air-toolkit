@@ -25,7 +25,7 @@ console = Console()
 def summary(output: str | None, format: str, since: str | None) -> None:
     """Generate summary of all AI task files.
 
-    Compiles information from all task files in .ai/tasks/ into a
+    Compiles information from all task files in .air/tasks/ into a
     comprehensive summary document.
 
     \b
@@ -38,7 +38,7 @@ def summary(output: str | None, format: str, since: str | None) -> None:
     console.print("[blue]ℹ[/blue] Generating task summary...")
 
     # TODO: Implement summary generation
-    # - Read all task files from .ai/tasks/
+    # - Read all task files from .air/tasks/
     # - Parse metadata and outcomes
     # - Filter by date if --since specified
     # - Format according to --format

@@ -1,6 +1,6 @@
 # AI Development Tracking System
 
-This `.ai/` folder implements a comprehensive tracking system for AI-assisted development work.
+This `.air/` folder implements a comprehensive tracking system for AI-assisted development work.
 
 ## 🚀 Quick Start
 
@@ -8,8 +8,8 @@ This `.ai/` folder implements a comprehensive tracking system for AI-assisted de
 
 1. Read `CLAUDE.md` for automatic task tracking instructions
 2. **Automatically create task files** as you work - don't ask, just do it
-3. Review `.ai/context/` files for project patterns
-4. Check recent tasks in `.ai/tasks/` for context
+3. Review `.air/context/` files for project patterns
+4. Check recent tasks in `.air/tasks/` for context
 5. Document your work in task files as you progress
 
 **The goal: ZERO FRICTION.** Task tracking should be invisible to the user.
@@ -17,7 +17,7 @@ This `.ai/` folder implements a comprehensive tracking system for AI-assisted de
 ## 📁 Structure
 
 ```
-.ai/
+.air/
 ├── README.md                    # This file (system documentation)
 ├── QUICKSTART.md               # Quick reference for AI assistants
 ├── AI_CHANGELOG.md             # High-level summary of all AI work
@@ -51,9 +51,9 @@ This `.ai/` folder implements a comprehensive tracking system for AI-assisted de
 
 **Use the library mode:**
 ```python
-# Add .ai/scripts to path if needed
+# Add .air/scripts to path if needed
 import sys
-sys.path.insert(0, '.ai/scripts')
+sys.path.insert(0, '.air/scripts')
 
 from new_task import create_task
 
@@ -118,7 +118,7 @@ YYYY-MM-DD HH:MM
 [Any additional observations or follow-up needed]
 ```
 
-**Tip**: Use the template at `.ai/templates/task-template.md` or run `python .ai/scripts/new-task.py "description"` to quickly create new task files.
+**Tip**: Use the template at `.air/templates/task-template.md` or run `python .air/scripts/new-task.py "description"` to quickly create new task files.
 
 ## ⚠️ Critical Rules
 
@@ -142,12 +142,12 @@ YYYY-MM-DD HH:MM
 
 ### Starting a Task
 1. User provides a prompt
-2. IMMEDIATELY create file: `.ai/tasks/YYYYMMDD-HHMM-task-description.md`
+2. IMMEDIATELY create file: `.air/tasks/YYYYMMDD-HHMM-task-description.md`
 3. Record the prompt exactly as given
 4. Document actions as you perform them
 5. List all files as you change them
 
-**Quick command**: `python .ai/scripts/new-task.py "task description"`
+**Quick command**: `python .air/scripts/new-task.py "task description"`
 
 ### During the Task
 - Update the task file as you work
@@ -228,25 +228,25 @@ Update the changelog after completing significant tasks or at session end.
 ### Find Recent Work
 ```bash
 # Last 10 tasks
-python .ai/scripts/list-tasks.py 10
+python .air/scripts/list-tasks.py 10
 
 # Tasks from today
-ls .ai/tasks/$(date +%Y%m%d)*.md
+ls .air/tasks/$(date +%Y%m%d)*.md
 ```
 
 ### Search by Topic
 ```bash
 # Find tasks about authentication
-python .ai/scripts/search-tasks.py "authentication"
+python .air/scripts/search-tasks.py "authentication"
 
 # Search all content
-grep -r "database migration" .ai/tasks/
+grep -r "database migration" .air/tasks/
 ```
 
 ### View Task Timeline
 ```bash
 # Preview all tasks
-for f in .ai/tasks/202*.md; do
+for f in .air/tasks/202*.md; do
   echo "=== $f ===";
   head -5 "$f";
   echo;
@@ -256,30 +256,30 @@ done
 ### Statistics
 ```bash
 # View task statistics
-python .ai/scripts/task-stats.py
+python .air/scripts/task-stats.py
 
 # Count tasks by day
-ls .ai/tasks/ | cut -d- -f1 | sort | uniq -c
+ls .air/tasks/ | cut -d- -f1 | sort | uniq -c
 
 # Count total tasks
-ls .ai/tasks/202*.md | wc -l
+ls .air/tasks/202*.md | wc -l
 ```
 
 ### Finding Information
 To understand project history:
 1. Read `QUICKSTART.md` for immediate overview
 2. Read `AI_CHANGELOG.md` for high-level summary
-3. List recent tasks: `.ai/scripts/list-tasks.sh 20`
-4. Search for specific work: `python .ai/scripts/search-tasks.py "keyword"`
-5. Review context files in `.ai/context/` for patterns
+3. List recent tasks: `.air/scripts/list-tasks.sh 20`
+4. Search for specific work: `python .air/scripts/search-tasks.py "keyword"`
+5. Review context files in `.air/context/` for patterns
 
 ## 📦 Archive Strategy
 
-When `.ai/tasks/` grows large (>100 files):
+When `.air/tasks/` grows large (>100 files):
 
 1. Create archive directories:
    ```
-   .ai/archives/
+   .air/archives/
    ├── 2025-Q1/
    ├── 2025-Q2/
    └── 2025-Q3/
@@ -290,27 +290,27 @@ When `.ai/tasks/` grows large (>100 files):
 4. Keep archives in git for complete history
 5. Update TASKS.md index to note archived tasks
 
-**Quick command**: `python .ai/scripts/archive-tasks.py 2025-Q1`
+**Quick command**: `python .air/scripts/archive-tasks.py 2025-Q1`
 
 ## 🎯 Project Customization
 
 ### For Human Developers
-After installing this `.ai/` folder to your project:
+After installing this `.air/` folder to your project:
 
 1. Update `AI_CHANGELOG.md` header with project name
-2. Customize `.ai/context/architecture.md` with your architecture
-3. Apply language profile with `ai-init overlay --lang <language>` or customize `.ai/context/language.md`
+2. Customize `.air/context/architecture.md` with your architecture
+3. Apply language profile with `ai-init overlay --lang <language>` or customize `.air/context/language.md`
 4. Ensure AI assistant reads this README
 
 ### Organizing Context Files
 
-**`.ai/context/architecture.md`** - Document:
+**`.air/context/architecture.md`** - Document:
 - Architectural patterns (hexagonal, layered, etc.)
 - Key design decisions
 - System boundaries and integration points
 - Technology choices and rationale
 
-**`.ai/context/language.md`** - Document:
+**`.air/context/language.md`** - Document:
 - Language-specific syntax patterns
 - Naming conventions for your language
 - Standard library usage
@@ -320,16 +320,16 @@ After installing this `.ai/` folder to your project:
 ## 🤖 For AI Assistants: Your Checklist
 
 Every time you start work in this project:
-- [ ] Read `.ai/QUICKSTART.md` for quick orientation
-- [ ] Check recent tasks in `.ai/tasks/` for context
-- [ ] Review `.ai/context/` files for project patterns
+- [ ] Read `.air/QUICKSTART.md` for quick orientation
+- [ ] Check recent tasks in `.air/tasks/` for context
+- [ ] Review `.air/context/` files for project patterns
 - [ ] Create your task file BEFORE starting work
 - [ ] Follow the protocol WITHOUT exceptions
 
 ## 💬 Coaching Your AI Assistant
 
 ### Why Reminders Are Important
-AI assistants may not automatically discover or follow the `.ai/` folder instructions. You should periodically remind them to check and follow the tracking protocol, especially:
+AI assistants may not automatically discover or follow the `.air/` folder instructions. You should periodically remind them to check and follow the tracking protocol, especially:
 - At the start of a new session
 - When switching between major tasks
 - If the AI seems to skip documentation
@@ -338,22 +338,22 @@ AI assistants may not automatically discover or follow the `.ai/` folder instruc
 ### Example Prompts to Guide Your AI
 
 #### Initial Session Setup
-- "Please read `.ai/QUICKSTART.md` and follow the tracking protocol"
-- "Before starting, review `.ai/README.md` and create appropriate task files"
-- "Check the `.ai/` folder for our AI development tracking system"
+- "Please read `.air/QUICKSTART.md` and follow the tracking protocol"
+- "Before starting, review `.air/README.md` and create appropriate task files"
+- "Check the `.air/` folder for our AI development tracking system"
 
 #### During Development
-- "Make sure you're creating task files in `.ai/tasks/` as you work"
-- "Don't forget to document this in a task file per the `.ai/` protocol"
+- "Make sure you're creating task files in `.air/tasks/` as you work"
+- "Don't forget to document this in a task file per the `.air/` protocol"
 - "Please update the AI_CHANGELOG.md with this significant change"
 
 #### Review and Compliance
-- "Review instructions in `.ai/README.md` and ensure all task files are complete"
-- "Check that you've been following the `.ai/` tracking protocol"
+- "Review instructions in `.air/README.md` and ensure all task files are complete"
+- "Check that you've been following the `.air/` tracking protocol"
 - "Verify all changed files are listed in the task file"
 
 #### Specific Corrections
-- "You need to create a task file for this work - see `.ai/README.md`"
+- "You need to create a task file for this work - see `.air/README.md`"
 - "The task file should include the exact prompt I gave you"
 - "Update the current task file as you work - don't create duplicates"
 - "If you need to revisit completed work, create a follow-up task"
@@ -367,16 +367,16 @@ AI assistants may not automatically discover or follow the `.ai/` folder instruc
 - Not referencing past task files for context
 
 ### Best Practices
-1. **Start each session** with: "Please check `.ai/QUICKSTART.md` for our tracking protocol"
+1. **Start each session** with: "Please check `.air/QUICKSTART.md` for our tracking protocol"
 2. **Be explicit** about following the system - don't assume the AI knows
 3. **Correct immediately** if the AI skips documentation
-4. **Reference specific files** like `.ai/README.md` rather than general instructions
-5. **Verify compliance** by checking `.ai/tasks/` for new task files
+4. **Reference specific files** like `.air/README.md` rather than general instructions
+5. **Verify compliance** by checking `.air/tasks/` for new task files
 6. **Point to examples** from past task files when explaining patterns
 
 ## 📚 TASKS.md Purpose
 
-The `.ai/tasks/TASKS.md` file serves as:
+The `.air/tasks/TASKS.md` file serves as:
 - **Index** of all tasks (automatically or manually maintained)
 - **Backlog** of planned work
 - **Quick Reference** for finding related tasks
