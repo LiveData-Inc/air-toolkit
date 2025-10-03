@@ -1,0 +1,154 @@
+name: Validate AI Task Files
+
+on:
+  push:
+    paths:
+      - '.ai/tasks/**/*.md'
+  pull_request:
+    paths:
+      - '.ai/tasks/**/*.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate task file naming
+        run: |
+          echo "Checking task file naming conventions..."
+          invalid_files=0
+
+          for file in .ai/tasks/*.md; do
+            # Skip TASKS.md
+            if [[ "$(basename "$file")" == "TASKS.md" ]]; then
+              continue
+            fi
+
+            filename=$(basename "$file")
+
+            # Check format: YYYYMMDD-HHMM-description.md
+            if ! echo "$filename" | grep -qE '^[0-9]{8}-[0-9]{4}-[a-z0-9-]+\.md$'; then
+              echo "❌ Invalid filename format: $filename"
+              echo "   Expected format: YYYYMMDD-HHMM-description.md"
+              invalid_files=$((invalid_files + 1))
+            fi
+          done
+
+          if [ $invalid_files -gt 0 ]; then
+            echo ""
+            echo "Found $invalid_files file(s) with invalid naming"
+            exit 1
+          fi
+
+          echo "✅ All task files have valid names"
+
+      - name: Validate task file structure
+        run: |
+          echo "Checking task file structure..."
+          invalid_files=0
+
+          required_sections=(
+            "# Task:"
+            "## Date"
+            "## Prompt"
+            "## Actions Taken"
+            "## Files Changed"
+            "## Outcome"
+          )
+
+          for file in .ai/tasks/*.md; do
+            # Skip TASKS.md
+            if [[ "$(basename "$file")" == "TASKS.md" ]]; then
+              continue
+            fi
+
+            filename=$(basename "$file")
+            missing_sections=()
+
+            for section in "${required_sections[@]}"; do
+              if ! grep -q "$section" "$file"; then
+                missing_sections+=("$section")
+              fi
+            done
+
+            if [ ${#missing_sections[@]} -gt 0 ]; then
+              echo "❌ $filename missing sections:"
+              for section in "${missing_sections[@]}"; do
+                echo "   - $section"
+              done
+              invalid_files=$((invalid_files + 1))
+            fi
+          done
+
+          if [ $invalid_files -gt 0 ]; then
+            echo ""
+            echo "Found $invalid_files file(s) with missing sections"
+            exit 1
+          fi
+
+          echo "✅ All task files have required sections"
+
+      - name: Check for placeholder content
+        run: |
+          echo "Checking for placeholder content..."
+          warnings=0
+
+          for file in .ai/tasks/*.md; do
+            # Skip TASKS.md
+            if [[ "$(basename "$file")" == "TASKS.md" ]]; then
+              continue
+            fi
+
+            filename=$(basename "$file")
+
+            # Check if prompt section contains placeholder text
+            if grep -A 1 "## Prompt" "$file" | grep -q '\[.*\]'; then
+              echo "⚠️  $filename: Prompt section contains placeholder text"
+              warnings=$((warnings + 1))
+            fi
+
+            # Check if outcome is marked
+            if ! grep -qE "(⏳|✅|⚠️|❌)" "$file"; then
+              echo "⚠️  $filename: No outcome status emoji found"
+              warnings=$((warnings + 1))
+            fi
+          done
+
+          if [ $warnings -gt 0 ]; then
+            echo ""
+            echo "Found $warnings warning(s) - review recommended but not blocking"
+          else
+            echo "✅ No placeholder content detected"
+          fi
+
+      - name: Validate markdown syntax
+        uses: DavidAnson/markdownlint-cli2-action@v14
+        with:
+          globs: |
+            .ai/tasks/*.md
+            !.ai/tasks/TASKS.md
+          config: |
+            {
+              "MD013": false,
+              "MD033": false,
+              "MD041": false
+            }
+        continue-on-error: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=============================="
+          echo "Task File Validation Complete"
+          echo "=============================="
+          echo ""
+          echo "View the logs above for any issues found."
+          echo ""
+          echo "Task files should:"
+          echo "  - Use format: YYYYMMDD-HHMM-description.md"
+          echo "  - Include all required sections"
+          echo "  - Contain actual prompts (not placeholders)"
+          echo "  - Have outcome status marked"
