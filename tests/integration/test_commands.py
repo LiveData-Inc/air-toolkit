@@ -1131,3 +1131,150 @@ class TestTaskNewCommand:
         assert "task-one.md" in result.output
         assert "task-two.md" in result.output
         assert "Active: 2" in result.output
+
+
+class TestSummaryCommand:
+    """Tests for air summary command."""
+
+    def test_summary_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["summary"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_summary_no_tasks(self, runner, isolated_project):
+        """Test summary with no task files."""
+        runner.invoke(main, ["init", "empty-summary"])
+        project_dir = isolated_project / "empty-summary"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["summary"])
+
+        assert result.exit_code == 0
+        assert "No tasks found" in result.output
+
+    def test_summary_with_tasks(self, runner, isolated_project):
+        """Test summary with task files."""
+        runner.invoke(main, ["init", "summary-test"])
+        project_dir = isolated_project / "summary-test"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a few tasks
+        runner.invoke(main, ["task", "new", "task one"])
+        runner.invoke(main, ["task", "new", "task two"])
+
+        # Mark one as complete by updating its file
+        import time
+        time.sleep(0.1)
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-task-one.md"))
+        if task_files:
+            content = task_files[0].read_text()
+            content = content.replace("⏳ In Progress", "✅ Success")
+            task_files[0].write_text(content)
+
+        result = runner.invoke(main, ["summary"])
+
+        assert result.exit_code == 0
+        assert "Task Summary" in result.output or "TASK SUMMARY" in result.output
+
+    def test_summary_json_format(self, runner, isolated_project):
+        """Test summary with JSON output."""
+        runner.invoke(main, ["init", "json-summary"])
+        project_dir = isolated_project / "json-summary"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "test task"])
+
+        result = runner.invoke(main, ["summary", "--format=json"])
+
+        assert result.exit_code == 0
+
+        # Verify JSON is valid
+        output_data = json.loads(result.output)
+        assert "statistics" in output_data
+        assert "tasks" in output_data
+        assert output_data["statistics"]["total_tasks"] >= 1
+
+    def test_summary_text_format(self, runner, isolated_project):
+        """Test summary with plain text output."""
+        runner.invoke(main, ["init", "text-summary"])
+        project_dir = isolated_project / "text-summary"
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["task", "new", "simple task"])
+
+        result = runner.invoke(main, ["summary", "--format=text"])
+
+        assert result.exit_code == 0
+        assert "AI TASK SUMMARY" in result.output
+        assert "Total Tasks:" in result.output
+
+    def test_summary_output_to_file(self, runner, isolated_project):
+        """Test writing summary to file."""
+        runner.invoke(main, ["init", "file-summary"])
+        project_dir = isolated_project / "file-summary"
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["task", "new", "documented task"])
+
+        output_file = project_dir / "SUMMARY.md"
+        result = runner.invoke(main, ["summary", "--output", str(output_file)])
+
+        assert result.exit_code == 0
+        assert output_file.exists()
+
+        content = output_file.read_text()
+        assert "Task Summary" in content
+        assert "documented task" in content.lower()
+
+    def test_summary_since_filter(self, runner, isolated_project):
+        """Test filtering tasks by date."""
+        runner.invoke(main, ["init", "since-summary"])
+        project_dir = isolated_project / "since-summary"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks
+        runner.invoke(main, ["task", "new", "old task"])
+
+        import time
+        time.sleep(0.1)
+
+        runner.invoke(main, ["task", "new", "new task"])
+
+        # Get tomorrow's date
+        from datetime import datetime, timedelta
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Filter to only show tasks since tomorrow (should be none)
+        result = runner.invoke(main, ["summary", "--since", tomorrow])
+
+        assert result.exit_code == 0
+        assert "No tasks found since" in result.output
+
+    def test_summary_invalid_date_format(self, runner, isolated_project):
+        """Test error with invalid date format."""
+        runner.invoke(main, ["init", "date-error"])
+        project_dir = isolated_project / "date-error"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["summary", "--since", "bad-date"])
+
+        assert result.exit_code == 1
+        assert "Invalid date format" in result.output
