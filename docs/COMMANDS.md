@@ -84,7 +84,7 @@ Creates project structure:
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── .assess-config.json
+├── air-config.json
 ├── .gitignore
 ├── review/
 ├── analysis/
@@ -98,7 +98,7 @@ project-name/
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── .assess-config.json
+├── air-config.json
 ├── .gitignore
 ├── collaborate/
 ├── analysis/
@@ -113,7 +113,7 @@ project-name/
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── .assess-config.json
+├── air-config.json
 ├── .gitignore
 ├── review/
 ├── collaborate/
@@ -249,7 +249,7 @@ air validate --fix
 
 **Structure Check:**
 - Required directories exist
-- `.assess-config.json` present
+- `air-config.json` present
 - Mode-appropriate structure (review/, collaborate/, etc.)
 
 **Links Check:**
@@ -270,7 +270,7 @@ air validate --fix
 
 Structure:
   ✓ README.md
-  ✓ .assess-config.json
+  ✓ air-config.json
   ✓ review/
   ✓ analysis/assessments/
 
@@ -379,7 +379,7 @@ air classify [OPTIONS]
 #### Options
 
 - `--verbose` - Show detailed classification reasoning
-- `--update` - Update `.assess-config.json` with classifications
+- `--update` - Update `air-config.json` with classifications
 
 #### Examples
 
@@ -1012,7 +1012,7 @@ AIR_COLOR=auto                  # Color output (auto|always|never)
 
 ### Project Configuration
 
-`.assess-config.json` - Project metadata and resource tracking
+`air-config.json` - Project metadata and resource tracking
 
 ### Global Configuration (Future)
 

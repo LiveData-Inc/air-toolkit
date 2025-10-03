@@ -349,7 +349,7 @@ from air.core.models import AssessmentConfig, ProjectMode
 def test_load_config(tmp_path):
     """Test loading configuration file."""
     # Arrange
-    config_path = tmp_path / ".assess-config.json"
+    config_path = tmp_path / "air-config.json"
     config_data = {
         "version": "2.0.0",
         "name": "test-project",

@@ -15,7 +15,7 @@ console = Console()
 @click.option(
     "--update",
     is_flag=True,
-    help="Update .assess-config.json with classifications",
+    help="Update air-config.json with classifications",
 )
 def classify(verbose: bool, update: bool) -> None:
     """Classify resources by type.

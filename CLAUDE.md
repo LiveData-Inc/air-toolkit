@@ -174,7 +174,7 @@ src/air/
 
 ### Data Models (Pydantic)
 Key models in `src/air/core/models.py`:
-- `AssessmentConfig`: Project configuration (.assess-config.json)
+- `AssessmentConfig`: Project configuration (air-config.json)
 - `Resource`: Linked repository metadata
 - `Contribution`: Proposed code changes
 - `TaskFile`: Parsed task file metadata
@@ -191,7 +191,7 @@ Enums (all use StrEnum):
 Created by `air init`:
 ```
 project-name/
-├── .assess-config.json    # AssessmentConfig (JSON)
+├── air-config.json        # AssessmentConfig (JSON)
 ├── README.md              # Project overview
 ├── CLAUDE.md              # AI guidance
 ├── .gitignore
@@ -283,7 +283,7 @@ error("Failed to validate", exit_code=1)
 
 1. **StrEnum**: Use `from enum import StrEnum`, not deprecated `(str, Enum)` pattern
 2. **Path expansion**: All paths support `~` (expanded via `expand_path()` validator)
-3. **Configuration**: Stored in `.assess-config.json`, validates against AssessmentConfig model
+3. **Configuration**: Stored in `air-config.json`, validates against AssessmentConfig model
 4. **Templates**: Will be embedded using importlib.resources (not external directory)
 5. **Git operations**: Use GitPython, not shell commands
 6. **Error handling**: Create AirError subclasses with helpful messages

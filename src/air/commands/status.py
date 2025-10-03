@@ -38,7 +38,7 @@ def status(resource_type: str, contributions: bool) -> None:
     console.print("[bold]AIR Project Status[/bold]\n")
 
     # TODO: Implement status display
-    # - Read .assess-config.json
+    # - Read air-config.json
     # - Count linked resources
     # - List analysis documents
     # - Show contribution tracking if requested

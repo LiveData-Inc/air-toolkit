@@ -26,7 +26,7 @@ def validate(check_type: str, fix: bool) -> None:
     Checks:
       - Directory structure (review/, collaborate/, analysis/, etc.)
       - Symlinks and clones validity
-      - Configuration file (.assess-config.json)
+      - Configuration file (air-config.json)
       - Repository accessibility
 
     \b

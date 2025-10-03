@@ -88,7 +88,7 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 - Initialize git repository
 - Create README.md, CLAUDE.md, .gitignore
 - Optionally initialize .ai/ tracking
-- Generate .assess-config.json
+- Generate air-config.json
 
 **Options:**
 - `--mode=review|collaborate|mixed` - Project mode (default: mixed)
@@ -99,7 +99,7 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 project-name/
 ├── README.md              # Project goals and overview
 ├── CLAUDE.md              # AI assistant instructions
-├── .assess-config.json    # Project configuration
+├── air-config.json        # Project configuration
 ├── review/                # Review-only resources
 ├── collaborate/           # Collaborative resources
 ├── analysis/              # Our analysis
@@ -123,7 +123,7 @@ project-name/
 - Link review-only repositories (symlinks)
 - Clone or link collaborative repositories
 - Read from `repos-to-link.txt` configuration file
-- Update `.assess-config.json` with resource metadata
+- Update `air-config.json` with resource metadata
 - Validate repository accessibility
 
 **Options:**
@@ -149,7 +149,7 @@ collaborate:architecture:~/repos/architecture-docs
 - Directory structure exists and is complete
 - Symlinks point to valid locations
 - Cloned repositories are accessible
-- `.assess-config.json` is valid
+- `air-config.json` is valid
 - Git repository status (if applicable)
 
 **Options:**
@@ -189,7 +189,7 @@ collaborate:architecture:~/repos/architecture-docs
 
 **Options:**
 - `--verbose` - Show detailed classification reasoning
-- `--update` - Update `.assess-config.json` automatically
+- `--update` - Update `air-config.json` automatically
 
 **Classification Heuristics:**
 - Git repository with remotes → Potentially collaborative
@@ -364,7 +364,7 @@ AI Tasks (5 total)
 
 ### 4.1 Project Configuration
 
-**File:** `.assess-config.json`
+**File:** `air-config.json`
 
 ```json
 {
@@ -599,7 +599,7 @@ choco install air-toolkit # Windows
 
 ## 9. Open Questions
 
-1. Should `.assess-config.json` be `.air-config.json`?
+1. ✅ RESOLVED: Config file is `air-config.json` (not `.assess-config.json`)
 2. Should we support configuration inheritance (global → project)?
 3. How to handle private repositories (SSH keys, tokens)?
 4. Should `air summary` be merged with `air status`?

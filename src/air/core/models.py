@@ -80,7 +80,7 @@ class Resource(BaseModel):
 
 
 class AssessmentConfig(BaseModel):
-    """Project configuration (.assess-config.json)."""
+    """Project configuration (air-config.json)."""
 
     version: str = "2.0.0"
     name: str
