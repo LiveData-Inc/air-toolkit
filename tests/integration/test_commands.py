@@ -565,3 +565,113 @@ class TestTaskArchiveCommands:
         data = json.loads(result.output)
         assert data["total_archived"] == 1
         assert data["by_month"]["2025-10"] == 1
+
+
+class TestInitInExistingProject:
+    """Tests for air init in existing projects."""
+
+    def test_init_no_args_current_directory(self, runner, isolated_project):
+        """Test air init with no arguments initializes current directory."""
+        result = runner.invoke(main, ["init"])
+
+        assert result.exit_code == 0
+        assert "Initializing AIR in current directory" in result.output
+        assert "AIR initialized in" in result.output
+
+        # Check project structure in current directory
+        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / "README.md").exists()
+        assert (isolated_project / ".air").exists()
+
+    def test_init_no_args_with_mode(self, runner, isolated_project):
+        """Test air init with mode but no name."""
+        result = runner.invoke(main, ["init", "--mode=review"])
+
+        assert result.exit_code == 0
+        assert "review" in result.output
+
+        # Should be in current directory
+        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / "review").exists()
+        assert not (isolated_project / "collaborate").exists()
+
+    def test_init_in_existing_directory_with_files(self, runner, isolated_project):
+        """Test initializing AIR in directory with existing files."""
+        # Create some existing files
+        (isolated_project / "README.md").write_text("# Existing project")
+        (isolated_project / "src").mkdir()
+        (isolated_project / "src/main.py").write_text("print('hello')")
+
+        result = runner.invoke(main, ["init"])
+
+        assert result.exit_code == 0
+        assert "Initializing AIR in directory with" in result.output
+        assert "existing files" in result.output
+
+        # AIR files should be created alongside existing ones
+        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air").exists()
+        # Original files should still exist
+        assert (isolated_project / "src/main.py").exists()
+
+    def test_init_create_dir_flag(self, runner, isolated_project):
+        """Test air init --create-dir creates new directory."""
+        result = runner.invoke(main, ["init", "--create-dir", "new-proj"])
+
+        assert result.exit_code == 0
+        assert "Creating AIR project" in result.output
+
+        project_dir = isolated_project / "new-proj"
+        assert project_dir.exists()
+        assert (project_dir / "air-config.json").exists()
+
+    def test_init_create_dir_without_name_error(self, runner, isolated_project):
+        """Test air init --create-dir without name fails."""
+        result = runner.invoke(main, ["init", "--create-dir"])
+
+        assert result.exit_code == 1
+        assert "Must provide NAME" in result.output
+
+    def test_init_already_initialized_error(self, runner, isolated_project):
+        """Test air init fails if already initialized."""
+        # First initialization
+        runner.invoke(main, ["init"])
+
+        # Second attempt should fail
+        result = runner.invoke(main, ["init"])
+
+        assert result.exit_code == 1
+        assert "already an AIR project" in result.output
+
+    def test_init_backward_compat_with_name(self, runner, isolated_project):
+        """Test backward compatibility: air init <name> creates directory."""
+        result = runner.invoke(main, ["init", "my-project"])
+
+        assert result.exit_code == 0
+        assert "Creating AIR project" in result.output
+
+        # Should create new directory
+        project_dir = isolated_project / "my-project"
+        assert project_dir.exists()
+        assert (project_dir / "air-config.json").exists()
+
+    def test_init_dot_in_current_directory(self, runner, isolated_project):
+        """Test air init . initializes current directory."""
+        result = runner.invoke(main, ["init", "."])
+
+        assert result.exit_code == 0
+        assert "Initializing AIR in current directory" in result.output
+
+        assert (isolated_project / "air-config.json").exists()
+
+    def test_init_non_empty_directory_error(self, runner, isolated_project):
+        """Test creating new project in non-empty directory fails."""
+        # Create directory with content
+        new_dir = isolated_project / "existing"
+        new_dir.mkdir()
+        (new_dir / "file.txt").write_text("content")
+
+        result = runner.invoke(main, ["init", "existing"])
+
+        assert result.exit_code == 1
+        assert "Directory not empty" in result.output

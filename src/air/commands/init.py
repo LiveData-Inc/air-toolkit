@@ -13,11 +13,11 @@ from air.services.templates import (
     render_ai_templates,
     render_assessment_templates,
 )
-from air.utils.console import error, info, success
+from air.utils.console import error, info, success, warn
 
 
 @click.command()
-@click.argument("name", default=".", required=False)
+@click.argument("name", default=None, required=False)
 @click.option(
     "--mode",
     type=click.Choice(["review", "collaborate", "mixed"]),
@@ -29,42 +29,100 @@ from air.utils.console import error, info, success
     default=True,
     help="Initialize .air/ task tracking",
 )
-def init(name: str, mode: str, track: bool) -> None:
-    """Create new AIR assessment project.
+@click.option(
+    "--create-dir",
+    is_flag=True,
+    help="Create new directory (when NAME is provided)",
+)
+def init(name: str | None, mode: str, track: bool, create_dir: bool) -> None:
+    """Initialize AIR assessment project.
+
+    \b
+    Usage:
+      air init                        # Initialize in current directory
+      air init --create-dir my-proj   # Create directory and initialize
+      air init my-proj                # Same as --create-dir (backward compat)
 
     \b
     Examples:
-      air init my-review              # Create mixed-mode project
-      air init review --mode=review   # Review-only mode
-      air init docs --mode=collaborate --no-track
+      air init                              # Current directory, mixed mode
+      air init --mode=review                # Current directory, review mode
+      air init --create-dir review-proj     # Create new directory
+      air init my-review --mode=review      # Backward compatible
     """
-    # Determine project directory
-    if name == ".":
+    # Determine behavior based on arguments
+    if name is None:
+        # No name: initialize in current directory
         project_dir = Path.cwd()
         project_name = project_dir.name
+        creating_new_dir = False
     else:
-        project_dir = Path.cwd() / name
-        project_name = name
+        # Name provided: backward compatibility (create directory by default)
+        # unless user explicitly wants current directory with "."
+        if name == ".":
+            project_dir = Path.cwd()
+            project_name = project_dir.name
+            creating_new_dir = False
+        else:
+            # Create new directory (backward compatible behavior)
+            project_dir = Path.cwd() / name
+            project_name = name
+            creating_new_dir = True
 
-    info(f"Creating AIR project: {project_name}")
-    info(f"Mode: {mode}")
-
-    # Check if already in an AIR project
-    if get_project_root() is not None:
+    # Override if --create-dir flag is set
+    if create_dir and name is None:
         error(
-            "Already in an AIR project",
-            hint="Create new project in a different directory",
+            "Must provide NAME when using --create-dir",
+            hint="Try: air init --create-dir my-project",
             exit_code=1,
         )
 
-    # Check if directory exists and has content
-    if project_dir.exists():
-        if name != "." and any(project_dir.iterdir()):
+    # Show what we're doing
+    if creating_new_dir:
+        info(f"Creating AIR project: {project_name}")
+        info(f"Directory: {project_dir}")
+    else:
+        info(f"Initializing AIR in current directory: {project_name}")
+
+    info(f"Mode: {mode}")
+
+    # Check if already in an AIR project (unless initializing current dir)
+    existing_root = get_project_root()
+    if existing_root is not None:
+        if existing_root == project_dir.resolve():
             error(
-                f"Directory not empty: {project_dir}",
-                hint="Use an empty directory or specify a new name",
+                "This directory is already an AIR project",
+                hint="AIR project already initialized here",
                 exit_code=1,
             )
+        elif not creating_new_dir:
+            error(
+                f"Already in an AIR project: {existing_root}",
+                hint="Create new project in a different directory with --create-dir",
+                exit_code=1,
+            )
+
+    # Check if directory exists and has content
+    if project_dir.exists():
+        if creating_new_dir:
+            # Creating new directory - should be empty
+            if any(project_dir.iterdir()):
+                error(
+                    f"Directory not empty: {project_dir}",
+                    hint="Use an empty directory or specify a different name",
+                    exit_code=1,
+                )
+        else:
+            # Initializing in existing directory - warn if has files
+            existing_files = list(project_dir.iterdir())
+            if existing_files:
+                # Filter out hidden files/dirs for count
+                visible_files = [f for f in existing_files if not f.name.startswith(".")]
+                if visible_files:
+                    warn(
+                        f"Initializing AIR in directory with {len(visible_files)} existing files"
+                    )
+                    info("AIR files will be added alongside existing content")
 
     # Create project directory if needed
     if not project_dir.exists():
@@ -117,12 +175,15 @@ def init(name: str, mode: str, track: bool) -> None:
         templates_dir = project_dir / ".air/templates"
         create_directory(templates_dir)
 
-    success(f"Project created successfully: {project_dir}")
+    if creating_new_dir:
+        success(f"Project created successfully: {project_dir}")
+    else:
+        success(f"AIR initialized in: {project_dir}")
 
     # Show next steps
     print()  # Blank line
     info("Next steps:")
-    if name != ".":
+    if creating_new_dir:
         print(f"  cd {name}")
 
     if mode in ["review", "mixed"]:
