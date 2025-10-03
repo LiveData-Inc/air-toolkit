@@ -275,3 +275,293 @@ class TestWorkflow:
         status_data = json.loads(result.output)
         assert status_data["success"] is True
         assert status_data["project"]["name"] == "json-workflow"
+
+class TestTaskArchiveCommands:
+    """Integration tests for task archive commands."""
+
+    def test_task_list_empty(self, runner, isolated_project):
+        """Test listing tasks in empty project."""
+        # Create project
+        runner.invoke(main, ["init", "task-project"])
+        import os
+        os.chdir(isolated_project / "task-project")
+
+        # List tasks
+        result = runner.invoke(main, ["task", "list"])
+        assert result.exit_code == 0
+        assert "Active Tasks" in result.output
+        assert "No active tasks" in result.output
+
+    def test_task_list_with_tasks(self, runner, isolated_project):
+        """Test listing tasks with some task files."""
+        # Create project
+        runner.invoke(main, ["init", "task-project"])
+        project_dir = isolated_project / "task-project"
+        import os
+        os.chdir(project_dir)
+
+        # Create some task files
+        tasks_dir = project_dir / ".air/tasks"
+        task1 = tasks_dir / "20251003-1430-implement-feature.md"
+        task2 = tasks_dir / "20251003-1500-fix-bug.md"
+        task1.write_text("# Task 1")
+        task2.write_text("# Task 2")
+
+        # List tasks
+        result = runner.invoke(main, ["task", "list"])
+        assert result.exit_code == 0
+        assert "20251003-1430-implement-feature.md" in result.output
+        assert "20251003-1500-fix-bug.md" in result.output
+        assert "Active: 2" in result.output
+
+    def test_task_list_json_format(self, runner, isolated_project):
+        """Test listing tasks with JSON output."""
+        # Create project
+        runner.invoke(main, ["init", "task-project"])
+        project_dir = isolated_project / "task-project"
+        import os
+        os.chdir(project_dir)
+
+        # Create task file
+        tasks_dir = project_dir / ".air/tasks"
+        task1 = tasks_dir / "20251003-1430-task.md"
+        task1.write_text("# Task")
+
+        # List with JSON
+        result = runner.invoke(main, ["task", "list", "--format=json"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["total_active"] == 1
+        assert data["total_archived"] == 0
+        assert len(data["active"]) == 1
+
+    def test_task_archive_single_task(self, runner, isolated_project):
+        """Test archiving a single task."""
+        # Create project
+        runner.invoke(main, ["init", "archive-project"])
+        project_dir = isolated_project / "archive-project"
+        import os
+        os.chdir(project_dir)
+
+        # Create task
+        tasks_dir = project_dir / ".air/tasks"
+        task_file = tasks_dir / "20251003-1430-old-task.md"
+        task_file.write_text("# Old task")
+
+        # Archive task
+        result = runner.invoke(main, ["task", "archive", "20251003-1430"])
+        assert result.exit_code == 0
+        assert "Archived: 20251003-1430-old-task.md" in result.output
+
+        # Verify task moved to archive
+        assert not task_file.exists()
+        archive_path = tasks_dir / "archive/2025-10/20251003-1430-old-task.md"
+        assert archive_path.exists()
+
+    def test_task_archive_multiple_tasks(self, runner, isolated_project):
+        """Test archiving multiple tasks at once."""
+        # Create project
+        runner.invoke(main, ["init", "multi-archive"])
+        project_dir = isolated_project / "multi-archive"
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks
+        tasks_dir = project_dir / ".air/tasks"
+        task1 = tasks_dir / "20251003-1430-task1.md"
+        task2 = tasks_dir / "20251003-1500-task2.md"
+        task1.write_text("# Task 1")
+        task2.write_text("# Task 2")
+
+        # Archive both tasks
+        result = runner.invoke(main, ["task", "archive", "20251003-1430", "20251003-1500"])
+        assert result.exit_code == 0
+        assert "Archived 2 tasks" in result.output
+
+        # Verify both moved
+        assert not task1.exists()
+        assert not task2.exists()
+
+    def test_task_archive_all(self, runner, isolated_project):
+        """Test archiving all tasks."""
+        # Create project
+        runner.invoke(main, ["init", "archive-all"])
+        project_dir = isolated_project / "archive-all"
+        import os
+        os.chdir(project_dir)
+
+        # Create multiple tasks
+        tasks_dir = project_dir / ".air/tasks"
+        for i in range(3):
+            task = tasks_dir / f"2025100{i + 1}-1{i}00-task{i}.md"
+            task.write_text(f"# Task {i}")
+
+        # Archive all
+        result = runner.invoke(main, ["task", "archive", "--all"])
+        assert result.exit_code == 0
+        assert "Archived 3 tasks" in result.output
+
+    def test_task_archive_before_date(self, runner, isolated_project):
+        """Test archiving tasks before a specific date."""
+        # Create project
+        runner.invoke(main, ["init", "date-archive"])
+        project_dir = isolated_project / "date-archive"
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks with different dates
+        tasks_dir = project_dir / ".air/tasks"
+        old_task = tasks_dir / "20250915-1200-old.md"
+        new_task = tasks_dir / "20251005-1400-new.md"
+        old_task.write_text("# Old")
+        new_task.write_text("# New")
+
+        # Archive before Oct 1
+        result = runner.invoke(main, ["task", "archive", "--before=2025-10-01"])
+        assert result.exit_code == 0
+
+        # Only old task should be archived
+        assert not old_task.exists()
+        assert new_task.exists()
+
+    def test_task_archive_dry_run(self, runner, isolated_project):
+        """Test dry run shows what would be archived."""
+        # Create project
+        runner.invoke(main, ["init", "dry-run-test"])
+        project_dir = isolated_project / "dry-run-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create task
+        tasks_dir = project_dir / ".air/tasks"
+        task_file = tasks_dir / "20251003-1430-task.md"
+        task_file.write_text("# Task")
+
+        # Dry run
+        result = runner.invoke(main, ["task", "archive", "--all", "--dry-run"])
+        assert result.exit_code == 0
+        assert "Would archive" in result.output
+        assert "Dry run" in result.output
+
+        # Task should still exist
+        assert task_file.exists()
+
+    def test_task_restore(self, runner, isolated_project):
+        """Test restoring an archived task."""
+        # Create project
+        runner.invoke(main, ["init", "restore-test"])
+        project_dir = isolated_project / "restore-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create and archive a task
+        tasks_dir = project_dir / ".air/tasks"
+        task_file = tasks_dir / "20251003-1430-task.md"
+        task_file.write_text("# Task")
+        runner.invoke(main, ["task", "archive", "20251003-1430"])
+
+        # Restore task
+        result = runner.invoke(main, ["task", "restore", "20251003-1430"])
+        assert result.exit_code == 0
+        assert "Restored: 20251003-1430-task.md" in result.output
+
+        # Task should be back in active
+        assert task_file.exists()
+        archive_path = tasks_dir / "archive/2025-10/20251003-1430-task.md"
+        assert not archive_path.exists()
+
+    def test_task_list_with_archived(self, runner, isolated_project):
+        """Test listing tasks with --all flag includes archived."""
+        # Create project
+        runner.invoke(main, ["init", "list-all-test"])
+        project_dir = isolated_project / "list-all-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create active and archived tasks
+        tasks_dir = project_dir / ".air/tasks"
+        active_task = tasks_dir / "20251003-1500-active.md"
+        old_task = tasks_dir / "20251003-1430-to-archive.md"
+        active_task.write_text("# Active")
+        old_task.write_text("# To Archive")
+
+        # Archive one task
+        runner.invoke(main, ["task", "archive", "20251003-1430"])
+
+        # List with --all
+        result = runner.invoke(main, ["task", "list", "--all"])
+        assert result.exit_code == 0
+        assert "Active Tasks" in result.output
+        assert "Archived Tasks" in result.output
+        assert "20251003-1500-active.md" in result.output
+        assert "2025-10/20251003-1430-to-archive.md" in result.output
+
+    def test_task_list_archived_only(self, runner, isolated_project):
+        """Test listing only archived tasks."""
+        # Create project
+        runner.invoke(main, ["init", "archived-only-test"])
+        project_dir = isolated_project / "archived-only-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create and archive task
+        tasks_dir = project_dir / ".air/tasks"
+        active_task = tasks_dir / "20251003-1500-active.md"
+        old_task = tasks_dir / "20251003-1430-archived.md"
+        active_task.write_text("# Active")
+        old_task.write_text("# Archived")
+
+        runner.invoke(main, ["task", "archive", "20251003-1430"])
+
+        # List archived only
+        result = runner.invoke(main, ["task", "list", "--archived"])
+        assert result.exit_code == 0
+        assert "Archived Tasks" in result.output
+        assert "2025-10/20251003-1430-archived.md" in result.output
+        assert "Active: 0" in result.output
+
+    def test_task_archive_status(self, runner, isolated_project):
+        """Test archive status command."""
+        # Create project
+        runner.invoke(main, ["init", "status-test"])
+        project_dir = isolated_project / "status-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create and archive tasks
+        tasks_dir = project_dir / ".air/tasks"
+        task1 = tasks_dir / "20251003-1430-task1.md"
+        task2 = tasks_dir / "20251003-1500-task2.md"
+        task1.write_text("# Task 1")
+        task2.write_text("# Task 2")
+
+        runner.invoke(main, ["task", "archive", "--all"])
+
+        # Check status
+        result = runner.invoke(main, ["task", "archive-status"])
+        assert result.exit_code == 0
+        assert "Archive Statistics" in result.output
+        assert "Total archived tasks: 2" in result.output
+        assert "2025-10: 2 tasks" in result.output
+
+    def test_task_archive_status_json(self, runner, isolated_project):
+        """Test archive status with JSON output."""
+        # Create project
+        runner.invoke(main, ["init", "json-status-test"])
+        project_dir = isolated_project / "json-status-test"
+        import os
+        os.chdir(project_dir)
+
+        # Create and archive task
+        tasks_dir = project_dir / ".air/tasks"
+        task = tasks_dir / "20251003-1430-task.md"
+        task.write_text("# Task")
+
+        runner.invoke(main, ["task", "archive", "20251003-1430"])
+
+        # Check status with JSON
+        result = runner.invoke(main, ["task", "archive-status", "--format=json"])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["total_archived"] == 1
+        assert data["by_month"]["2025-10"] == 1

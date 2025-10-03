@@ -115,7 +115,17 @@ air validate --format=json
 air task new "description"
 
 # List tasks
-air task list
+air task list                # Active tasks only
+air task list --all          # Include archived
+air task list --archived     # Archived only
+
+# Archive old tasks (to keep .air/tasks/ clean)
+air task archive 20251003-1430           # Archive specific task
+air task archive --before=2025-09-01     # Archive before date
+air task archive --all --dry-run         # Preview what would be archived
+
+# Restore if needed
+air task restore 20251003-1430
 
 # Generate summary
 air summary
@@ -175,6 +185,19 @@ timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
 ```python
 # Update task file with outcome
 # ✅ Success / ⚠️ Partial / ❌ Blocked
+```
+
+### 6. Archive Tasks (Periodic Cleanup)
+```bash
+# Keep .air/tasks/ clean by archiving completed work
+# Archive old tasks (recommended: monthly or when > 20 tasks)
+air task archive --before=2025-09-01
+
+# Or archive all completed tasks
+air task archive --all
+
+# Tasks move to .air/tasks/archive/YYYY-MM/ by default
+# Still accessible with: air task list --all
 ```
 
 ## Important Rules
