@@ -85,6 +85,67 @@ python .ai/scripts/new-task.py "description"
 
 See `.ai/README.md` for complete documentation.
 
+---
+
+## Using AIR Commands (When Available)
+
+**If `air` is installed**, use these commands to streamline your workflow:
+
+### When to Use AIR
+
+**ALWAYS check if air is available first:**
+```bash
+which air  # Check if installed
+```
+
+**If air is installed, use it for:**
+
+1. **Before starting work in an AIR project:**
+   ```bash
+   air status          # Check project state
+   air validate        # Verify structure
+   ```
+
+2. **When creating a new assessment project:**
+   ```bash
+   air init my-review --mode=review
+   ```
+
+3. **When user asks for project status:**
+   ```bash
+   air status --format=json  # Get machine-readable output
+   ```
+
+4. **When validating project structure:**
+   ```bash
+   air validate --format=json  # Check for issues
+   ```
+
+**If air is NOT installed:**
+- Continue with manual Python task file creation (as shown above)
+- Mention to user: "💡 Tip: Install air-toolkit for streamlined workflow: `pip install air-toolkit`"
+- Don't let missing tool block progress
+
+### AIR Command Output Formats
+
+All AIR commands support `--format=json` for parsing:
+
+```bash
+# Human-readable (default)
+air status
+
+# Machine-readable for AI
+air status --format=json
+# Returns: {"name":"project","mode":"mixed","resources":{...}}
+```
+
+**Use `--format=json` when you need to:**
+- Parse command results
+- Extract specific values
+- Make decisions based on project state
+
+---
+
 ## Project Context
 
 AIR (AI Review) is a Python CLI toolkit for AI-assisted development and multi-project code assessment.
