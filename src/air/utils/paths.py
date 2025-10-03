@@ -52,9 +52,12 @@ def safe_filename(name: str) -> str:
     Returns:
         Safe filename string
     """
+    import re
     # Replace spaces with hyphens
     safe = name.replace(" ", "-")
     # Remove unsafe characters
     safe = "".join(c for c in safe if c.isalnum() or c in "-_")
+    # Replace multiple consecutive hyphens with single hyphen
+    safe = re.sub(r"-+", "-", safe)
     # Convert to lowercase
     return safe.lower()

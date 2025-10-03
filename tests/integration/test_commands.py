@@ -979,3 +979,155 @@ class TestLinkCommand:
 
         assert result.exit_code == 1
         assert "Not in an AIR project" in result.output
+
+
+class TestTaskNewCommand:
+    """Tests for air task new command."""
+
+    def test_task_new_creates_file(self, runner, isolated_project):
+        """Test creating a new task file."""
+        # Create AIR project
+        runner.invoke(main, ["init", "task-project"])
+        project_dir = isolated_project / "task-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["task", "new", "implement feature X"])
+
+        assert result.exit_code == 0
+        assert "Task file created" in result.output
+        assert "implement-feature-x.md" in result.output
+
+        # Verify file exists
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-implement-feature-x.md"))
+        assert len(task_files) == 1
+
+        # Verify file content
+        task_content = task_files[0].read_text()
+        assert "# Task: Implement feature x" in task_content
+        assert "## Date" in task_content
+        assert "## Prompt" in task_content
+        assert "implement feature X" in task_content
+        assert "## Actions Taken" in task_content
+        assert "## Files Changed" in task_content
+        assert "## Outcome" in task_content
+        assert "⏳ In Progress" in task_content
+        assert "## Notes" in task_content
+
+    def test_task_new_with_prompt(self, runner, isolated_project):
+        """Test creating task with custom prompt."""
+        runner.invoke(main, ["init", "prompt-project"])
+        project_dir = isolated_project / "prompt-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(
+            main,
+            ["task", "new", "fix bug Y", "--prompt", "Fix the critical login issue"]
+        )
+
+        assert result.exit_code == 0
+
+        # Verify prompt in file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-fix-bug-y.md"))
+        assert len(task_files) == 1
+
+        task_content = task_files[0].read_text()
+        assert "Fix the critical login issue" in task_content
+
+    def test_task_new_filename_format(self, runner, isolated_project):
+        """Test that task filename has correct format."""
+        runner.invoke(main, ["init", "format-project"])
+        project_dir = isolated_project / "format-project"
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["task", "new", "test task"])
+
+        # Verify filename format: YYYYMMDD-HHMM-description.md
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-test-task.md"))
+        assert len(task_files) == 1
+
+        filename = task_files[0].name
+        # Should start with timestamp: YYYYMMDD-HHMM
+        assert len(filename) >= 18  # YYYYMMDD-HHMM-x.md = 18 chars minimum
+        assert filename[:8].isdigit()  # YYYYMMDD
+        assert filename[8] == "-"
+        assert filename[9:13].isdigit()  # HHMM
+        assert filename.endswith("-test-task.md")
+
+    def test_task_new_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["task", "new", "test"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_task_new_special_characters(self, runner, isolated_project):
+        """Test task with special characters in description."""
+        runner.invoke(main, ["init", "special-project"])
+        project_dir = isolated_project / "special-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(
+            main,
+            ["task", "new", "fix: bug @#$ with login"]
+        )
+
+        assert result.exit_code == 0
+
+        # Verify filename sanitization
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-fix-bug-with-login.md"))
+        assert len(task_files) == 1
+
+    def test_task_new_shows_in_list(self, runner, isolated_project):
+        """Test that new task appears in task list."""
+        runner.invoke(main, ["init", "list-test"])
+        project_dir = isolated_project / "list-test"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create task
+        runner.invoke(main, ["task", "new", "test task"])
+
+        # List tasks
+        result = runner.invoke(main, ["task", "list"])
+
+        assert result.exit_code == 0
+        assert "test-task.md" in result.output
+        assert "Active: 1" in result.output
+
+    def test_task_new_multiple_tasks(self, runner, isolated_project):
+        """Test creating multiple tasks."""
+        runner.invoke(main, ["init", "multi-task"])
+        project_dir = isolated_project / "multi-task"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create multiple tasks
+        runner.invoke(main, ["task", "new", "task one"])
+
+        # Wait a moment to ensure different timestamps
+        import time
+        time.sleep(0.1)
+
+        runner.invoke(main, ["task", "new", "task two"])
+
+        # List tasks
+        result = runner.invoke(main, ["task", "list"])
+
+        assert result.exit_code == 0
+        assert "task-one.md" in result.output
+        assert "task-two.md" in result.output
+        assert "Active: 2" in result.output

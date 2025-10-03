@@ -44,15 +44,60 @@ def task_new(description: str, prompt: str | None) -> None:
       air task new "implement feature X"
       air task new "fix bug Y" --prompt "Fix the login issue"
     """
-    console.print(f"[blue]ℹ[/blue] Creating task: {description}")
+    from datetime import datetime, timezone
+    from air.services.templates import render_template
+    from air.utils.console import info
+    from air.utils.dates import format_timestamp
+    from air.utils.paths import safe_filename
 
-    # TODO: Implement task creation
-    # - Generate timestamp filename: YYYYMMDD-HHMM-description.md
-    # - Use template from .air/templates/
-    # - Populate with description and prompt
-    # - Write to .air/tasks/
+    # Validate project
+    project_root = get_project_root()
+    if not project_root:
+        error(
+            "Not in an AIR project",
+            hint="Run 'air init' to create a project or 'cd' to project directory",
+            exit_code=1,
+        )
 
-    console.print("[green]✓[/green] Task file created: .air/tasks/20251003-1200-implement-feature-x.md")
+    tasks_dir = project_root / ".air/tasks"
+    if not tasks_dir.exists():
+        error(
+            ".air/tasks directory not found",
+            hint="Run 'air init' to initialize project structure",
+            exit_code=1,
+        )
+
+    # Generate filename
+    timestamp = format_timestamp()
+    safe_desc = safe_filename(description)
+    filename = f"{timestamp}-{safe_desc}.md"
+    task_path = tasks_dir / filename
+
+    # Check if file already exists
+    if task_path.exists():
+        error(
+            f"Task file already exists: {filename}",
+            hint="Wait a minute or use a different description",
+            exit_code=1,
+        )
+
+    # Prepare template context
+    now = datetime.now(timezone.utc)
+    context = {
+        "title": description.capitalize(),
+        "date": now.strftime("%Y-%m-%d %H:%M UTC"),
+        "prompt": prompt or description,
+        "description": f"Working on: {description}",
+    }
+
+    # Render template
+    content = render_template("ai/task.md.j2", context)
+
+    # Write task file
+    task_path.write_text(content)
+
+    info(f"Task file created: .air/tasks/{filename}")
+    success(f"Task: {description}")
 
 
 @task.command("list")
