@@ -1,0 +1,68 @@
+# AIR Assessment Project
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# AIR specific
+{% if mode == "review" or mode == "mixed" -%}
+# Review resources are symlinks - don't commit the links themselves
+# But DO track the config that lists them
+review/*
+!review/.gitkeep
+
+{% endif -%}
+{% if mode == "collaborate" or mode == "mixed" -%}
+# Collaborative resources - symlinks or clones
+# Don't commit if symlinked
+collaborate/*
+!collaborate/.gitkeep
+
+{% endif -%}
+# Temporary files
+*.tmp
+*.log
+.cache/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Project specific
+# Add your ignores below

@@ -29,6 +29,7 @@ dependencies = [
     "pydantic>=2.0.0",   # Data validation
     "pyyaml>=6.0",       # YAML config support
     "gitpython>=3.1.0",  # Git operations
+    "jinja2>=3.1.0",     # Template rendering
 ]
 
 [project.optional-dependencies]

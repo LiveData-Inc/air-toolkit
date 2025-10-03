@@ -1,0 +1,230 @@
+# CLAUDE.md
+
+**Project:** {{ name }}
+**Mode:** {{ mode }}
+
+This file provides instructions for AI assistants (Claude Code, etc.) working in this assessment project.
+
+## Project Overview
+
+This is an AIR assessment project for analyzing and comparing codebases.
+
+**Your Role:**
+{% if mode == "review" -%}
+- Review linked resources in `review/` (READ-ONLY)
+- Create analysis documents in `analysis/assessments/`
+- Generate executive summary
+{% elif mode == "collaborate" -%}
+- Review linked resources in `collaborate/`
+- Identify improvement opportunities
+- Create contributions in `contributions/`
+- Help submit pull requests
+{% else -%}
+- Review resources in `review/` (READ-ONLY) and `collaborate/`
+- Create analysis for review resources
+- Propose improvements for collaborative resources
+{% endif -%}
+
+## CRITICAL: Task Tracking
+
+**REQUIRED:** Create a task file for EVERY piece of work:
+
+```python
+from datetime import datetime, timezone
+from pathlib import Path
+
+timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+description = "task-description"  # kebab-case
+filename = f".ai/tasks/{timestamp}-{description}.md"
+
+content = f"""# Task: Brief Description
+
+## Date
+{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}
+
+## Prompt
+[User's exact words]
+
+## Actions Taken
+1. [What you did]
+
+## Files Changed
+- `path/to/file` - [What and why]
+
+## Outcome
+⏳ In Progress / ✅ Success / ⚠️ Partial / ❌ Blocked
+
+[Summary]
+"""
+
+Path(filename).write_text(content)
+```
+
+## Linked Resources
+
+{% if mode == "review" or mode == "mixed" -%}
+### Review Resources (READ-ONLY)
+
+Located in `review/` - These are symlinks. NEVER attempt to modify.
+
+**Your Tasks:**
+1. Analyze architecture and design patterns
+2. Identify strengths and weaknesses
+3. Create analysis documents in `analysis/assessments/`
+4. Compare implementations if multiple services
+
+**Analysis Format:**
+- One file per resource: `analysis/assessments/{resource-name}.md`
+- Comparison document: `analysis/assessments/comparison.md`
+- Executive summary: `analysis/SUMMARY.md`
+
+{% endif -%}
+{% if mode == "collaborate" or mode == "mixed" -%}
+### Collaborative Resources
+
+Located in `collaborate/` - You can propose improvements.
+
+**Your Tasks:**
+1. Review documentation and identify gaps
+2. Identify areas needing clarification
+3. Create improvements in `contributions/{resource-name}/`
+4. We'll submit via `air pr {resource-name}`
+
+**Contribution Format:**
+- Place in `contributions/{resource-name}/`
+- Include clear explanation in commit message
+- Reference original files being improved
+
+{% endif -%}
+
+## Commands You Should Use
+
+### Check Project Status
+```bash
+# Check if air is available
+which air
+
+# If available, use it
+air status --format=json
+air validate --format=json
+```
+
+### Task Management
+```bash
+# Create task (or use Python directly)
+air task new "description"
+
+# List tasks
+air task list
+
+# Generate summary
+air summary
+```
+
+### Validation
+```bash
+# Validate structure
+air validate
+
+# Fix issues
+air validate --fix
+```
+
+## Workflow
+
+### 1. Start Any Work
+```python
+# ALWAYS create task file first
+from datetime import datetime, timezone
+from pathlib import Path
+
+timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+# ... create task file
+```
+
+### 2. Review Resources
+{% if mode == "review" or mode == "mixed" -%}
+- Read code in `review/{resource}/`
+- Document findings as you go
+- Create analysis documents
+{% endif -%}
+{% if mode == "collaborate" or mode == "mixed" -%}
+- Read documentation in `collaborate/{resource}/`
+- Note gaps and improvement opportunities
+{% endif -%}
+
+### 3. Create Analysis
+{% if mode == "review" or mode == "mixed" -%}
+- Write to `analysis/assessments/{resource}.md`
+- Include: architecture, patterns, strengths, weaknesses
+- Add comparison if multiple resources
+{% endif -%}
+{% if mode == "collaborate" or mode == "mixed" -%}
+- Write to `analysis/improvements/{resource}-gaps.md`
+- List specific improvement suggestions
+{% endif -%}
+
+### 4. Create Contributions (if collaborative)
+{% if mode == "collaborate" or mode == "mixed" -%}
+- Create in `contributions/{resource}/`
+- Match original file structure
+- Include clear documentation
+{% endif -%}
+
+### 5. Finalize Task
+```python
+# Update task file with outcome
+# ✅ Success / ⚠️ Partial / ❌ Blocked
+```
+
+## Important Rules
+
+1. **Never Modify Review Resources**: Resources in `review/` are READ-ONLY symlinks
+2. **Always Track Tasks**: Create task file before starting work
+3. **Use Structured Output**: Follow analysis formats above
+4. **Check Air Availability**: Use `which air` before trying air commands
+5. **Validate Before Finishing**: Run `air validate` before marking complete
+
+## Analysis Template
+
+When creating analysis documents, use this structure:
+
+```markdown
+# Analysis: {Resource Name}
+
+## Overview
+[Brief description]
+
+## Architecture
+[System design, components, patterns]
+
+## Strengths
+- [What's done well]
+
+## Weaknesses
+- [What could improve]
+
+## Recommendations
+- [Specific suggestions]
+
+## Technical Details
+[Deep dive into implementation]
+```
+
+## Context Files
+
+Review these for project-specific guidance:
+- `.ai/context/architecture.md` - Architecture patterns to look for
+- `.ai/context/language.md` - Language-specific conventions
+
+## Questions?
+
+If you're unsure about:
+- Project structure: Run `air validate`
+- What to analyze: Check README.md goals
+- Where to put output: See project structure above
+- How to contribute: Check contribution workflow
+
+---
+
+**Remember**: Document everything in task files. They create a complete audit trail of all analysis work.

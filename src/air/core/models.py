@@ -181,7 +181,7 @@ class ProjectStructure(BaseModel):
             ProjectStructure for that mode
         """
         base_dirs = [".ai", ".ai/tasks", ".ai/context", ".ai/templates", "scripts", "analysis"]
-        base_files = ["README.md", "CLAUDE.md", ".assess-config.json", ".gitignore"]
+        base_files = ["README.md", "CLAUDE.md", "air-config.json", ".gitignore"]
         optional_files = ["repos-to-link.txt"]
 
         if mode == ProjectMode.REVIEW:

@@ -1,5 +1,8 @@
 """Rich console utilities for AIR toolkit."""
 
+import sys
+from typing import NoReturn
+
 from rich.console import Console
 
 # Global console instance
@@ -33,10 +36,15 @@ def warn(message: str) -> None:
     console.print(f"[yellow]⚠[/yellow] {message}")
 
 
-def error(message: str) -> None:
-    """Print error message.
+def error(message: str, hint: str | None = None, exit_code: int = 1) -> NoReturn:
+    """Print error message and exit.
 
     Args:
-        message: Message to print
+        message: Error message to print
+        hint: Optional hint for resolving the error
+        exit_code: Exit code (default: 1)
     """
-    console.print(f"[red]✗[/red] {message}", err=True)
+    console.print(f"[red]✗[/red] {message}")
+    if hint:
+        console.print(f"[dim]💡 Hint: {hint}[/dim]")
+    sys.exit(exit_code)
