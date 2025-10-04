@@ -5,6 +5,40 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-10-04
+
+### Added
+- **Interactive Link Command** - `air link add` is now interactive by default
+  - Guided prompts for path, name, relationship, and type
+  - Smart defaults: folder name for resource name, review mode, implementation type
+  - Path validation with retry loops for invalid paths
+  - Name uniqueness validation
+  - Optional auto-classification (opt-in) for resource type detection
+  - Confirmation panel showing summary before creating link
+  - Partial argument support - provide some args, prompted for rest
+
+### Changed
+- **air link add** command signature updated:
+  - `--path` and `--name` now explicit options (no longer NAME:PATH)
+  - `--type` is now optional (defaults to "implementation" if not specified)
+  - Interactive mode triggers when path, name, or relationship missing
+  - Non-interactive mode requires --path, --name, and --review or --develop
+
+### Deprecated
+- **NAME:PATH format** - Shows deprecation warning, will be removed in v0.5.0
+  - Old: `air link add service-a:~/repos/service-a --review`
+  - New: `air link add --path ~/repos/service-a --name service-a --review`
+
+### Documentation
+- Updated COMMANDS.md with comprehensive interactive link documentation
+- Added examples for interactive and non-interactive usage
+- Documented all interactive features and prompts
+
+### Testing
+- **317 tests total** - All passing ✅
+- Updated 7 link command integration tests for new format
+- Tests cover interactive detection, deprecation warnings, and validation
+
 ## [0.4.0] - 2025-10-04
 
 ### Breaking Changes

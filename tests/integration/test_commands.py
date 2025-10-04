@@ -794,10 +794,10 @@ class TestLinkCommand:
         import os
         os.chdir(project_dir)
 
-        # Add resource
+        # Add resource using new flag format
         result = runner.invoke(
             main,
-            ["link", "add", f"service-a:{source_dir}", "--review"]
+            ["link", "add", "--path", str(source_dir), "--name", "service-a", "--review", "--type=implementation"]
         )
 
         assert result.exit_code == 0
@@ -833,10 +833,10 @@ class TestLinkCommand:
         import os
         os.chdir(project_dir)
 
-        # Add resource
+        # Add resource using new flag format
         result = runner.invoke(
             main,
-            ["link", "add", f"docs:{source_dir}", "--develop", "--type=documentation"]
+            ["link", "add", "--path", str(source_dir), "--name", "docs", "--develop", "--type=documentation"]
         )
 
         assert result.exit_code == 0
@@ -857,10 +857,10 @@ class TestLinkCommand:
         assert config["resources"]["develop"][0]["type"] == "documentation"
         assert config["resources"]["develop"][0]["relationship"] == "developer"
 
-    def test_link_add_default_review_mode(self, runner, isolated_project):
-        """Test that default mode is review when no flag specified."""
-        runner.invoke(main, ["init", "default-project", "--mode=mixed"])
-        project_dir = isolated_project / "default-project"
+    def test_link_add_deprecated_name_path_format(self, runner, isolated_project):
+        """Test that NAME:PATH format shows deprecation warning."""
+        runner.invoke(main, ["init", "deprecated-project", "--mode=mixed"])
+        project_dir = isolated_project / "deprecated-project"
 
         source_dir = isolated_project / "lib"
         source_dir.mkdir()
@@ -868,24 +868,38 @@ class TestLinkCommand:
         import os
         os.chdir(project_dir)
 
-        result = runner.invoke(main, ["link", "add", f"lib:{source_dir}"])
+        # Use deprecated NAME:PATH format with explicit flags for non-interactive
+        result = runner.invoke(main, ["link", "add", f"lib:{source_dir}", "--review", "--type=library"])
 
         assert result.exit_code == 0
-        assert "Defaulting to review mode" in result.output
+        assert "NAME:PATH format is deprecated" in result.output
         assert "Linked review resource: lib" in result.output
 
-    def test_link_add_invalid_format(self, runner, isolated_project):
-        """Test error when NAME:PATH format is invalid."""
-        runner.invoke(main, ["init", "error-project"])
-        project_dir = isolated_project / "error-project"
+    def test_link_add_with_type_flag(self, runner, isolated_project):
+        """Test adding resource with explicit type flag."""
+        runner.invoke(main, ["init", "type-project"])
+        project_dir = isolated_project / "type-project"
+
+        source_dir = isolated_project / "service-lib"
+        source_dir.mkdir()
 
         import os
         os.chdir(project_dir)
 
-        result = runner.invoke(main, ["link", "add", "invalid-format"])
+        result = runner.invoke(
+            main,
+            ["link", "add", "--path", str(source_dir), "--name", "service-lib", "--review", "--type=library"]
+        )
 
-        assert result.exit_code == 1
-        assert "Invalid format" in result.output
+        assert result.exit_code == 0
+        assert "Linked review resource: service-lib" in result.output
+
+        # Verify type in config
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert config["resources"]["review"][0]["type"] == "library"
 
     def test_link_add_nonexistent_path(self, runner, isolated_project):
         """Test error when source path doesn't exist."""
@@ -897,7 +911,7 @@ class TestLinkCommand:
 
         result = runner.invoke(
             main,
-            ["link", "add", "missing:/nonexistent/path", "--review"]
+            ["link", "add", "--path", "/nonexistent/path", "--name", "missing", "--review", "--type=implementation"]
         )
 
         assert result.exit_code == 1
@@ -917,10 +931,10 @@ class TestLinkCommand:
         os.chdir(project_dir)
 
         # Add first resource
-        runner.invoke(main, ["link", "add", f"repo:{source1}", "--review"])
+        runner.invoke(main, ["link", "add", "--path", str(source1), "--name", "repo", "--review", "--type=implementation"])
 
         # Try to add with same name
-        result = runner.invoke(main, ["link", "add", f"repo:{source2}", "--review"])
+        result = runner.invoke(main, ["link", "add", "--path", str(source2), "--name", "repo", "--review", "--type=implementation"])
 
         assert result.exit_code == 1
         assert "already linked" in result.output

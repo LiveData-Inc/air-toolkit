@@ -139,57 +139,131 @@ After running `air init`:
 
 ### air link
 
-Link repositories to the assessment project.
+Link repositories to the assessment project. Interactive by default for easy setup.
 
-#### Usage
+#### Commands
 
-```bash
-air link [OPTIONS]
-```
+##### air link add
 
-#### Options
+Add a resource to the project.
 
-- `--review NAME:PATH` - Add review-only resource (repeatable)
-- `--develop NAME:PATH` - Add developer resource (repeatable)
-- `--clone` - Clone instead of symlink (for `--develop`)
-
-If no options provided, reads from `repos-to-link.txt`.
-
-#### Examples
+**Usage:**
 
 ```bash
-# Link review-only repositories
-air link --review service-a:~/repos/service-a
-air link --review service-b:~/repos/service-b
-
-# Link developer repository
-air link --develop arch:~/repos/architecture
-
-# Clone developer repository
-air link --develop arch:~/repos/architecture --clone
-
-# Link multiple at once
-air link \
-  --review service-a:~/repos/service-a \
-  --review service-b:~/repos/service-b \
-  --develop arch:~/repos/arch --clone
-
-# Read from configuration file
-air link
+air link add [OPTIONS]
 ```
 
-#### Configuration File
+**Interactive Mode (default):**
 
-Create `repos-to-link.txt`:
+When run without all required options, enters interactive mode with guided prompts:
 
+```bash
+# Interactive setup
+air link add
+
+# Partial arguments - will prompt for missing values
+air link add --path ~/repos/service-a
+air link add --name my-service --review
 ```
-# Review-only resources (symlinked)
-review:service-a:~/repos/service-a
-review:service-b:~/repos/service-b
-review:change-lib:~/repos/change-command-lib
 
-# Collaborative resources (cloned or symlinked)
-collaborate:architecture:~/repos/cloud-native-architecture
+**Non-Interactive Mode:**
+
+Provide all required options for scripting:
+
+```bash
+air link add --path PATH --name NAME --review|--develop [--type TYPE]
+```
+
+**Options:**
+
+- `--path PATH` - Path to repository (required)
+- `--name NAME` - Resource name/alias (required)
+- `--review` - Link as review-only resource (read-only)
+- `--develop` - Link as developer resource (can contribute)
+- `--type TYPE` - Resource type: `implementation`, `documentation`, `library`, `service`
+
+**Examples:**
+
+```bash
+# Interactive mode
+air link add
+
+# Non-interactive - review resource
+air link add --path ~/repos/service-a --name service-a --review --type implementation
+
+# Non-interactive - develop resource
+air link add --path ~/repos/architecture --name arch --develop --type documentation
+
+# With partial args (prompts for missing)
+air link add --path ~/repos/mylib --name mylib
+```
+
+**Interactive Features:**
+
+1. **Path Validation** - Checks path exists and is a directory
+2. **Name Suggestions** - Defaults to folder name, validates uniqueness
+3. **Relationship Choice** - Review (read-only) or Develop (contribute)
+4. **Auto-Classification** - Optional auto-detect of resource type
+5. **Confirmation** - Review summary before creating link
+
+**Deprecated Format:**
+
+The `NAME:PATH` format is deprecated and will be removed in v0.5.0:
+
+```bash
+# ⚠️ Deprecated (shows warning)
+air link add service-a:~/repos/service-a --review
+
+# ✅ Use instead
+air link add --path ~/repos/service-a --name service-a --review
+```
+
+##### air link list
+
+List all linked resources.
+
+**Usage:**
+
+```bash
+air link list [--format FORMAT]
+```
+
+**Options:**
+
+- `--format FORMAT` - Output format: `human` (default) or `json`
+
+**Examples:**
+
+```bash
+# Human-readable table
+air link list
+
+# JSON output
+air link list --format json
+```
+
+##### air link remove
+
+Remove a linked resource.
+
+**Usage:**
+
+```bash
+air link remove NAME [--keep-link]
+```
+
+**Options:**
+
+- `--keep-link` - Keep symlink, only remove from config
+
+**Examples:**
+
+```bash
+# Remove resource and symlink
+air link remove service-a
+
+# Remove from config but keep symlink
+air link remove service-a --keep-link
 ```
 
 #### Behavior
@@ -198,17 +272,23 @@ collaborate:architecture:~/repos/cloud-native-architecture
 - Always created as symlinks (read-only)
 - Placed in `repos/` directory
 - Original repository not modified
+- Relationship: `REVIEW_ONLY`
 
-**Collaborative Resources:**
-- Default: symlink
-- With `--clone`: git clone
-- Placed in `collaborate/` directory
-- Can be modified and committed
+**Developer Resources:**
+- Created as symlinks
+- Placed in `repos/` directory
+- Can be modified (for contributing back)
+- Relationship: `DEVELOPER`
+
+**All Resources:**
+- Stored in `repos/` directory
+- Managed in `air-config.json`
+- Validated for uniqueness
 
 #### Exit Codes
 
-- `0` - All resources linked successfully
-- `1` - Some resources failed to link
+- `0` - Success
+- `1` - Validation error or resource not found
 - `2` - Configuration error
 
 ---
