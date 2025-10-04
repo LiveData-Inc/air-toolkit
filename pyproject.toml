@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "air-toolkit"
-version = "0.2.2"
+version = "0.2.3"
 description = "AIR - AI Review & Development Toolkit for multi-project assessment and AI-assisted development tracking"
 readme = "README.md"
 requires-python = ">=3.10"
