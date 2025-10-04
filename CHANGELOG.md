@@ -5,6 +5,47 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-10-04
+
+### Added
+- **`air pr`** - Create pull requests for collaborative resources
+  - Automatic change detection in `contributions/{resource}/` directory
+  - Auto-generated PR titles and descriptions from recent task files
+  - Custom PR title and body via `--title` and `--body` options
+  - Draft PR support with `--draft` flag
+  - Custom base branch via `--base` option (default: main)
+  - Dry-run mode to preview changes without creating PR
+  - List collaborative resources with contribution status (when no resource specified)
+  - Integration with GitHub CLI (`gh pr create`)
+  - Automatic branch creation with `air/{sanitized-title}` naming
+  - File copying from contributions to resource repository
+  - Git operations: branch creation, commit, push
+  - PR metadata generation from last 5 task files
+  - Branch name sanitization (lowercase, hyphens, 50 char limit)
+  - 30 unit tests for pr_generator service
+  - 9 integration tests for pr command
+
+### Infrastructure
+- New service module: `src/air/services/pr_generator.py`
+  - `detect_changes()` - Detect files in contributions directory
+  - `generate_pr_metadata()` - Generate PR title/body from tasks
+  - `create_pr_with_gh()` - Create PR via gh CLI
+  - `copy_contributions_to_resource()` - Copy files to target repo
+  - `git_create_branch_and_commit()` - Git operations
+  - `check_gh_cli_available()` - Verify gh CLI setup
+  - `is_git_repository()` - Validate git repos
+  - `_sanitize_branch_name()` - Clean branch names
+
+### Testing
+- **276 tests total** (was 237) - All passing ✅
+- Added 39 new tests (30 unit + 9 integration)
+
+### Documentation
+- Updated COMMANDS.md with comprehensive `air pr` documentation
+- Added examples for all PR workflow scenarios
+- Documented auto-generated PR metadata format
+- Added gh CLI installation and authentication instructions
+
 ## [0.3.0] - 2025-10-04
 
 ### Added

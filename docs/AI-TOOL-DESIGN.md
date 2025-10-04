@@ -1,6 +1,6 @@
 # AIR as a Claude Code Tool - Design Document
 
-**Version:** 0.2.3
+**Version:** 0.3.1
 **Date:** 2025-10-04
 **Status:** Finalized
 

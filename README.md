@@ -28,7 +28,7 @@ pip install -e .
 
 ## Quick Start
 
-### Complete Workflow (v0.3.0)
+### Complete Workflow (v0.3.1)
 
 ```bash
 # 1. Initialize project
@@ -73,7 +73,7 @@ air summary
 
 ## Features
 
-### Core Workflow (v0.3.0) ✅
+### Core Workflow (v0.3.1) ✅
 - **Project Initialization** (`air init`)
   - Create new projects or initialize in existing directories
   - Support for review, collaborate, or mixed modes
@@ -116,6 +116,7 @@ air summary
 - **Task Archive System** - Archive, restore, and manage task history
 
 ### Resource Classification (v0.3.0) ✅
+
 - **Auto-Classify Resources** (`air classify`) - Automatic resource type detection
 - Detects 11 programming languages (Python, JavaScript, Go, Rust, etc.)
 - Detects 10 major frameworks (Django, React, Rails, Spring, etc.)
@@ -123,7 +124,19 @@ air summary
 - Confidence scoring and verbose output
 - Updates air-config.json automatically
 
+### Pull Request Workflow (v0.3.1) ✅
+
+- **Create Pull Requests** (`air pr`) - Automated PR creation for collaborative resources
+- Auto-detect changes in `contributions/{resource}/` directory
+- Auto-generate PR titles and descriptions from recent task files
+- Custom PR options: `--title`, `--body`, `--draft`, `--base`
+- GitHub CLI integration (`gh pr create`)
+- Dry-run mode to preview changes
+- List collaborative resources with contribution status
+- Automatic branch creation and file copying
+
 ### Package Distribution (v0.2.3) ✅
+
 - Available on PyPI for easy installation
 - Built wheel and source distributions
 - Cross-platform support (macOS, Linux, Windows)
@@ -151,7 +164,7 @@ air-toolkit/
 
 ## Command Overview
 
-### Core Commands (v0.3.0)
+### Core Commands (v0.3.1)
 
 ```bash
 # Project Management

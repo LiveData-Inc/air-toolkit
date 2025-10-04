@@ -848,6 +848,160 @@ class TestLinkCommand:
         assert result.exit_code == 0
         assert "No resources linked" in result.output
 
+
+class TestPRCommand:
+    """Tests for air pr command."""
+
+    def test_pr_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["pr"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_pr_list_no_collaborative_resources(self, runner, isolated_project):
+        """Test listing when no collaborative resources exist."""
+        runner.invoke(main, ["init", "test-project", "--mode=review"])
+        project_dir = isolated_project / "test-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["pr"])
+
+        assert result.exit_code == 0
+        assert "No collaborative resources found" in result.output
+
+    def test_pr_resource_not_found(self, runner, isolated_project):
+        """Test error when resource doesn't exist."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["pr", "nonexistent"])
+
+        assert result.exit_code == 1
+        assert "Resource 'nonexistent' not found" in result.output
+
+    def test_pr_not_collaborative_resource(self, runner, isolated_project):
+        """Test error when resource is not collaborative."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        # Create a review-only resource
+        source = isolated_project / "review-repo"
+        source.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--review"])
+
+        result = runner.invoke(main, ["pr", "docs"])
+
+        assert result.exit_code == 1
+        assert "not a collaborative resource" in result.output
+
+    def test_pr_not_git_repository(self, runner, isolated_project):
+        """Test error when collaborative resource is not a git repo."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        # Create a collaborative resource (not a git repo)
+        source = isolated_project / "collab-repo"
+        source.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+
+        result = runner.invoke(main, ["pr", "docs"])
+
+        assert result.exit_code == 1
+        assert "not a git repository" in result.output
+
+    def test_pr_no_contributions(self, runner, isolated_project):
+        """Test when no contributions exist."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        # Create a collaborative git resource
+        source = isolated_project / "collab-repo"
+        source.mkdir()
+        (source / ".git").mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+
+        result = runner.invoke(main, ["pr", "docs"])
+
+        assert result.exit_code == 0
+        assert "No contributions found" in result.output
+
+    def test_pr_dry_run(self, runner, isolated_project):
+        """Test dry run mode."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        # Create collaborative git resource
+        source = isolated_project / "collab-repo"
+        source.mkdir()
+        (source / ".git").mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+
+        # Create contributions
+        contrib_dir = project_dir / "contributions" / "docs"
+        contrib_dir.mkdir(parents=True)
+        (contrib_dir / "README.md").write_text("# Test")
+
+        result = runner.invoke(main, ["pr", "docs", "--dry-run"])
+
+        assert result.exit_code == 0
+        assert "Dry run mode" in result.output
+        assert "Creating PR for: docs" in result.output
+        assert "Files: 1" in result.output
+
+    def test_pr_list_collaborative_resources(self, runner, isolated_project):
+        """Test listing collaborative resources with contributions."""
+        runner.invoke(main, ["init", "test-project"])
+        project_dir = isolated_project / "test-project"
+
+        # Create two collaborative git resources
+        source1 = isolated_project / "repo1"
+        source1.mkdir()
+        (source1 / ".git").mkdir()
+
+        source2 = isolated_project / "repo2"
+        source2.mkdir()
+        (source2 / ".git").mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        runner.invoke(main, ["link", "add", f"docs:{source1}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"api:{source2}", "--collaborate"])
+
+        # Create contributions for one resource
+        contrib_dir = project_dir / "contributions" / "docs"
+        contrib_dir.mkdir(parents=True)
+        (contrib_dir / "README.md").write_text("# Test")
+
+        result = runner.invoke(main, ["pr"])
+
+        assert result.exit_code == 0
+        assert "Collaborative Resources:" in result.output
+        assert "docs" in result.output
+        assert "api" in result.output
+
     def test_link_list_human_format(self, runner, isolated_project):
         """Test listing resources in human-readable format."""
         runner.invoke(main, ["init", "list-project", "--mode=mixed"])

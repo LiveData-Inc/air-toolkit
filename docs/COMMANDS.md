@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.2.3
+**Version:** 0.3.1
 **Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
@@ -463,68 +463,94 @@ air pr [RESOURCE] [OPTIONS]
 
 #### Arguments
 
-- `RESOURCE` - Name of collaborative resource (optional)
+- `RESOURCE` - Name of collaborative resource (optional - lists resources if omitted)
 
 #### Options
 
-- `--branch=NAME` - Branch name (default: auto-generated)
-- `--message=TEXT` - Commit message
+- `--base=BRANCH` - Base branch for PR (default: `main`)
+- `--title=TEXT` - Custom PR title (default: auto-generated from tasks)
+- `--body=TEXT` - Custom PR body (default: auto-generated from tasks)
 - `--draft` - Create as draft PR
-- `--dry-run` - Show what would be done
+- `--dry-run` - Show what would be done without making changes
 
 #### Examples
 
 ```bash
-# Create PR for resource
-air pr architecture
+# List collaborative resources with contribution status
+air pr
 
-# Specify branch name
-air pr architecture --branch=add-integration-guide
+# Create PR for resource (auto-generated title/body)
+air pr docs
+
+# Create PR with custom title and body
+air pr docs --title="Add API documentation" --body="Comprehensive API guide"
 
 # Create draft PR
-air pr architecture --draft
+air pr docs --draft
 
-# Preview without creating
-air pr architecture --dry-run
+# Create PR against develop branch
+air pr docs --base=develop
 
-# List resources with pending contributions
-air pr
+# Preview without creating PR
+air pr docs --dry-run
 ```
 
 #### Workflow
 
-1. Validate resource is collaborative type
-2. Check `contributions/[resource]/` has content
-3. Create git branch
-4. Copy contribution files to target locations
-5. Commit changes
-6. Push branch to remote
-7. Create PR via `gh` CLI
+1. Detect changes in `contributions/{resource}/` directory
+2. Generate PR title and body from recent task files
+3. Copy files from contributions to resource repository
+4. Create git branch and commit changes
+5. Push branch to remote
+6. Create pull request via `gh` CLI
 
 #### Requirements
 
 - GitHub CLI (`gh`) must be installed and authenticated
-- Resource must be a git clone (not symlink)
-- Contributions exist in `contributions/[resource]/`
-- Remote repository must be accessible
+  - Install: `brew install gh` (macOS) or see [GitHub CLI docs](https://cli.github.com/)
+  - Authenticate: `gh auth login`
+- Resource must be a git repository
+- Resource must be marked as collaborative (`--collaborate` flag when linking)
+- Contributions must exist in `contributions/{resource}/` directory
+
+#### Auto-Generated PR Metadata
+
+When `--title` and `--body` are not provided, the PR metadata is automatically generated:
+
+**Title:**
+- Format: `Improvements to {resource}`
+
+**Body:**
+- Summary of improvements
+- Related Work section (from last 5 task files)
+- Changes section
+- Footer with AIR Toolkit attribution
+
+**Branch Name:**
+- Format: `air/{sanitized-title}`
+- Example: `air/improvements-to-docs`
 
 #### Output
 
 ```
-[i] Creating PR for: architecture
+Creating PR for: docs
 
-Found contributions:
-  • new-guide.md -> docs/guides/implementation-guide.md
-  • Update ADR-2025.008
+  Branch: air/improvements-to-docs
+  Base: main
+  Title: Improvements to docs
+  Files: 3
+  Draft: No
 
-Creating branch: add-integration-guide
-Copying contribution files...
-Committing changes...
-Pushing to remote...
-Creating pull request...
+[i] Copying contributions...
+[✓] Copied 3 files
 
-[✓] PR created successfully
-  https://github.com/org/architecture/pull/123
+[i] Creating branch and committing...
+[✓] Committed changes to air/improvements-to-docs
+
+[i] Creating pull request...
+[✓] Pull request created successfully!
+
+https://github.com/org/docs/pull/42
 ```
 
 #### Dry Run Output
@@ -532,15 +558,37 @@ Creating pull request...
 ```
 [⚠] Dry run mode - no changes will be made
 
-Would create PR with:
-  Branch: add-integration-guide
-  Files:
-    • contributions/architecture/new-guide.md
-      -> docs/guides/implementation-guide.md
-  Commit message:
-    Add implementation guide from assessment
-  PR title:
-    Add integration implementation guide
+Creating PR for: docs
+
+  Branch: air/add-api-docs
+  Base: main
+  Title: Add API documentation
+  Files: 5
+  Draft: No
+
+Files to be contributed:
+  • README.md
+  • api/endpoints.md
+  • api/authentication.md
+  • examples/quickstart.md
+  • examples/advanced.md
+```
+
+#### Listing Collaborative Resources
+
+When no resource is specified, shows all collaborative resources with contribution status:
+
+```
+Collaborative Resources:
+
+┌──────────┬──────────────┬───────────────┬─────────────┐
+│ Resource │ Type         │ Contributions │ Status      │
+├──────────┼──────────────┼───────────────┼─────────────┤
+│ docs     │ documentation│ 3             │ ✓ Ready     │
+│ api      │ implementation│ 0             │ ○ No changes│
+└──────────┴──────────────┴───────────────┴─────────────┘
+
+💡 Run 'air pr RESOURCE' to create a pull request
 ```
 
 ---
@@ -984,7 +1032,7 @@ air --version
 #### Output
 
 ```
-air version 0.3.0
+air version 0.3.1
 ```
 
 ---
