@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.5.0
+**Version:** 0.5.11
 **Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
@@ -142,7 +142,7 @@ After running `air init`:
 
 ### air link
 
-Link repositories to the assessment project. Interactive by default for easy setup.
+Link repositories to the assessment project. Non-interactive by default for fast workflow.
 
 #### Commands
 
@@ -153,70 +153,87 @@ Add a resource to the project.
 **Usage:**
 
 ```bash
-air link add [OPTIONS]
+air link add PATH [OPTIONS]
 ```
 
-**Interactive Mode (default):**
+**Non-Interactive Mode (default):**
 
-When run without all required options, enters interactive mode with guided prompts:
+Fast mode with smart defaults - no prompts:
 
 ```bash
-# Interactive setup
-air link add
+# Fastest: use folder name, auto-detect type, review mode ⭐ RECOMMENDED
+air link add ~/repos/my-service
 
-# Partial arguments - will prompt for missing values
-air link add --path ~/repos/service-a
-air link add --name my-service --review
+# With custom name
+air link add ~/repos/service-a --name my-service
+
+# With explicit type
+air link add ~/repos/service-a --type library
+
+# Developer mode
+air link add ~/repos/service-a --develop
+
+# Fully explicit
+air link add ~/repos/service-a --name my-service --review --type library
 ```
 
-**Non-Interactive Mode:**
+**Interactive Mode:**
 
-Provide all required options for scripting:
+Use `-i` flag for guided prompts and customization:
 
 ```bash
-air link add --path PATH --name NAME --review|--develop [--type TYPE]
+# Interactive setup with prompts
+air link add ~/repos/service-a -i
+
+# Interactive mode features:
+# - Path validation and verification
+# - Name suggestion with uniqueness check
+# - Relationship choice (review/develop)
+# - Auto-classification with opt-out
+# - Confirmation summary
 ```
 
 **Options:**
 
-- `--path PATH` - Path to repository (required)
-- `--name NAME` - Resource name/alias (required)
+- `PATH` - Path to repository (required)
+- `--name NAME` - Resource name/alias (default: folder name)
 - `--review` - Link as review-only resource (read-only) **[default]**
 - `--develop` - Link as developer resource (can contribute)
-- `--type TYPE` - Resource type: `library`, `documentation`, `service` (default: `library`)
+- `--type TYPE` - Resource type: `library`, `documentation`, `service` (default: auto-detect)
+- `-i, --interactive` - Interactive mode with prompts
+
+**Smart Defaults:**
+
+1. **Name** - Uses folder name if not provided
+2. **Type** - Auto-classifies by analyzing repository structure
+3. **Relationship** - Defaults to `review` (read-only)
 
 **Examples:**
 
 ```bash
-# Fully interactive mode
-air link add
+# Quick link (folder name + auto-detect) ⭐ RECOMMENDED
+air link add /path/to/my-repo
 
-# Path with shell tab-complete (prompts for name, type, etc) ⭐ RECOMMENDED
-air link add ~/repos/mylib
+# Custom name
+air link add /path/to/my-repo --name custom-name
 
-# Minimal - uses defaults (review mode, library type)
-air link add ~/repos/service-a --name service-a
+# Developer mode with auto-detect
+air link add /path/to/my-repo --develop
 
-# Explicit review resource with type
-air link add ~/repos/service-a --name service-a --review --type library
+# Explicit type (skip auto-detection)
+air link add /path/to/my-repo --type documentation
 
-# Develop resource
-air link add ~/repos/architecture --name arch --develop --type documentation
+# Interactive mode for full customization
+air link add /path/to/my-repo -i
 ```
 
-**Usage:**
+**Auto-Classification:**
 
-```bash
-air link add [PATH] [OPTIONS]
-```
-
-**Interactive Features:**
-
-1. **Path Validation** - Checks path exists and is a directory
-2. **Name Suggestions** - Defaults to folder name, validates uniqueness
-3. **Relationship Choice** - Review (read-only) or Develop (contribute)
-4. **Auto-Classification** - Optional auto-detect of resource type
-5. **Confirmation** - Review summary before creating link
+When `--type` is not provided, AIR analyzes the repository:
+- Detects languages (Python, JavaScript, Go, etc.)
+- Identifies frameworks (Django, React, FastAPI, etc.)
+- Classifies as: `library`, `documentation`, or `service`
+- Generates technology stack (e.g., "Python/FastAPI")
 
 ##### air link list
 
@@ -249,14 +266,12 @@ Remove a linked resource.
 **Usage:**
 
 ```bash
-air link remove NAME [--keep-link]
+air link remove [NAME] [OPTIONS]
 ```
 
-**Options:**
+**Non-Interactive Mode:**
 
-- `--keep-link` - Keep symlink, only remove from config
-
-**Examples:**
+Provide resource name directly:
 
 ```bash
 # Remove resource and symlink
@@ -264,6 +279,50 @@ air link remove service-a
 
 # Remove from config but keep symlink
 air link remove service-a --keep-link
+```
+
+**Interactive Mode:**
+
+Use `-i` for numbered list selection:
+
+```bash
+# Select from numbered list
+air link remove -i
+
+# Shows:
+# Linked Resources:
+#
+# #  Name         Type           Relationship  Path
+# 1  service-a    library        review        /path/to/service-a
+# 2  docs         documentation  review        /path/to/docs
+# 3  my-api       service        develop       /path/to/my-api
+#
+# Select resource to remove (number or 'q' to quit) [q]: 2
+# Remove resource: docs
+# Confirm removal? [y/N]: y
+# ✓ Removed resource: docs
+```
+
+**Options:**
+
+- `NAME` - Resource name (required if not using `-i`)
+- `-i, --interactive` - Interactive mode with numbered selection
+- `--keep-link` - Keep symlink, only remove from config
+
+**Examples:**
+
+```bash
+# Direct removal by name
+air link remove service-a
+
+# Remove but keep symlink
+air link remove service-a --keep-link
+
+# Interactive selection ⭐ RECOMMENDED
+air link remove -i
+
+# Interactive + keep symlink
+air link remove -i --keep-link
 ```
 
 #### Behavior

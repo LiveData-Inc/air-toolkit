@@ -5,6 +5,74 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.11] - 2025-10-04
+
+### Changed
+
+- **`air link add` now non-interactive by default** - Fast workflow with smart defaults
+  - Uses folder name as default resource name (no `--name` required)
+  - Auto-classifies repository type (no `--type` required)
+  - Defaults to review mode (read-only)
+  - Creates link immediately without prompting
+  - Example: `air link add ~/repos/my-service` (instant, no prompts)
+
+### Added
+
+- **`-i, --interactive` flag for `air link add`** - Opt-in interactive mode
+  - Guided prompts for all options
+  - Path validation and verification
+  - Name suggestion with uniqueness check
+  - Relationship choice (review/develop)
+  - Auto-classification with opt-out
+  - Confirmation summary before creating link
+  - Example: `air link add ~/repos/my-service -i`
+
+- **`-i, --interactive` flag for `air link remove`** - Numbered list selection
+  - Displays all linked resources in numbered table
+  - Select resource by number (1, 2, 3, etc.)
+  - Shows name, type, relationship, and path for each resource
+  - Confirmation prompt before removal
+  - Graceful cancellation with 'q' or Ctrl+C
+  - Example: `air link remove -i`
+  - Direct removal still works: `air link remove NAME`
+
+### Testing
+
+- **337 tests total** (was 333) - All passing ✅
+- Added 4 new integration tests:
+  - `test_link_add_auto_classify` - Auto-classification without --type
+  - `test_link_add_folder_name_default` - Folder name as default name
+  - `test_link_add_fully_automatic` - Both defaults (no --name, no --type)
+  - `test_link_remove_no_name_without_interactive` - Usage display when no args
+- All existing tests remain compatible (use explicit args)
+
+### Documentation
+
+- Updated `docs/COMMANDS.md` with new behavior for both commands
+- Added `-i` flag documentation and examples for `link add` and `link remove`
+- Documented smart defaults (name, type, relationship) for `link add`
+- Documented interactive numbered selection for `link remove`
+- Added auto-classification documentation
+
+### Migration Guide
+
+**Before (v0.5.1 and earlier):**
+```bash
+# Would prompt interactively
+air link add ~/repos/my-service
+```
+
+**After (v0.5.11):**
+```bash
+# Instant, no prompts (uses folder name, auto-detects type)
+air link add ~/repos/my-service
+
+# For interactive mode, use -i flag
+air link add ~/repos/my-service -i
+```
+
+This change makes the common case (quick linking with sensible defaults) much faster, while preserving full customization via the `-i` flag.
+
 ## [0.5.1] - 2025-10-04
 
 ### Fixed
