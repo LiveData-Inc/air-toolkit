@@ -26,10 +26,6 @@ class TestAgentCoordination:
 
     def test_analyze_command_inline(self, runner, isolated_project):
         """Test analyze command in inline mode."""
-        # Change to temp directory first
-        os.chdir(isolated_project)
-
-        # Change to temp directory first
         os.chdir(isolated_project)
 
         # Create AIR project
