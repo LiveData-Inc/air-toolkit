@@ -1,7 +1,7 @@
 # AIR Toolkit - AI Integration Guide
 
-**Version:** 0.1.0
-**Last Updated:** 2025-10-03
+**Version:** 0.2.3
+**Last Updated:** 2025-10-04
 
 ## 1. Overview
 

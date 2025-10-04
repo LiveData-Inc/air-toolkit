@@ -1,8 +1,21 @@
-# AIR Toolkit - Quick Start (v0.2.0)
+# AIR Toolkit - Quick Start (v0.2.3)
 
 Get started with AIR in 5 minutes - complete workflow now available!
 
 ## Installation
+
+```bash
+# Install from PyPI (recommended)
+pip install air-toolkit
+
+# Or with pipx for isolated installation
+pipx install air-toolkit
+
+# Verify installation
+air --version
+```
+
+### Development Installation
 
 ```bash
 # Clone repository
@@ -11,9 +24,6 @@ cd air-toolkit
 
 # Install in development mode
 pip install -e .
-
-# Verify installation
-air --version
 ```
 
 ## Create Your First Project
@@ -53,7 +63,7 @@ my-review/
 └── scripts/             # Helper scripts
 ```
 
-## Quick Commands (v0.2.0)
+## Quick Commands (v0.2.3)
 
 ### Repository Linking
 ```bash
@@ -285,7 +295,7 @@ cat docs/COMMANDS.md
 https://github.com/LiveData-Inc/air-toolkit/issues
 ```
 
-## Quick Reference (v0.2.0)
+## Quick Reference (v0.2.3)
 
 | Command | Description |
 |---------|-------------|

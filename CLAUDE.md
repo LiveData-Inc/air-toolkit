@@ -150,7 +150,7 @@ air status --format=json
 
 AIR (AI Review) is a Python CLI toolkit for AI-assisted development and multi-project code assessment.
 
-**Status**: v0.1.0 - Core structure complete, most commands need implementation
+**Status**: v0.2.3 - Complete task lifecycle implemented, ready for PyPI distribution
 
 Review these before starting:
 - `.air/context/architecture.md` - System architecture (needs updating)

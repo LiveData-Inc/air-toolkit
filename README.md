@@ -11,14 +11,7 @@ AIR provides two complementary capabilities:
 
 ## Installation
 
-### From Source (Development)
-
-```bash
-cd air-toolkit
-pip install -e .
-```
-
-### From PyPI (Future)
+### From PyPI (Recommended)
 
 ```bash
 pip install air-toolkit
@@ -26,9 +19,16 @@ pip install air-toolkit
 pipx install air-toolkit
 ```
 
+### From Source (Development)
+
+```bash
+cd air-toolkit
+pip install -e .
+```
+
 ## Quick Start
 
-### Complete Workflow (v0.2.0)
+### Complete Workflow (v0.2.3)
 
 ```bash
 # 1. Initialize project
@@ -73,7 +73,7 @@ air summary
 
 ## Features
 
-### Core Workflow (v0.2.0) ✅
+### Core Workflow (v0.2.3) ✅
 - **Project Initialization** (`air init`)
   - Create new projects or initialize in existing directories
   - Support for review, collaborate, or mixed modes
@@ -109,11 +109,16 @@ air summary
   - Count resources and tasks
   - JSON output for automation
 
-### Task Archive System ✅
-- Archive tasks by ID, date, or all tasks
-- Organization strategies: by-month, by-quarter, flat
-- Task restoration from archive
-- Archive statistics and reporting
+### Complete Task Lifecycle (v0.2.2) ✅
+- **Task Status** (`air task status`) - View detailed task information
+- **Enhanced Task List** (`air task list`) - Filter, sort, and search tasks
+- **Task Completion** (`air task complete`) - Mark tasks as complete
+- **Task Archive System** - Archive, restore, and manage task history
+
+### Package Distribution (v0.2.3) ✅
+- Available on PyPI for easy installation
+- Built wheel and source distributions
+- Cross-platform support (macOS, Linux, Windows)
 
 ## Documentation
 
@@ -138,7 +143,7 @@ air-toolkit/
 
 ## Command Overview
 
-### Core Commands (v0.2.0)
+### Core Commands (v0.2.3)
 
 ```bash
 # Project Management

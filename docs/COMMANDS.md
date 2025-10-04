@@ -1,7 +1,7 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.1.0
-**Last Updated:** 2025-10-03
+**Version:** 0.2.3
+**Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
 
@@ -984,7 +984,7 @@ air --version
 #### Output
 
 ```
-air version 0.1.0
+air version 0.2.3
 ```
 
 ---
