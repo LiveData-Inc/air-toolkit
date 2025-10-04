@@ -5,6 +5,29 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-10-04
+
+### Added
+- **`air classify`** - Auto-classify resources by analyzing repository structure
+  - Detects programming languages (Python, JavaScript, Go, Rust, Java, Ruby, PHP, etc.)
+  - Detects frameworks (Django, React, Vue, Angular, Express, Rails, Spring, etc.)
+  - Classifies resource type: implementation, documentation, library, service
+  - Provides confidence scores for classifications
+  - Verbose mode shows detection details (languages, frameworks, reasoning)
+  - `--update` flag to update air-config.json with detected types
+  - Support for specific resource classification by name
+  - JSON output format for automation
+  - 24 unit tests + 8 integration tests
+
+### Changed
+- Resource classification is now automated (previously manual)
+- Classification algorithm uses file pattern matching and content analysis
+- Detection patterns for major languages and frameworks
+
+### Testing
+- **237 tests total** (was 205) - All passing ✅
+- Added 32 new tests (24 unit + 8 integration)
+
 ## [0.2.3] - 2025-10-04
 
 ### Changed

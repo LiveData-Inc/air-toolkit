@@ -1723,3 +1723,193 @@ class TestTaskListEnhanced:
         # Test status filter combined with sort
         result = runner.invoke(main, ["task", "list", "--status=in-progress", "--sort=date"])
         assert result.exit_code == 0
+
+
+class TestClassifyCommand:
+    """Tests for air classify command."""
+
+    def test_classify_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["classify"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_classify_no_resources(self, runner, isolated_project):
+        """Test classify with no linked resources."""
+        runner.invoke(main, ["init", "classify-empty"])
+        project_dir = isolated_project / "classify-empty"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["classify"])
+
+        assert result.exit_code == 0
+        assert "No linked resources" in result.output
+
+    def test_classify_python_project(self, runner, isolated_project):
+        """Test classifying a Python project."""
+        runner.invoke(main, ["init", "classify-python"])
+        project_dir = isolated_project / "classify-python"
+
+        # Create a Python project to classify
+        python_proj = isolated_project / "python-app"
+        python_proj.mkdir()
+        (python_proj / "app.py").write_text("print('hello')")
+        (python_proj / "requirements.txt").write_text("flask>=2.0.0")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link it
+        runner.invoke(main, ["link", "add", f"python-app:{python_proj}", "--review"])
+
+        # Classify
+        result = runner.invoke(main, ["classify"])
+
+        assert result.exit_code == 0
+        assert "python-app" in result.output
+        assert "Classified" in result.output
+
+    def test_classify_json_output(self, runner, isolated_project):
+        """Test JSON output format."""
+        runner.invoke(main, ["init", "classify-json"])
+        project_dir = isolated_project / "classify-json"
+
+        # Create a docs project
+        docs_proj = isolated_project / "docs-project"
+        docs_proj.mkdir()
+        docs_dir = docs_proj / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "index.md").write_text("# Docs")
+        (docs_dir / "guide.md").write_text("# Guide")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link it
+        runner.invoke(main, ["link", "add", f"docs-project:{docs_proj}", "--review"])
+
+        # Classify with JSON output
+        result = runner.invoke(main, ["classify", "--format=json"])
+
+        assert result.exit_code == 0
+
+        # Parse JSON
+        import json
+        output = json.loads(result.output)
+
+        assert "total" in output
+        assert "resources" in output
+        assert len(output["resources"]) == 1
+        assert output["resources"][0]["name"] == "docs-project"
+        assert "detected_type" in output["resources"][0]
+        assert "confidence" in output["resources"][0]
+
+    def test_classify_verbose_output(self, runner, isolated_project):
+        """Test verbose output shows details."""
+        runner.invoke(main, ["init", "classify-verbose"])
+        project_dir = isolated_project / "classify-verbose"
+
+        # Create a service project
+        service_proj = isolated_project / "my-service"
+        service_proj.mkdir()
+        (service_proj / "Dockerfile").write_text("FROM python:3.11")
+        (service_proj / "app.py").write_text("from flask import Flask")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link it
+        runner.invoke(main, ["link", "add", f"my-service:{service_proj}", "--review"])
+
+        # Classify with verbose
+        result = runner.invoke(main, ["classify", "--verbose"])
+
+        assert result.exit_code == 0
+        assert "my-service" in result.output
+        assert "Languages:" in result.output or "Reasoning:" in result.output
+
+    def test_classify_update_config(self, runner, isolated_project):
+        """Test --update flag updates air-config.json."""
+        runner.invoke(main, ["init", "classify-update"])
+        project_dir = isolated_project / "classify-update"
+
+        # Create a docs project
+        docs_proj = isolated_project / "docs-update"
+        docs_proj.mkdir()
+        docs_dir = docs_proj / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "index.md").write_text("# Docs")
+        (docs_dir / "api.md").write_text("# API")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link it with wrong type (implementation)
+        runner.invoke(main, ["link", "add", f"docs-update:{docs_proj}", "--review"])
+
+        # Classify with update
+        result = runner.invoke(main, ["classify", "--update"])
+
+        assert result.exit_code == 0
+
+        # Verify config was updated
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            import json
+            config = json.load(f)
+
+        # Find the resource
+        resource = config["resources"]["review"][0]
+        assert resource["name"] == "docs-update"
+        # Should be classified as documentation
+        assert resource["type"] == "documentation"
+
+    def test_classify_specific_resource(self, runner, isolated_project):
+        """Test classifying a specific resource by name."""
+        runner.invoke(main, ["init", "classify-specific"])
+        project_dir = isolated_project / "classify-specific"
+
+        # Create two projects
+        proj1 = isolated_project / "proj-one"
+        proj1.mkdir()
+        (proj1 / "app.py").write_text("print('one')")
+
+        proj2 = isolated_project / "proj-two"
+        proj2.mkdir()
+        (proj2 / "main.py").write_text("print('two')")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link both
+        runner.invoke(main, ["link", "add", f"proj-one:{proj1}", "--review"])
+        runner.invoke(main, ["link", "add", f"proj-two:{proj2}", "--review"])
+
+        # Classify only proj-one
+        result = runner.invoke(main, ["classify", "proj-one"])
+
+        assert result.exit_code == 0
+        assert "proj-one" in result.output
+        # proj-two should not be mentioned
+        assert "proj-two" not in result.output or "Classified 1 resource" in result.output
+
+    def test_classify_nonexistent_resource(self, runner, isolated_project):
+        """Test error when classifying non-existent resource."""
+        runner.invoke(main, ["init", "classify-notfound"])
+        project_dir = isolated_project / "classify-notfound"
+
+        import os
+        os.chdir(project_dir)
+
+        # First add a resource so we're not testing empty list
+        dummy_proj = isolated_project / "dummy"
+        dummy_proj.mkdir()
+        runner.invoke(main, ["link", "add", f"dummy:{dummy_proj}", "--review"])
+
+        result = runner.invoke(main, ["classify", "nonexistent"])
+
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
