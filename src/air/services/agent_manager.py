@@ -1,0 +1,193 @@
+"""Agent lifecycle management for parallel execution."""
+
+import json
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from air.utils.console import success
+from air.utils.paths import safe_filename
+
+
+def generate_agent_id(command: str) -> str:
+    """Generate unique agent ID.
+
+    Args:
+        command: Command name (e.g., "analyze")
+
+    Returns:
+        Agent ID in format: YYYYMMDD-HHMM-command-NNN
+    """
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    safe_cmd = safe_filename(command)
+    return f"{timestamp}-{safe_cmd}"
+
+
+def get_agent_dir(agent_id: str) -> Path:
+    """Get agent directory path.
+
+    Args:
+        agent_id: Agent identifier
+
+    Returns:
+        Path to agent directory
+    """
+    return Path(".air/agents") / agent_id
+
+
+def spawn_background_agent(
+    agent_id: str,
+    command: str,
+    args: dict[str, Any],
+    resource_path: str | None = None,
+) -> None:
+    """Spawn a background agent.
+
+    Args:
+        agent_id: Unique agent identifier
+        command: Command to run (e.g., "analyze")
+        args: Command arguments
+        resource_path: Optional resource path for analysis
+    """
+    # Create agent directory
+    agent_dir = get_agent_dir(agent_id)
+    agent_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write metadata
+    metadata = {
+        "id": agent_id,
+        "command": command,
+        "args": args,
+        "resource_path": resource_path,
+        "status": "running",
+        "started": datetime.now().isoformat(),
+        "pid": None,  # Will be updated by subprocess
+    }
+    (agent_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
+    # Build command line arguments
+    cmd_args = ["air", command]
+
+    if resource_path:
+        cmd_args.append(resource_path)
+
+    # Add args as flags
+    for key, value in args.items():
+        if isinstance(value, bool):
+            if value:
+                cmd_args.append(f"--{key}")
+        elif value is not None:
+            cmd_args.extend([f"--{key}", str(value)])
+
+    # Spawn subprocess in background
+    process = subprocess.Popen(
+        cmd_args,
+        stdout=open(agent_dir / "stdout.log", "w"),
+        stderr=open(agent_dir / "stderr.log", "w"),
+        cwd=Path.cwd(),
+        start_new_session=True,  # Detach from parent
+    )
+
+    # Update metadata with PID
+    metadata["pid"] = process.pid
+    (agent_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
+    success(f"Started background agent: {agent_id} (PID: {process.pid})")
+
+
+def load_agent_metadata(agent_id: str) -> dict[str, Any]:
+    """Load agent metadata.
+
+    Args:
+        agent_id: Agent identifier
+
+    Returns:
+        Agent metadata dict
+
+    Raises:
+        FileNotFoundError: If agent metadata doesn't exist
+    """
+    metadata_file = get_agent_dir(agent_id) / "metadata.json"
+    if not metadata_file.exists():
+        raise FileNotFoundError(f"Agent not found: {agent_id}")
+
+    return json.loads(metadata_file.read_text())
+
+
+def update_agent_status(agent_id: str, status: str, **kwargs: Any) -> None:
+    """Update agent status.
+
+    Args:
+        agent_id: Agent identifier
+        status: New status (running, complete, failed)
+        **kwargs: Additional metadata to update
+    """
+    metadata = load_agent_metadata(agent_id)
+    metadata["status"] = status
+
+    if status == "complete":
+        metadata["completed"] = datetime.now().isoformat()
+    elif status == "failed":
+        metadata["failed"] = datetime.now().isoformat()
+        if "error" in kwargs:
+            metadata["error"] = kwargs["error"]
+
+    # Add any additional metadata
+    metadata.update(kwargs)
+
+    metadata_file = get_agent_dir(agent_id) / "metadata.json"
+    metadata_file.write_text(json.dumps(metadata, indent=2))
+
+
+def list_agents() -> list[dict[str, Any]]:
+    """List all agents.
+
+    Returns:
+        List of agent metadata dicts
+    """
+    agents_dir = Path(".air/agents")
+    if not agents_dir.exists():
+        return []
+
+    agents = []
+    for agent_dir in agents_dir.glob("*/"):
+        metadata_file = agent_dir / "metadata.json"
+        if metadata_file.exists():
+            try:
+                agents.append(json.loads(metadata_file.read_text()))
+            except json.JSONDecodeError:
+                # Skip corrupted metadata
+                continue
+
+    # Sort by started time (newest first)
+    agents.sort(key=lambda a: a.get("started", ""), reverse=True)
+    return agents
+
+
+def get_agent_progress(agent_id: str) -> str:
+    """Get agent progress message.
+
+    Args:
+        agent_id: Agent identifier
+
+    Returns:
+        Progress message or empty string
+    """
+    # For MVP, check stdout for progress
+    stdout_file = get_agent_dir(agent_id) / "stdout.log"
+    if not stdout_file.exists():
+        return ""
+
+    try:
+        # Get last non-empty line
+        lines = stdout_file.read_text().strip().split("\n")
+        for line in reversed(lines):
+            if line.strip():
+                # Truncate long lines
+                return line[:60] + "..." if len(line) > 60 else line
+    except Exception:
+        pass
+
+    return ""

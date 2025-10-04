@@ -11,6 +11,10 @@ from . import (
     task,
     track,
     summary,
+    review,
+    claude,
+    analyze,
+    findings,
 )
 
 __all__ = [
@@ -23,4 +27,8 @@ __all__ = [
     "task",
     "track",
     "summary",
+    "review",
+    "claude",
+    "analyze",
+    "findings",
 ]

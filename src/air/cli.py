@@ -16,6 +16,8 @@ from air.commands import (
     task,
     track,
     summary,
+    analyze,
+    findings,
 )
 
 console = Console()
@@ -53,6 +55,8 @@ main.add_command(status.status)
 main.add_command(classify.classify)
 main.add_command(pr.pr)
 main.add_command(review.review)
+main.add_command(analyze.analyze)
+main.add_command(findings.findings)
 
 # AI assistant commands
 main.add_command(claude.claude)
