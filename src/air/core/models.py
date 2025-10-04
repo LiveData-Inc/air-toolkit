@@ -185,6 +185,7 @@ class ProjectStructure(BaseModel):
             return cls(
                 mode=mode,
                 directories=[".air", ".air/tasks", ".air/context", ".air/templates",
+                           ".air/agents", ".air/shared",
                            "repos", "analysis", "analysis/reviews"],
                 required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
                 optional_files=["repos-to-link.txt"],
@@ -194,7 +195,8 @@ class ProjectStructure(BaseModel):
             # No special directories - this is your actual project
             return cls(
                 mode=mode,
-                directories=[".air", ".air/tasks", ".air/context", ".air/templates"],
+                directories=[".air", ".air/tasks", ".air/context", ".air/templates",
+                           ".air/agents", ".air/shared"],
                 required_files=["air-config.json"],
                 optional_files=[],
             )
@@ -203,6 +205,7 @@ class ProjectStructure(BaseModel):
             return cls(
                 mode=mode,
                 directories=[".air", ".air/tasks", ".air/context", ".air/templates",
+                           ".air/agents", ".air/shared",
                            "repos", "analysis", "analysis/reviews", "contributions"],
                 required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
                 optional_files=["repos-to-link.txt"],
