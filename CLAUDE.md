@@ -67,10 +67,11 @@ YYYY-MM-DD HH:MM
 
 Use Python (works on all platforms):
 ```python
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
-timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+# IMPORTANT: Use LOCAL time, not UTC, for proper chronological sorting
+timestamp = datetime.now().strftime("%Y%m%d-%H%M")
 description = "user-task-description"  # kebab-case from user prompt
 filename = f".air/tasks/{timestamp}-{description}.md"
 

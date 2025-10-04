@@ -35,8 +35,8 @@ LANGUAGE_PATTERNS = {
 # Framework detection patterns
 FRAMEWORK_PATTERNS = {
     "django": ["manage.py", "django"],
-    "flask": ["app.py", "flask"],
-    "fastapi": ["fastapi", "uvicorn"],
+    "flask": ["flask"],  # Removed "app.py" - too generic, conflicts with FastAPI/CDK
+    "fastapi": ["fastapi"],  # Removed uvicorn - often just for local dev
     "react": ["react", "package.json"],
     "vue": ["vue", "package.json"],
     "angular": ["angular.json", "@angular"],
@@ -44,6 +44,8 @@ FRAMEWORK_PATTERNS = {
     "express": ["express", "package.json"],
     "rails": ["Gemfile", "rails"],
     "spring": ["spring-boot", "pom.xml"],
+    "cdk": ["cdk.json", "app.py"],  # AWS CDK projects
+    "lambda": ["mangum", "chalice"],  # AWS Lambda indicators
 }
 
 # Documentation indicators
@@ -84,11 +86,72 @@ def _generate_technology_stack(languages: list[str], frameworks: list[str]) -> s
     if not languages and not frameworks:
         return None
 
-    # Prioritize the first detected language
-    primary_lang = languages[0].capitalize() if languages else None
+    # Proper capitalization for languages and frameworks
+    lang_names = {
+        "python": "Python",
+        "javascript": "JavaScript",
+        "typescript": "TypeScript",
+        "go": "Go",
+        "rust": "Rust",
+        "java": "Java",
+        "ruby": "Ruby",
+        "php": "PHP",
+        "csharp": "C#",
+        "swift": "Swift",
+        "kotlin": "Kotlin",
+    }
 
-    # Find the most relevant framework
-    primary_framework = frameworks[0].capitalize() if frameworks else None
+    framework_names = {
+        "django": "Django",
+        "flask": "Flask",
+        "fastapi": "FastAPI",
+        "react": "React",
+        "vue": "Vue",
+        "angular": "Angular",
+        "nextjs": "Next.js",
+        "express": "Express",
+        "rails": "Rails",
+        "spring": "Spring",
+        "cdk": "CDK",
+        "lambda": "Lambda",
+    }
+
+    # Prioritize the first detected language
+    primary_lang = lang_names.get(languages[0], languages[0].capitalize()) if languages else None
+
+    # Smart framework prioritization
+    # For AWS Lambda/CDK projects, combine FastAPI + Lambda/CDK
+    if "lambda" in frameworks or "cdk" in frameworks:
+        # This is a Lambda/CDK project
+        app_framework = None
+        deployment_framework = None
+
+        if "lambda" in frameworks:
+            deployment_framework = "Lambda"
+        elif "cdk" in frameworks:
+            deployment_framework = "CDK"
+
+        # Check for application framework
+        for fw in ["fastapi", "flask", "django", "express"]:
+            if fw in frameworks:
+                app_framework = framework_names.get(fw)
+                break
+
+        if app_framework and deployment_framework:
+            return f"{primary_lang}/{app_framework}/{deployment_framework}"
+        elif deployment_framework:
+            return f"{primary_lang}/{deployment_framework}"
+
+    # Find the most relevant framework (prefer app frameworks over infrastructure)
+    app_frameworks = ["fastapi", "flask", "django", "react", "vue", "angular", "nextjs", "express", "rails", "spring"]
+    primary_framework = None
+    for fw in frameworks:
+        if fw in app_frameworks:
+            primary_framework = framework_names.get(fw, fw.capitalize())
+            break
+
+    if not primary_framework and frameworks:
+        primary_framework = framework_names.get(frameworks[0], frameworks[0].capitalize())
 
     if primary_lang and primary_framework:
         return f"{primary_lang}/{primary_framework}"
@@ -224,23 +287,42 @@ def _detect_frameworks(path: Path) -> list[str]:
         List of detected framework names
     """
     detected = []
+
+    # Package files to check for dependencies
+    package_files = {
+        "requirements.txt": ["django", "flask", "fastapi", "mangum", "chalice"],
+        "pyproject.toml": ["django", "flask", "fastapi", "mangum", "chalice"],
+        "package.json": ["react", "vue", "@angular", "next", "express"],
+        "Gemfile": ["rails"],
+        "pom.xml": ["spring-boot"],
+    }
+
     for framework, patterns in FRAMEWORK_PATTERNS.items():
+        framework_detected = False
         for pattern in patterns:
-            # Check if file exists
-            if (path / pattern).exists():
-                detected.append(framework)
-                break
-            # Check in package files
-            if pattern in ["package.json", "requirements.txt", "Gemfile", "pom.xml"]:
-                file_path = path / pattern
-                if file_path.exists():
-                    try:
-                        content = file_path.read_text()
-                        if framework in content.lower():
-                            detected.append(framework)
-                            break
-                    except Exception:
-                        pass
+            # Check if it's a specific file that exists (like manage.py, angular.json)
+            if "." in pattern or "/" in pattern:
+                if (path / pattern).exists():
+                    detected.append(framework)
+                    framework_detected = True
+                    break
+            # Otherwise, check if pattern appears in package files
+            else:
+                for pkg_file, search_terms in package_files.items():
+                    if pattern in search_terms:
+                        file_path = path / pkg_file
+                        if file_path.exists():
+                            try:
+                                content = file_path.read_text()
+                                if pattern in content.lower():
+                                    detected.append(framework)
+                                    framework_detected = True
+                                    break
+                            except Exception:
+                                pass
+                if framework_detected:
+                    break
+
     return detected
 
 

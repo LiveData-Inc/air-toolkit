@@ -7,11 +7,11 @@ from pathlib import Path
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 
 from air.core.models import AirConfig
 from air.services.filesystem import get_project_root
 from air.utils.console import error
+from air.utils.tables import render_resource_table
 
 console = Console()
 
@@ -153,59 +153,23 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
 
         # Resources table
         if resource_type in ["review", "all"] and review_resources:
-            table = Table(title="Review Resources", style="cyan")
-            table.add_column("Status", width=8)
-            table.add_column("Name", style="cyan")
-            table.add_column("Type", style="magenta")
-            table.add_column("Path", style="dim")
-
-            for resource in review_resources:
-                # Check if resource path exists
-                resource_path = Path(resource.path)
-                link_path = project_root / "repos" / resource.name
-
-                if link_path.exists() and resource_path.exists():
-                    status = "[green]✓[/green]"
-                elif link_path.exists() and not resource_path.exists():
-                    status = "[red]✗[/red]"
-                else:
-                    status = "[yellow]⚠[/yellow]"
-
-                table.add_row(
-                    status,
-                    resource.name,
-                    resource.type,
-                    resource.path,
-                )
-            console.print(table)
+            render_resource_table(
+                review_resources,
+                project_root,
+                title="Review Resources",
+                title_style="cyan",
+                name_style="cyan",
+            )
             console.print()
 
         if resource_type in ["develop", "all"] and collaborate_resources:
-            table = Table(title="Collaborative Resources", style="green")
-            table.add_column("Status", width=8)
-            table.add_column("Name", style="green")
-            table.add_column("Type", style="magenta")
-            table.add_column("Path", style="dim")
-
-            for resource in collaborate_resources:
-                # Check if resource path exists
-                resource_path = Path(resource.path)
-                link_path = project_root / "repos" / resource.name
-
-                if link_path.exists() and resource_path.exists():
-                    status = "[green]✓[/green]"
-                elif link_path.exists() and not resource_path.exists():
-                    status = "[red]✗[/red]"
-                else:
-                    status = "[yellow]⚠[/yellow]"
-
-                table.add_row(
-                    status,
-                    resource.name,
-                    resource.type,
-                    resource.path,
-                )
-            console.print(table)
+            render_resource_table(
+                collaborate_resources,
+                project_root,
+                title="Collaborative Resources",
+                title_style="green",
+                name_style="green",
+            )
             console.print()
 
         # Summary

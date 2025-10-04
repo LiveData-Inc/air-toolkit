@@ -5,7 +5,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
-from air.commands.link import parse_name_path, load_config, save_config
+from air.commands.link import load_config, save_config
 from air.core.models import (
     AirConfig,
     ProjectMode,
@@ -13,52 +13,6 @@ from air.core.models import (
     ResourceType,
     ResourceRelationship,
 )
-
-
-class TestParseNamePath:
-    """Tests for parse_name_path function."""
-
-    def test_valid_name_path(self):
-        """Test parsing valid NAME:PATH format."""
-        name, path = parse_name_path("service-a:~/repos/service-a")
-        assert name == "service-a"
-        assert path == "~/repos/service-a"
-
-    def test_valid_with_spaces(self):
-        """Test parsing with spaces (should be stripped)."""
-        name, path = parse_name_path("  service-a  :  ~/repos/service-a  ")
-        assert name == "service-a"
-        assert path == "~/repos/service-a"
-
-    def test_multiple_colons(self):
-        """Test parsing path with multiple colons."""
-        name, path = parse_name_path("service-a:/path/with:colon")
-        assert name == "service-a"
-        assert path == "/path/with:colon"
-
-    def test_missing_colon(self):
-        """Test error when colon is missing."""
-        with pytest.raises(SystemExit) as excinfo:
-            parse_name_path("service-a")
-        assert excinfo.value.code == 1
-
-    def test_empty_name(self):
-        """Test error when name is empty."""
-        with pytest.raises(SystemExit) as excinfo:
-            parse_name_path(":~/repos/service-a")
-        assert excinfo.value.code == 1
-
-    def test_empty_path(self):
-        """Test error when path is empty."""
-        with pytest.raises(SystemExit) as excinfo:
-            parse_name_path("service-a:")
-        assert excinfo.value.code == 1
-
-    def test_both_empty(self):
-        """Test error when both name and path are empty."""
-        with pytest.raises(SystemExit) as excinfo:
-            parse_name_path(":")
-        assert excinfo.value.code == 1
 
 
 class TestLoadConfig:

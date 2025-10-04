@@ -7,31 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.3] - 2025-10-04
 
+### Added
+- **`air validate --fix`** - Automatically recreate missing/broken symlinks
+  - Recreates symlinks when source path still exists
+  - Handles broken symlinks (removes and recreates)
+  - Clear feedback showing what was fixed
+  - Reports errors when source path doesn't exist
+  - Perfect for cloning AIR projects and restoring links
+
+- **Shell Tab Completion Support** - `air link add` now requires PATH as positional argument
+  - `air link add ~/repos/myproject` - Use your shell's tab-completion! ⭐
+  - PATH is required (running `air link add` without args shows help)
+  - Still prompts interactively for name, relationship, and type if not provided
+  - Much better UX than typing `--path` option
+  - Removed ~40 lines of path prompting code
+
 ### Fixed
 - **Broken Symlink Detection** - All commands now properly handle missing or broken symlinks
   - `air validate` now cross-references config with filesystem to detect missing resources
   - `air validate` detects when configured resources are missing from `repos/` directory
   - `air validate` detects when symlinks exist but target directories have been removed
-  - `air link list` now shows status indicators: ✓ valid, ✗ broken, ⚠ missing
-  - `air status` now shows status indicators for all resources
+  - `air link list` now shows status indicators: `✓ valid`, `✗ broken`, `⚠ missing`
+  - `air status` now shows status indicators for all resources (consistent with link list)
   - `air classify` fails gracefully with helpful message if resource path not found
   - `air pr` fails gracefully with helpful message if resource path not found
 
+- **Classifier Improvements** - Fixed Flask false positives and added CDK/Lambda detection
+  - Removed `app.py` from Flask detection (too generic, conflicted with FastAPI/CDK)
+  - Fixed framework detection to search in requirements.txt/pyproject.toml properly
+  - Added CDK and Lambda framework detection (cdk.json, mangum, app.py combinations)
+  - Added proper capitalization (FastAPI, JavaScript, Next.js, PHP, C#)
+  - Multi-framework stacks now supported (e.g., `Python/FastAPI/Lambda`)
+  - AWS CDK Lambda projects now correctly identified
+
 ### Changed
-- **Enhanced UX** - Better visibility into resource health
-  - Status column added to `air link list` output (shows valid/broken/missing)
-  - Status column added to `air status` resource tables
+- **Enhanced UX** - Better visibility and consistency
+  - Status column added to `air link list` output (shows `✓ valid`, `✗ broken`, `⚠ missing`)
+  - Status column added to `air status` resource tables (consistent formatting)
+  - Status column width increased to 10 chars (prevents text wrapping)
   - Clear error messages guide users to run `air validate` when paths are missing
+  - `air validate --fix` displays "Fixed Issues" table with green checkmarks
+  - `air init` shows usage pattern and complete examples in "Next steps"
+
+- **Code Quality** - Refactored duplicate code
+  - Created `src/air/utils/tables.py` with shared resource table rendering
+  - Both `air link list` and `air status` use same rendering function
+  - Removed ~80 lines of duplicate table rendering code
+  - Consistent column widths across all commands
+
+- **Breaking Changes** - Removed deprecated NAME:PATH format
+  - `air link add` no longer accepts `--path` option (use positional PATH argument)
+  - Removed deprecated NAME:PATH format completely (e.g., `service-a:~/repos/service-a`)
+  - All documentation updated to show new syntax
+  - All hint messages updated
 
 ### Testing
-- **320 tests total** (was 318) - All passing ✅
-- Added 2 new integration tests for symlink validation
+- **333 tests total** (was 318) - All passing ✅
+  - Added 2 new integration tests for symlink validation
+  - Added 2 new integration tests for --fix functionality
+  - Added 11 new unit tests for validate fix logic
+  - Updated 7 tests to use positional PATH argument
 
-### Use Case
-This fix addresses a common scenario: when a user manually removes a symlink or the target directory,
-the config still references the resource. Previously, `air validate` wouldn't detect this, and
-`air link list` would show the resource as if it were valid. Now all commands properly detect and
-report broken or missing resources.
+### Use Cases
+
+**Scenario 1: Manually Removed Symlink**
+When a user manually removes a symlink, `air validate` detects it and `air validate --fix` recreates it.
+
+**Scenario 2: Cloning AIR Projects**
+Clone an AIR project from GitHub, run `air validate --fix`, and all symlinks are automatically restored
+(assuming the source repositories exist on the new machine).
+
+**Scenario 3: Broken Symlinks**
+When target directories are moved/removed, `air validate` detects broken symlinks. If the source paths
+are updated in config, `air validate --fix` removes broken symlinks and creates new ones.
 
 ## [0.4.2] - 2025-10-04
 

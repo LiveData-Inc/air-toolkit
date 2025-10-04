@@ -254,16 +254,6 @@ class TaskFile(BaseModel):
 }
 ```
 
-**`repos-to-link.txt`:**
-```
-# Format: type:name:path
-# type = review | collaborate
-
-review:service-a:~/repos/service-a
-review:service-b:~/repos/service-b
-collaborate:architecture:~/repos/arch-docs
-```
-
 ## 4. Key Design Decisions
 
 ### 4.1 CLI Framework: Click

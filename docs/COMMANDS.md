@@ -185,20 +185,26 @@ air link add --path PATH --name NAME --review|--develop [--type TYPE]
 **Examples:**
 
 ```bash
-# Interactive mode
+# Fully interactive mode
 air link add
 
+# Path with shell tab-complete (prompts for name, type, etc) ⭐ RECOMMENDED
+air link add ~/repos/mylib
+
 # Minimal - uses defaults (review mode, library type)
-air link add --path ~/repos/service-a --name service-a
+air link add ~/repos/service-a --name service-a
 
 # Explicit review resource with type
-air link add --path ~/repos/service-a --name service-a --review --type library
+air link add ~/repos/service-a --name service-a --review --type library
 
 # Develop resource
-air link add --path ~/repos/architecture --name arch --develop --type documentation
+air link add ~/repos/architecture --name arch --develop --type documentation
+```
 
-# With partial args (prompts for missing)
-air link add --path ~/repos/mylib
+**Usage:**
+
+```bash
+air link add [PATH] [OPTIONS]
 ```
 
 **Interactive Features:**
@@ -208,18 +214,6 @@ air link add --path ~/repos/mylib
 3. **Relationship Choice** - Review (read-only) or Develop (contribute)
 4. **Auto-Classification** - Optional auto-detect of resource type
 5. **Confirmation** - Review summary before creating link
-
-**Deprecated Format:**
-
-The `NAME:PATH` format is deprecated and will be removed in v0.5.0:
-
-```bash
-# ⚠️ Deprecated (shows warning)
-air link add service-a:~/repos/service-a --review
-
-# ✅ Use instead
-air link add --path ~/repos/service-a --name service-a --review
-```
 
 ##### air link list
 

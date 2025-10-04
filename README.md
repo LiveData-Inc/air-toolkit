@@ -28,7 +28,7 @@ pip install -e .
 
 ## Quick Start
 
-### Complete Workflow (v0.4.0)
+### Complete Workflow (v0.4.3)
 
 ```bash
 # 1. Initialize project
@@ -36,9 +36,12 @@ air init my-assessment --mode=mixed
 
 cd my-assessment
 
-# 2. Link repositories
-air link add service-a:~/repos/service-a --review
-air link add docs:~/repos/docs --develop --type=documentation
+# 2. Link repositories (PATH required, use shell tab completion!)
+air link add ~/repos/service-a --name service-a --review
+air link add ~/repos/docs --name docs --develop --type=documentation
+
+# Or just provide PATH and answer prompts interactively
+air link add ~/repos/service-a
 
 # List linked resources
 air link list
@@ -80,12 +83,13 @@ air summary
   - Automatic directory structure and template generation
 
 - **Repository Linking** (`air link`)
-  - Link resources with NAME:PATH format
+  - Interactive and non-interactive modes
   - Review-only (read-only) or developer modes
-  - Resource types: implementation, documentation, library, service
+  - Resource types: library, documentation, service
+  - Auto-classification with technology stack detection
   - Symlink-based (no copying)
   - All linked repos go in `repos/` directory
-  - List and manage linked resources
+  - List and manage linked resources with status indicators
 
 - **Task Tracking** (`air task new`)
   - Timestamped task files: YYYYMMDD-HHMM-description.md
@@ -148,6 +152,8 @@ air summary
 - [Architecture](docs/ARCHITECTURE.md) - System design and technical architecture
 - [Development Guide](docs/DEVELOPMENT.md) - Contributing and development workflow
 - [Commands Reference](docs/COMMANDS.md) - Complete command reference
+- [Code Review](docs/CODE-REVIEW.md) - AI-powered code review design (future)
+- [MCP Server](docs/MCP-SERVER.md) - Model Context Protocol integration (future)
 
 ## Project Structure
 
@@ -174,10 +180,11 @@ air init --mode=MODE                 # Initialize with specific mode
 air init --create-dir NAME           # Explicit directory creation
 
 # Repository Linking
-air link add NAME:PATH [OPTIONS]     # Link repository
-  --review                           # Link as review-only
-  --collaborate                      # Link as collaborative
-  --type TYPE                        # Resource type
+air link add PATH [OPTIONS]          # Link repository
+  --name NAME                        # Resource name (optional, defaults to folder name)
+  --review                           # Link as review-only (default)
+  --develop                          # Link as collaborative/developer
+  --type TYPE                        # Resource type (library/documentation/service)
 air link list [--format=json]        # List linked resources
 air link remove NAME [--keep-link]   # Remove resource
 

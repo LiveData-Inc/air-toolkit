@@ -196,10 +196,14 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
     if creating_new_dir:
         print(f"  cd {name}")
 
+    # Show usage pattern first
+    print("  air link add [PATH]                                      # Interactive (use shell tab-complete!)")
+
+    # Then show complete examples
     if mode in ["review", "mixed"]:
-        print("  air link --review service-a:~/repos/service-a")
+        print("  air link add ~/repos/service-a --name service-a --review --type library")
     if mode in ["develop", "mixed"]:
-        print("  air link --develop docs:~/repos/docs")
+        print("  air link add ~/repos/docs --name docs --develop --type documentation")
 
     print("  air validate")
     print("  air status")

@@ -77,7 +77,7 @@ def classify(
             print(json.dumps({"resources": [], "message": "No linked resources"}))
         else:
             console.print("[yellow]⚠[/yellow] No linked resources to classify")
-            console.print("[dim]💡 Hint: Run 'air link add NAME:PATH' to link resources[/dim]")
+            console.print("[dim]💡 Hint: Run 'air link add' to link resources[/dim]")
         sys.exit(0)
 
     # Filter by resource name if specified

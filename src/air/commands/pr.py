@@ -230,7 +230,7 @@ def _list_collaborative_resources(project_root: Path, config: AirConfig) -> None
 
     if not collab_resources:
         console.print("[yellow]⚠[/yellow] No collaborative resources found")
-        console.print("[dim]💡 Add with: air link add NAME:PATH --develop[/dim]")
+        console.print("[dim]💡 Add with: air link add --path PATH --name NAME --develop[/dim]")
         return
 
     console.print("[bold]Collaborative Resources:[/bold]\n")

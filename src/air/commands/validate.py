@@ -100,6 +100,7 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
             errors.append("Missing air-config.json")
 
     # Check links in repos/ and contributions/ directories
+    fixed = []
     if check_type in ["links", "all"]:
         # First, check that configured resources actually exist
         config_path = project_root / "air-config.json"
@@ -113,13 +114,52 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
                     for resource in config.get_all_resources():
                         # Check if symlink/directory exists in repos/
                         link_path = project_root / "repos" / resource.name
+                        source_path = Path(resource.path).expanduser()
+
                         if not link_path.exists():
-                            errors.append(
-                                f"Missing resource: repos/{resource.name} "
-                                f"(configured in air-config.json but not found)"
-                            )
+                            # Missing symlink - try to fix if --fix is enabled
+                            if fix:
+                                if source_path.exists():
+                                    # Source exists, recreate symlink
+                                    try:
+                                        from air.services.filesystem import create_symlink
+                                        create_symlink(source_path, link_path)
+                                        fixed.append(f"Recreated symlink: repos/{resource.name}")
+                                    except Exception as e:
+                                        errors.append(
+                                            f"Failed to recreate symlink repos/{resource.name}: {e}"
+                                        )
+                                else:
+                                    errors.append(
+                                        f"Cannot fix repos/{resource.name}: "
+                                        f"source path does not exist: {source_path}"
+                                    )
+                            else:
+                                errors.append(
+                                    f"Missing resource: repos/{resource.name} "
+                                    f"(configured in air-config.json but not found)"
+                                )
                         elif link_path.is_symlink() and not is_symlink_valid(link_path):
-                            errors.append(f"Broken symlink: repos/{resource.name}")
+                            # Broken symlink - try to fix if --fix is enabled
+                            if fix:
+                                if source_path.exists():
+                                    # Remove broken symlink and recreate
+                                    try:
+                                        from air.services.filesystem import create_symlink
+                                        link_path.unlink()
+                                        create_symlink(source_path, link_path)
+                                        fixed.append(f"Fixed broken symlink: repos/{resource.name}")
+                                    except Exception as e:
+                                        errors.append(
+                                            f"Failed to fix broken symlink repos/{resource.name}: {e}"
+                                        )
+                                else:
+                                    errors.append(
+                                        f"Cannot fix repos/{resource.name}: "
+                                        f"source path does not exist: {source_path}"
+                                    )
+                            else:
+                                errors.append(f"Broken symlink: repos/{resource.name}")
             except Exception as e:
                 errors.append(f"Failed to validate resources from config: {e}")
 
@@ -146,12 +186,21 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
             "success": len(errors) == 0,
             "errors": errors,
             "warnings": warnings,
+            "fixed": fixed if fix else [],
             "project_root": str(project_root),
         }
         print(json.dumps(result, indent=2))
         sys.exit(0 if len(errors) == 0 else 3)
     else:
         # Human-readable output
+        if fixed:
+            table = Table(title="Fixed Issues", style="green")
+            table.add_column("Action", style="green")
+            for fix_msg in fixed:
+                table.add_row(fix_msg)
+            console.print(table)
+            console.print()
+
         if errors:
             table = Table(title="Validation Errors", style="red")
             table.add_column("Issue", style="red")
@@ -166,8 +215,12 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
                 table.add_row(wrn)
             console.print(table)
 
-        if not errors and not warnings:
+        if not errors and not warnings and not fixed:
             success("Project structure is valid")
+            sys.exit(0)
+        elif not errors and fixed:
+            print()
+            success(f"Fixed {len(fixed)} issue(s)")
             sys.exit(0)
         elif errors:
             print()

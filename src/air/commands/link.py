@@ -5,46 +5,13 @@ from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.table import Table
 
 from air.core.models import AirConfig, Resource, ResourceRelationship, ResourceType
 from air.services.filesystem import create_symlink, get_project_root
 from air.utils.console import error, info, success, warn
+from air.utils.tables import render_resource_table
 
 console = Console()
-
-
-def parse_name_path(name_path: str) -> tuple[str, str]:
-    """Parse NAME:PATH format.
-
-    Args:
-        name_path: String in format "name:path"
-
-    Returns:
-        Tuple of (name, path)
-
-    Raises:
-        SystemExit: If format is invalid
-    """
-    if ":" not in name_path:
-        error(
-            f"Invalid format: {name_path}",
-            hint="Use NAME:PATH format, e.g., service-a:~/repos/service-a",
-            exit_code=1,
-        )
-
-    parts = name_path.split(":", 1)
-    name = parts[0].strip()
-    path = parts[1].strip()
-
-    if not name or not path:
-        error(
-            f"Invalid format: {name_path}",
-            hint="Both name and path must be non-empty",
-            exit_code=1,
-        )
-
-    return name, path
 
 
 def load_config(project_root: Path) -> AirConfig:
@@ -177,7 +144,7 @@ def _interactive_link_add(
                 exit_code=1,
             )
 
-    # Step 3: Relationship prompt
+    # Step 2: Relationship prompt
     if not is_review and not is_develop:
         console.print()
         console.print("[cyan]Relationship:[/cyan]")
@@ -200,7 +167,7 @@ def _interactive_link_add(
         else ResourceRelationship.DEVELOPER
     )
 
-    # Step 4: Auto-classify (opt-out, default: YES)
+    # Step 3: Auto-classify (opt-out, default: YES)
     tech_stack = None
     if not resource_type:
         console.print()
@@ -246,7 +213,7 @@ def _interactive_link_add(
                 default="library"  # Changed default from "implementation"
             )
 
-    # Step 5: Confirmation
+    # Step 4: Confirmation
     console.print()
     tech_display = f" ({tech_stack})" if tech_stack else ""
     console.print(Panel.fit(
@@ -305,8 +272,7 @@ def link() -> None:
 
 
 @link.command("add")
-@click.argument("name_path", required=False)
-@click.option("--path", help="Path to repository")
+@click.argument("path", required=True, type=click.Path(exists=False))
 @click.option("--name", help="Resource name (alias)")
 @click.option(
     "--review",
@@ -327,8 +293,7 @@ def link() -> None:
     help="Resource type",
 )
 def link_add(
-    name_path: str | None,
-    path: str | None,
+    path: str,
     name: str | None,
     is_review: bool,
     is_develop: bool,
@@ -336,16 +301,13 @@ def link_add(
 ) -> None:
     """Add a linked resource.
 
-    Interactive by default with auto-classification. Provide all options for non-interactive use.
+    PATH is required and supports shell tab completion. Other options prompt interactively.
 
     \b
     Examples:
-      air link add                                    # Interactive mode with auto-classify
-      air link add --path ~/repos/service-a --review  # Semi-interactive
-      air link add --path ~/repos/service-a --name service-a --review --type library  # Non-interactive
-
-      # Deprecated (still works, will be removed in v0.5.0):
-      air link add service-a:~/repos/service-a --review
+      air link add ~/repos/service-a                                          # Prompts for name/type
+      air link add ~/repos/service-a --name service-a                         # Prompts for type
+      air link add ~/repos/service-a --name service-a --review --type library # Fully non-interactive
     """
     # Validate project
     project_root = get_project_root()
@@ -359,25 +321,13 @@ def link_add(
     # Load configuration early for validation
     config = load_config(project_root)
 
-    # Handle deprecated NAME:PATH format
-    if name_path and ":" in name_path:
-        warn("⚠️  NAME:PATH format is deprecated and will be removed in v0.5.0")
-        warn("   Use: air link add --path PATH --name NAME")
-        parsed_name, parsed_path = parse_name_path(name_path)
-        # Override with parsed values if not provided via options
-        if not path:
-            path = parsed_path
-        if not name:
-            name = parsed_name
-
     # Default to review mode if neither flag specified
     if not is_review and not is_develop:
         is_review = True
 
-    # Detect if we need interactive mode
-    # We need interactive if missing path OR name
-    # Note: relationship defaults to review, resource_type defaults to "library"
-    needs_interactive = not all([path, name])
+    # Detect if we need interactive mode (only if missing name)
+    # PATH is always required, so we only prompt for name/type/relationship
+    needs_interactive = not name
 
     if needs_interactive:
         # Enter interactive mode
@@ -385,11 +335,20 @@ def link_add(
             project_root, config, path, name, is_review, is_develop, resource_type
         )
 
-    # Non-interactive mode: validate all required args
-    if not path:
-        error("--path is required in non-interactive mode", exit_code=1)
-    if not name:
-        error("--name is required in non-interactive mode", exit_code=1)
+    # Non-interactive mode: validate inputs
+    source_path = Path(path).expanduser().resolve()
+    if not source_path.exists():
+        error(
+            f"Path does not exist: {path}",
+            hint="Provide a valid directory path",
+            exit_code=1,
+        )
+    if not source_path.is_dir():
+        error(
+            f"Path is not a directory: {path}",
+            hint="Resource must be a directory",
+            exit_code=1,
+        )
 
     # Determine mode
     if is_review and is_develop:
@@ -531,52 +490,24 @@ def link_list(output_format: str) -> None:
         return
 
     if review_resources:
-        console.print("\n[bold]Review Resources (Read-Only)[/bold]\n")
-        table = Table(show_header=True)
-        table.add_column("Status", width=8)
-        table.add_column("Name")
-        table.add_column("Type")
-        table.add_column("Path")
-
-        for resource in review_resources:
-            # Check if resource path exists
-            resource_path = Path(resource.path)
-            link_path = project_root / "repos" / resource.name
-
-            if link_path.exists() and resource_path.exists():
-                status = "[green]✓ valid[/green]"
-            elif link_path.exists() and not resource_path.exists():
-                status = "[red]✗ broken[/red]"
-            else:
-                status = "[yellow]⚠ missing[/yellow]"
-
-            table.add_row(status, resource.name, resource.type, resource.path)
-
-        console.print(table)
+        console.print()
+        render_resource_table(
+            review_resources,
+            project_root,
+            title="Review Resources (Read-Only)",
+            title_style="cyan",
+            name_style="cyan",
+        )
 
     if collab_resources:
-        console.print("\n[bold]Collaborative Resources[/bold]\n")
-        table = Table(show_header=True)
-        table.add_column("Status", width=8)
-        table.add_column("Name")
-        table.add_column("Type")
-        table.add_column("Path")
-
-        for resource in collab_resources:
-            # Check if resource path exists
-            resource_path = Path(resource.path)
-            link_path = project_root / "repos" / resource.name
-
-            if link_path.exists() and resource_path.exists():
-                status = "[green]✓ valid[/green]"
-            elif link_path.exists() and not resource_path.exists():
-                status = "[red]✗ broken[/red]"
-            else:
-                status = "[yellow]⚠ missing[/yellow]"
-
-            table.add_row(status, resource.name, resource.type, resource.path)
-
-        console.print(table)
+        console.print()
+        render_resource_table(
+            collab_resources,
+            project_root,
+            title="Collaborative Resources",
+            title_style="green",
+            name_style="green",
+        )
 
     total = len(review_resources) + len(collab_resources)
     console.print(f"\n[dim]Total: {total} resources[/dim]")

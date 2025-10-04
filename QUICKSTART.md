@@ -67,9 +67,9 @@ my-review/
 
 ### Repository Linking
 ```bash
-air link add NAME:PATH [OPTIONS]        # Link repository
-air link add service:~/repos/service --review
-air link add docs:~/docs --collaborate --type=documentation
+air link add PATH [OPTIONS]             # Link repository
+air link add ~/repos/service --name service --review
+air link add ~/docs --name docs --develop --type=documentation
 air link list                           # List resources
 air link remove NAME                    # Remove resource
 ```
@@ -300,7 +300,7 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | Command | Description |
 |---------|-------------|
 | `air init [NAME]` | Create or initialize project |
-| `air link add NAME:PATH` | Link repository |
+| `air link add PATH` | Link repository |
 | `air link list` | List linked resources |
 | `air task new DESC` | Create task file |
 | `air task status <id>` | View task details |

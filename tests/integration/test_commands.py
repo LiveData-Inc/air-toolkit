@@ -296,7 +296,6 @@ class TestValidateCommand:
             [
                 "link",
                 "add",
-                "--path",
                 str(resource_dir),
                 "--name",
                 "test-resource",
@@ -337,7 +336,6 @@ class TestValidateCommand:
             [
                 "link",
                 "add",
-                "--path",
                 str(resource_dir),
                 "--name",
                 "test-resource",
@@ -354,6 +352,90 @@ class TestValidateCommand:
 
         assert result.exit_code == 3
         assert "Broken symlink: repos/test-resource" in result.output
+
+    def test_validate_fix_recreates_missing_symlink(self, runner, isolated_project):
+        """Test air validate --fix recreates missing symlinks."""
+        import os
+        import shutil
+
+        # Create project
+        runner.invoke(main, ["init", "fix-test-proj"])
+        project_dir = isolated_project / "fix-test-proj"
+
+        # Create a temp resource to link
+        resource_dir = isolated_project / "temp-resource"
+        resource_dir.mkdir()
+        (resource_dir / "README.md").write_text("# Test Resource")
+
+        os.chdir(project_dir)
+
+        # Add resource link
+        runner.invoke(
+            main,
+            [
+                "link",
+                "add",
+                str(resource_dir),
+                "--name",
+                "test-resource",
+                "--review",
+                "--type=library",
+            ],
+        )
+
+        # Remove the symlink
+        symlink_path = project_dir / "repos" / "test-resource"
+        symlink_path.unlink()
+
+        # Validate --fix should recreate the symlink
+        result = runner.invoke(main, ["validate", "--fix"])
+
+        assert result.exit_code == 0
+        assert "Fixed" in result.output or "Recreated symlink: repos/test-resource" in result.output
+        assert symlink_path.exists()
+        assert symlink_path.is_symlink()
+
+    def test_validate_fix_handles_missing_source(self, runner, isolated_project):
+        """Test air validate --fix reports error when source path doesn't exist."""
+        import os
+        import shutil
+
+        # Create project
+        runner.invoke(main, ["init", "fix-nosource-proj"])
+        project_dir = isolated_project / "fix-nosource-proj"
+
+        # Create a temp resource to link
+        resource_dir = isolated_project / "temp-resource"
+        resource_dir.mkdir()
+        (resource_dir / "README.md").write_text("# Test Resource")
+
+        os.chdir(project_dir)
+
+        # Add resource link
+        runner.invoke(
+            main,
+            [
+                "link",
+                "add",
+                str(resource_dir),
+                "--name",
+                "test-resource",
+                "--review",
+                "--type=library",
+            ],
+        )
+
+        # Remove BOTH the symlink and the source
+        symlink_path = project_dir / "repos" / "test-resource"
+        symlink_path.unlink()
+        shutil.rmtree(resource_dir)
+
+        # Validate --fix should report it can't fix
+        result = runner.invoke(main, ["validate", "--fix"])
+
+        assert result.exit_code == 3
+        assert "Cannot fix repos/test-resource" in result.output
+        assert "source path does not exist" in result.output
 
 
 class TestStatusCommand:
@@ -878,7 +960,7 @@ class TestLinkCommand:
         # Add resource using new flag format
         result = runner.invoke(
             main,
-            ["link", "add", "--path", str(source_dir), "--name", "service-a", "--review", "--type=library"]
+            ["link", "add", str(source_dir), "--name", "service-a", "--review", "--type=library"]
         )
 
         assert result.exit_code == 0
@@ -917,7 +999,7 @@ class TestLinkCommand:
         # Add resource using new flag format
         result = runner.invoke(
             main,
-            ["link", "add", "--path", str(source_dir), "--name", "docs", "--develop", "--type=documentation"]
+            ["link", "add", str(source_dir), "--name", "docs", "--develop", "--type=documentation"]
         )
 
         assert result.exit_code == 0
@@ -938,24 +1020,6 @@ class TestLinkCommand:
         assert config["resources"]["develop"][0]["type"] == "documentation"
         assert config["resources"]["develop"][0]["relationship"] == "developer"
 
-    def test_link_add_deprecated_name_path_format(self, runner, isolated_project):
-        """Test that NAME:PATH format shows deprecation warning."""
-        runner.invoke(main, ["init", "deprecated-project", "--mode=mixed"])
-        project_dir = isolated_project / "deprecated-project"
-
-        source_dir = isolated_project / "lib"
-        source_dir.mkdir()
-
-        import os
-        os.chdir(project_dir)
-
-        # Use deprecated NAME:PATH format with explicit flags for non-interactive
-        result = runner.invoke(main, ["link", "add", f"lib:{source_dir}", "--review", "--type=library"])
-
-        assert result.exit_code == 0
-        assert "NAME:PATH format is deprecated" in result.output
-        assert "Linked review resource: lib" in result.output
-
     def test_link_add_with_type_flag(self, runner, isolated_project):
         """Test adding resource with explicit type flag."""
         runner.invoke(main, ["init", "type-project"])
@@ -969,7 +1033,7 @@ class TestLinkCommand:
 
         result = runner.invoke(
             main,
-            ["link", "add", "--path", str(source_dir), "--name", "service-lib", "--review", "--type=library"]
+            ["link", "add", str(source_dir), "--name", "service-lib", "--review", "--type=library"]
         )
 
         assert result.exit_code == 0
@@ -992,7 +1056,7 @@ class TestLinkCommand:
 
         result = runner.invoke(
             main,
-            ["link", "add", "--path", "/nonexistent/path", "--name", "missing", "--review", "--type=library"]
+            ["link", "add", "/nonexistent/path", "--name", "missing", "--review", "--type=library"]
         )
 
         assert result.exit_code == 1
@@ -1012,10 +1076,10 @@ class TestLinkCommand:
         os.chdir(project_dir)
 
         # Add first resource
-        runner.invoke(main, ["link", "add", "--path", str(source1), "--name", "repo", "--review", "--type=library"])
+        runner.invoke(main, ["link", "add", str(source1), "--name", "repo", "--review", "--type=library"])
 
         # Try to add with same name
-        result = runner.invoke(main, ["link", "add", "--path", str(source2), "--name", "repo", "--review", "--type=library"])
+        result = runner.invoke(main, ["link", "add", str(source2), "--name", "repo", "--review", "--type=library"])
 
         assert result.exit_code == 1
         assert "already linked" in result.output
@@ -1034,7 +1098,7 @@ class TestLinkCommand:
         # No --review or --develop specified, should default to review
         result = runner.invoke(
             main,
-            ["link", "add", "--path", str(source_dir), "--name", "lib", "--type=library"]
+            ["link", "add", str(source_dir), "--name", "lib", "--type=library"]
         )
 
         assert result.exit_code == 0
@@ -1111,7 +1175,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--review"])
+        runner.invoke(main, ["link", "add", str(source), "--name", "docs", "--review"])
 
         result = runner.invoke(main, ["pr", "docs"])
 
@@ -1130,7 +1194,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
+        runner.invoke(main, ["link", "add", str(source), "--name", "docs", "--develop"])
 
         result = runner.invoke(main, ["pr", "docs"])
 
@@ -1150,7 +1214,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
+        runner.invoke(main, ["link", "add", str(source), "--name", "docs", "--develop"])
 
         result = runner.invoke(main, ["pr", "docs"])
 
@@ -1170,7 +1234,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
+        runner.invoke(main, ["link", "add", str(source), "--name", "docs", "--develop"])
 
         # Create contributions
         contrib_dir = project_dir / "contributions" / "docs"
@@ -1201,8 +1265,8 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source1}", "--develop"])
-        runner.invoke(main, ["link", "add", f"api:{source2}", "--develop"])
+        runner.invoke(main, ["link", "add", str(source1), "--name", "docs", "--develop"])
+        runner.invoke(main, ["link", "add", str(source2), "--name", "api", "--develop"])
 
         # Create contributions for one resource
         contrib_dir = project_dir / "contributions" / "docs"
@@ -1230,8 +1294,8 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"review-repo:{review_src}", "--review"])
-        runner.invoke(main, ["link", "add", f"collab-repo:{collab_src}", "--develop"])
+        runner.invoke(main, ["link", "add", str(review_src), "--name", "review-repo", "--review"])
+        runner.invoke(main, ["link", "add", str(collab_src), "--name", "collab-repo", "--develop"])
 
         result = runner.invoke(main, ["link", "list"])
 
@@ -1253,7 +1317,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"api:{source_dir}", "--review", "--type=service"])
+        runner.invoke(main, ["link", "add", str(source_dir), "--name", "api", "--review", "--type=service"])
 
         result = runner.invoke(main, ["link", "list", "--format=json"])
 
@@ -1278,7 +1342,7 @@ class TestPRCommand:
         os.chdir(project_dir)
 
         # Add resource
-        runner.invoke(main, ["link", "add", f"to-remove:{source_dir}", "--review"])
+        runner.invoke(main, ["link", "add", str(source_dir), "--name", "to-remove", "--review"])
 
         link_path = project_dir / "repos/to-remove"
         assert link_path.exists()
@@ -1311,7 +1375,7 @@ class TestPRCommand:
         os.chdir(project_dir)
 
         # Add and remove with --keep-link
-        runner.invoke(main, ["link", "add", f"keep-link:{source_dir}", "--review"])
+        runner.invoke(main, ["link", "add", str(source_dir), "--name", "keep-link", "--review"])
         result = runner.invoke(main, ["link", "remove", "keep-link", "--keep-link"])
 
         assert result.exit_code == 0
@@ -2131,7 +2195,7 @@ class TestClassifyCommand:
         os.chdir(project_dir)
 
         # Link it
-        runner.invoke(main, ["link", "add", f"python-app:{python_proj}", "--review"])
+        runner.invoke(main, ["link", "add", str(python_proj), "--name", "python-app", "--review"])
 
         # Classify
         result = runner.invoke(main, ["classify"])
@@ -2157,7 +2221,7 @@ class TestClassifyCommand:
         os.chdir(project_dir)
 
         # Link it
-        runner.invoke(main, ["link", "add", f"docs-project:{docs_proj}", "--review"])
+        runner.invoke(main, ["link", "add", str(docs_proj), "--name", "docs-project", "--review"])
 
         # Classify with JSON output
         result = runner.invoke(main, ["classify", "--format=json"])
@@ -2190,7 +2254,7 @@ class TestClassifyCommand:
         os.chdir(project_dir)
 
         # Link it
-        runner.invoke(main, ["link", "add", f"my-service:{service_proj}", "--review"])
+        runner.invoke(main, ["link", "add", str(service_proj), "--name", "my-service", "--review"])
 
         # Classify with verbose
         result = runner.invoke(main, ["classify", "--verbose"])
@@ -2216,7 +2280,7 @@ class TestClassifyCommand:
         os.chdir(project_dir)
 
         # Link it with wrong type (implementation)
-        runner.invoke(main, ["link", "add", f"docs-update:{docs_proj}", "--review"])
+        runner.invoke(main, ["link", "add", str(docs_proj), "--name", "docs-update", "--review"])
 
         # Classify with update
         result = runner.invoke(main, ["classify", "--update"])
@@ -2253,8 +2317,8 @@ class TestClassifyCommand:
         os.chdir(project_dir)
 
         # Link both
-        runner.invoke(main, ["link", "add", f"proj-one:{proj1}", "--review"])
-        runner.invoke(main, ["link", "add", f"proj-two:{proj2}", "--review"])
+        runner.invoke(main, ["link", "add", str(proj1), "--name", "proj-one", "--review"])
+        runner.invoke(main, ["link", "add", str(proj2), "--name", "proj-two", "--review"])
 
         # Classify only proj-one
         result = runner.invoke(main, ["classify", "proj-one"])
@@ -2275,7 +2339,7 @@ class TestClassifyCommand:
         # First add a resource so we're not testing empty list
         dummy_proj = isolated_project / "dummy"
         dummy_proj.mkdir()
-        runner.invoke(main, ["link", "add", f"dummy:{dummy_proj}", "--review"])
+        runner.invoke(main, ["link", "add", str(dummy_proj), "--name", "dummy", "--review"])
 
         result = runner.invoke(main, ["classify", "nonexistent"])
 

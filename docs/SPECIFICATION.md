@@ -1,6 +1,6 @@
 # AIR Toolkit - Feature Specification
 
-**Version:** 0.4.2
+**Version:** 0.4.3
 **Status:** Active
 **Last Updated:** 2025-10-04
 
@@ -127,9 +127,12 @@ project-name/
 - Validate repository accessibility
 
 **Options:**
-- `--review NAME:PATH` - Add review resource (multiple allowed)
-- `--develop NAME:PATH` - Add collaborative resource (multiple allowed)
-- `--clone` - Clone instead of symlink (for collaborative)
+- `--path PATH` - Path to repository
+- `--name NAME` - Resource name (alias)
+- `--review` - Add review-only resource (read-only)
+- `--develop` - Add developer resource (with write access)
+- `--type TYPE` - Resource type: library, documentation, service
+- Interactive mode enabled when path or name not provided
 
 **Configuration File Format (`repos-to-link.txt`):**
 ```
