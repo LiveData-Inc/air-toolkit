@@ -9,6 +9,7 @@ from air.services.analyzers import (
     ArchitectureAnalyzer,
     CodeStructureAnalyzer,
     FindingSeverity,
+    PerformanceAnalyzer,
     QualityAnalyzer,
     SecurityAnalyzer,
 )
@@ -238,6 +239,40 @@ class TestFindingSeverity:
         assert FindingSeverity.INFO == "info"
 
 
+class TestPerformanceAnalyzer:
+    """Tests for PerformanceAnalyzer."""
+
+    def test_detect_nested_loops(self, temp_repo):
+        """Test detection of nested loops."""
+        # Create file with nested loop
+        (temp_repo / "slow.py").write_text(
+            """
+for i in items:
+    for j in other_items:
+        process(i, j)
+"""
+        )
+
+        analyzer = PerformanceAnalyzer(temp_repo)
+        result = analyzer.analyze()
+
+        # Should detect nested loop
+        nested_findings = [
+            f for f in result.findings
+            if "nested loop" in f.title.lower()
+        ]
+        assert len(nested_findings) > 0
+
+    def test_result_structure(self, temp_repo):
+        """Test that result has proper structure."""
+        analyzer = PerformanceAnalyzer(temp_repo)
+        result = analyzer.analyze()
+
+        assert result.analyzer_name == "performance"
+        assert isinstance(result.findings, list)
+        assert isinstance(result.summary, dict)
+
+
 class TestIntegration:
     """Integration tests for multiple analyzers."""
 
@@ -248,6 +283,7 @@ class TestIntegration:
             CodeStructureAnalyzer(temp_repo),
             QualityAnalyzer(temp_repo),
             ArchitectureAnalyzer(temp_repo),
+            PerformanceAnalyzer(temp_repo),
         ]
 
         all_findings = []

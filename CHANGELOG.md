@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-10-04
+
+### Added - Enhanced Analysis Depth (Continued)
+
+**Additional Analyzers and Security Patterns**
+
+#### New Analyzer
+
+- **PerformanceAnalyzer** - Detects performance anti-patterns
+  - N+1 query detection (Django ORM)
+  - Nested loops (O(n²) complexity)
+  - Inefficient string concatenation in loops
+  - List comprehension opportunities
+  - Missing pagination on queries
+  - React component memoization issues
+  - forEach+push → map opportunities
+
+#### Enhanced SecurityAnalyzer
+
+Added 5 new security pattern categories (total: 14 types):
+- Path traversal vulnerabilities
+- Command injection (os.popen, commands.getoutput)
+- XML External Entity (XXE) attacks
+- CSRF protection missing on POST endpoints
+- LDAP injection
+- Regular Expression DoS (ReDoS)
+- Cryptographically weak random (random vs secrets module)
+- Additional hardcoded secret patterns (Bearer tokens, SSH keys)
+
+#### Analysis Command Enhancement
+
+- `--focus=performance` - Performance-only analysis
+- Enhanced severity reporting
+- All 5 analyzers now integrated
+
+### Testing
+
+- **372 tests total** (was 370) - All passing ✅
+- Added 2 new PerformanceAnalyzer tests
+- Integration test updated for all 5 analyzers
+
+### Impact
+
+**Security coverage expanded:**
+- Was: 9 security pattern types
+- Now: 14 security pattern types  (+55%)
+
+**Performance analysis added:**
+- Detects 7 types of performance issues
+- Python and JavaScript/TypeScript/React coverage
+
+## [0.6.0] - 2025-10-04
+
 ### Added - Enhanced Analysis Depth
 
 **Deep Code Analysis** - Four specialized analyzers provide actionable insights

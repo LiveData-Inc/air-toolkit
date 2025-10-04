@@ -5,6 +5,7 @@ from .code_structure import CodeStructureAnalyzer
 from .security import SecurityAnalyzer
 from .architecture import ArchitectureAnalyzer
 from .quality import QualityAnalyzer
+from .performance import PerformanceAnalyzer
 
 __all__ = [
     "AnalyzerResult",
@@ -15,4 +16,5 @@ __all__ = [
     "SecurityAnalyzer",
     "ArchitectureAnalyzer",
     "QualityAnalyzer",
+    "PerformanceAnalyzer",
 ]

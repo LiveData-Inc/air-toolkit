@@ -11,6 +11,7 @@ from air.services.agent_manager import generate_agent_id, spawn_background_agent
 from air.services.analyzers import (
     ArchitectureAnalyzer,
     CodeStructureAnalyzer,
+    PerformanceAnalyzer,
     QualityAnalyzer,
     SecurityAnalyzer,
 )
@@ -97,6 +98,9 @@ def analyze(
 
         if focus == "security" or not focus:
             analyzers.append(SecurityAnalyzer(resource))
+
+        if focus == "performance" or not focus:
+            analyzers.append(PerformanceAnalyzer(resource))
 
         if focus == "architecture" or not focus:
             analyzers.append(ArchitectureAnalyzer(resource))

@@ -20,11 +20,56 @@ class SecurityAnalyzer(BaseAnalyzer):
             "patterns": [
                 r'(password|passwd|pwd|secret|api[_-]?key|token)\s*=\s*["\'][^"\']{8,}["\']',
                 r'(aws_access_key_id|aws_secret_access_key)\s*=\s*["\'][^"\']+["\']',
+                r'(bearer|authorization)\s*[:=]\s*["\'][^"\']{20,}["\']',
+                r'(private[_-]?key|ssh[_-]?key)\s*=\s*["\'][^"\']+["\']',
             ],
             "severity": FindingSeverity.CRITICAL,
             "title": "Possible hardcoded secret",
             "description": "Detected potential hardcoded secret or API key",
             "suggestion": "Use environment variables or secure secret management",
+        },
+        "path_traversal": {
+            "patterns": [
+                r'open\([^)]*\+\s*[^)]+\)',
+                r'\.\./',
+                r'os\.path\.join\([^)]*user',
+            ],
+            "severity": FindingSeverity.HIGH,
+            "title": "Potential path traversal",
+            "description": "User input in file path operations can lead to path traversal",
+            "suggestion": "Validate and sanitize file paths, use allowlist",
+        },
+        "command_injection": {
+            "patterns": [
+                r'os\.popen\(',
+                r'commands\.getoutput\(',
+                r'subprocess\.(Popen|call|run)\([^)]*shell\s*=\s*True',
+            ],
+            "severity": FindingSeverity.CRITICAL,
+            "title": "Command injection risk",
+            "description": "Executing shell commands with user input can lead to command injection",
+            "suggestion": "Use subprocess with shell=False and pass arguments as list",
+        },
+        "xxe_vulnerability": {
+            "patterns": [
+                r'xml\.etree\.ElementTree\.parse\(',
+                r'xml\.dom\.minidom\.parse',
+                r'lxml\.etree\.parse\([^)]*resolve_entities\s*=\s*True',
+            ],
+            "severity": FindingSeverity.HIGH,
+            "title": "XML External Entity (XXE) vulnerability",
+            "description": "Parsing untrusted XML without disabling external entities",
+            "suggestion": "Disable external entity processing in XML parsers",
+        },
+        "csrf_missing": {
+            "patterns": [
+                r'@app\.route\([^)]*methods\s*=\s*\[["\']POST',
+                r'@api\.route\([^)]*methods\s*=\s*\[["\']POST',
+            ],
+            "severity": FindingSeverity.MEDIUM,
+            "title": "Potential CSRF vulnerability",
+            "description": "POST endpoint may lack CSRF protection",
+            "suggestion": "Implement CSRF tokens for state-changing operations",
         },
         "sql_injection": {
             "patterns": [
@@ -90,6 +135,34 @@ class SecurityAnalyzer(BaseAnalyzer):
             "title": "Potential shell injection",
             "description": "Shell command execution with shell=True can be dangerous",
             "suggestion": "Use shell=False and pass commands as lists",
+        },
+        "ldap_injection": {
+            "patterns": [
+                r'ldap\.(search|bind)\([^)]*\+\s*[^)]+\)',
+            ],
+            "severity": FindingSeverity.HIGH,
+            "title": "Potential LDAP injection",
+            "description": "LDAP query with string concatenation can be exploited",
+            "suggestion": "Use parameterized LDAP queries",
+        },
+        "regex_dos": {
+            "patterns": [
+                r're\.compile\(["\'].*\(\.\*\)\+',
+                r're\.match\(["\'].*\(\.\*\)\+',
+            ],
+            "severity": FindingSeverity.MEDIUM,
+            "title": "Potential ReDoS vulnerability",
+            "description": "Complex regex pattern may cause catastrophic backtracking",
+            "suggestion": "Simplify regex patterns, add timeouts",
+        },
+        "unsafe_random": {
+            "patterns": [
+                r'random\.(random|randint|choice)',
+            ],
+            "severity": FindingSeverity.MEDIUM,
+            "title": "Cryptographically weak random",
+            "description": "Using random module for security-sensitive operations",
+            "suggestion": "Use secrets module for cryptographic randomness",
         },
     }
 
