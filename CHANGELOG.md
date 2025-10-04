@@ -5,6 +5,22 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-10-04
+
+### Fixed
+
+- **Critical packaging bug** - Templates not included in distribution
+  - `air init` was failing with "Templates directory not found" error when installed via pip/pipx
+  - Only directory structure created, no `air-config.json`, `README.md`, `CLAUDE.md`, or `.gitignore`
+  - Root cause: Missing `[tool.setuptools.package-data]` in `pyproject.toml`
+  - Fix: Added package-data configuration to include all template files
+  - All template files now properly packaged in wheel distribution
+  - Verified with fresh pipx installation
+
+### Technical Details
+
+The bug only appeared in packaged installations (pip/pipx), not in development mode (`pip install -e .`), which is why it wasn't caught during development. Template files need to be explicitly declared as package data in `pyproject.toml` for setuptools to include them in the distribution.
+
 ## [0.5.0] - 2025-10-04
 
 ### Added

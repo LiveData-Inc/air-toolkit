@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "air-toolkit"
-version = "0.5.0"
+version = "0.5.1"
 description = "AIR - AI Review & Development Toolkit for multi-project assessment and AI-assisted development tracking"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -51,6 +51,9 @@ Repository = "https://github.com/LiveData-Inc/air-toolkit"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+air = ["templates/**/*", "templates/**/**/*"]
 
 [tool.black]
 line-length = 100
