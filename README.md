@@ -28,7 +28,7 @@ pip install -e .
 
 ## Quick Start
 
-### Complete Workflow (v0.2.3)
+### Complete Workflow (v0.3.0)
 
 ```bash
 # 1. Initialize project
@@ -73,7 +73,7 @@ air summary
 
 ## Features
 
-### Core Workflow (v0.2.3) ✅
+### Core Workflow (v0.3.0) ✅
 - **Project Initialization** (`air init`)
   - Create new projects or initialize in existing directories
   - Support for review, collaborate, or mixed modes
@@ -115,6 +115,14 @@ air summary
 - **Task Completion** (`air task complete`) - Mark tasks as complete
 - **Task Archive System** - Archive, restore, and manage task history
 
+### Resource Classification (v0.3.0) ✅
+- **Auto-Classify Resources** (`air classify`) - Automatic resource type detection
+- Detects 11 programming languages (Python, JavaScript, Go, Rust, etc.)
+- Detects 10 major frameworks (Django, React, Rails, Spring, etc.)
+- Classifies as: implementation, documentation, library, or service
+- Confidence scoring and verbose output
+- Updates air-config.json automatically
+
 ### Package Distribution (v0.2.3) ✅
 - Available on PyPI for easy installation
 - Built wheel and source distributions
@@ -143,7 +151,7 @@ air-toolkit/
 
 ## Command Overview
 
-### Core Commands (v0.2.3)
+### Core Commands (v0.3.0)
 
 ```bash
 # Project Management
@@ -185,6 +193,13 @@ air summary [OPTIONS]                # Generate summary
   --output FILE                      # Save to file
   --since DATE                       # Filter by date
 
+# Resource Classification
+air classify [OPTIONS]               # Classify resources
+  --verbose                          # Show detection details
+  --update                           # Update air-config.json
+  --format json                      # JSON output
+air classify RESOURCE                # Classify specific resource
+
 # Validation & Status
 air validate [--format=json]         # Validate project
 air status [--format=json]           # Show project status
@@ -193,7 +208,6 @@ air status [--format=json]           # Show project status
 ### Coming Soon
 
 ```bash
-air classify                         # Auto-classify resources
 air pr [resource]                    # Create pull request
 ```
 

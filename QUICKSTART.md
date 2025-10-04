@@ -1,4 +1,4 @@
-# AIR Toolkit - Quick Start (v0.2.3)
+# AIR Toolkit - Quick Start (v0.3.0)
 
 Get started with AIR in 5 minutes - complete workflow now available!
 
@@ -63,7 +63,7 @@ my-review/
 └── scripts/             # Helper scripts
 ```
 
-## Quick Commands (v0.2.3)
+## Quick Commands (v0.3.0)
 
 ### Repository Linking
 ```bash
@@ -295,7 +295,7 @@ cat docs/COMMANDS.md
 https://github.com/LiveData-Inc/air-toolkit/issues
 ```
 
-## Quick Reference (v0.2.3)
+## Quick Reference (v0.3.0)
 
 | Command | Description |
 |---------|-------------|
@@ -311,6 +311,8 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | `air summary` | Generate summary |
 | `air validate` | Validate project structure |
 | `air status` | Show project status |
+| `air classify` | Auto-classify resources |
+| `air classify --update` | Classify and update config |
 | `air task archive --all` | Archive all tasks |
 | `air task restore <id>` | Restore archived task |
 

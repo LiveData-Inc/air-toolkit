@@ -984,7 +984,7 @@ air --version
 #### Output
 
 ```
-air version 0.2.3
+air version 0.3.0
 ```
 
 ---
