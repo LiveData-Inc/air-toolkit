@@ -157,6 +157,8 @@ air link remove NAME [--keep-link]   # Remove resource
 # Task Tracking
 air task new DESCRIPTION             # Create task file
   --prompt TEXT                      # Custom prompt
+air task complete ID                 # Mark task as complete
+  --notes TEXT                       # Add completion notes
 air task list [OPTIONS]              # List tasks
   --all                              # Include archived
   --archived                         # Only archived
@@ -183,7 +185,6 @@ air status [--format=json]           # Show project status
 ```bash
 air classify                         # Auto-classify resources
 air pr [resource]                    # Create pull request
-air task complete ID                 # Mark task complete
 ```
 
 ## License

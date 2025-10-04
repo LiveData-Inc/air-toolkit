@@ -188,21 +188,105 @@ def task_list(
 
 @task.command("complete")
 @click.argument("task_id")
-def task_complete(task_id: str) -> None:
+@click.option(
+    "--notes",
+    help="Optional completion notes to add",
+)
+def task_complete(task_id: str, notes: str | None) -> None:
     """Mark task as complete.
 
     \b
     Examples:
       air task complete 20251003-1200
+      air task complete 20251003-1200 --notes "Fixed authentication bug"
     """
-    console.print(f"[blue]ℹ[/blue] Marking task complete: {task_id}")
+    from air.utils.console import info
 
-    # TODO: Implement task completion
-    # - Find task file by ID prefix
-    # - Update outcome to ✅ Success
-    # - Optionally update timestamp
+    project_root = get_project_root()
+    if not project_root:
+        error(
+            "Not in an AIR project",
+            hint="Run 'air init' to create a project or 'cd' to project directory",
+            exit_code=1,
+        )
 
-    console.print("[green]✓[/green] Task marked as complete")
+    tasks_root = project_root / ".air/tasks"
+
+    # Find task file by ID prefix
+    if not task_id.endswith(".md"):
+        pattern = f"{task_id}-*.md"
+    else:
+        pattern = task_id
+
+    matching = list(tasks_root.glob(pattern))
+    if not matching:
+        error(
+            f"Task not found: {task_id}",
+            hint="Use 'air task list' to see available tasks",
+            exit_code=1,
+        )
+
+    if len(matching) > 1:
+        error(
+            f"Multiple tasks match '{task_id}'",
+            hint=f"Be more specific. Matches: {', '.join(t.name for t in matching)}",
+            exit_code=1,
+        )
+
+    task_file = matching[0]
+
+    # Read current content
+    content = task_file.read_text()
+
+    # Update outcome section
+    import re
+
+    # Find the outcome section and update it - match the line after ## Outcome
+    # Preserve whatever comes after the outcome line
+    outcome_pattern = r"(## Outcome\n)([^\n]+)(.*)"
+
+    if re.search(outcome_pattern, content, re.DOTALL):
+        # Replace existing outcome, keeping everything after it
+        new_content = re.sub(
+            outcome_pattern,
+            r"\1✅ Success\3",
+            content,
+            count=1,
+            flags=re.DOTALL
+        )
+    else:
+        # No outcome section found - shouldn't happen with templates but handle it
+        error(
+            "Task file is missing Outcome section",
+            hint="Check task file format",
+            exit_code=1,
+        )
+
+    # Optionally append notes to Notes section if provided
+    if notes:
+        # Pattern to match Notes section - handles empty section or section with content
+        notes_pattern = r"(## Notes\s*\n)(.*?)($)"
+        match = re.search(notes_pattern, new_content, re.DOTALL)
+
+        if match:
+            existing_notes = match.group(2).strip()
+            if existing_notes:
+                updated_notes = f"{existing_notes}\n\n**Completed:** {notes}\n"
+            else:
+                updated_notes = f"**Completed:** {notes}\n"
+
+            new_content = re.sub(
+                notes_pattern,
+                rf"\1{updated_notes}",
+                new_content,
+                count=1
+            )
+
+    # Write updated content
+    task_file.write_text(new_content)
+
+    info(f"Updated task file: .air/tasks/{task_file.name}")
+    success(f"Task marked as complete: {task_id}")
 
 
 @task.command("archive")

@@ -68,6 +68,8 @@ air link remove NAME                    # Remove resource
 ```bash
 air task new "DESCRIPTION"              # Create task
 air task new "fix bug" --prompt "Fix login issue"
+air task complete ID                    # Mark task complete
+air task complete ID --notes "All tests passing"
 air task list                           # List active tasks
 air task list --all                     # Include archived
 air task archive --all                  # Archive all tasks
@@ -286,6 +288,7 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | `air link add NAME:PATH` | Link repository |
 | `air link list` | List linked resources |
 | `air task new DESC` | Create task file |
+| `air task complete <id>` | Mark task as complete |
 | `air task list` | List active tasks |
 | `air summary` | Generate summary |
 | `air validate` | Validate project structure |

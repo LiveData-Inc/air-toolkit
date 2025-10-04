@@ -1256,12 +1256,12 @@ class TestSummaryCommand:
 
         runner.invoke(main, ["task", "new", "new task"])
 
-        # Get tomorrow's date
-        from datetime import datetime, timedelta
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        # Get a future date (tomorrow in UTC to avoid timezone issues near midnight)
+        from datetime import datetime, timedelta, timezone
+        future_date = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d")
 
-        # Filter to only show tasks since tomorrow (should be none)
-        result = runner.invoke(main, ["summary", "--since", tomorrow])
+        # Filter to only show tasks since future date (should be none)
+        result = runner.invoke(main, ["summary", "--since", future_date])
 
         assert result.exit_code == 0
         assert "No tasks found since" in result.output
@@ -1278,3 +1278,182 @@ class TestSummaryCommand:
 
         assert result.exit_code == 1
         assert "Invalid date format" in result.output
+
+
+class TestTaskCompleteCommand:
+    """Tests for air task complete command."""
+
+    def test_task_complete_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["task", "complete", "20251003-1200"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_task_complete_task_not_found(self, runner, isolated_project):
+        """Test error when task doesn't exist."""
+        runner.invoke(main, ["init", "complete-test"])
+        project_dir = isolated_project / "complete-test"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["task", "complete", "nonexistent"])
+
+        assert result.exit_code == 1
+        assert "Task not found" in result.output
+
+    def test_task_complete_basic(self, runner, isolated_project):
+        """Test marking a task as complete."""
+        runner.invoke(main, ["init", "complete-basic"])
+        project_dir = isolated_project / "complete-basic"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        result = runner.invoke(main, ["task", "new", "test task"])
+        assert result.exit_code == 0
+
+        # Find the task file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-test-task.md"))
+        assert len(task_files) == 1
+        task_file = task_files[0]
+
+        # Verify initial state (⏳ In Progress)
+        content = task_file.read_text()
+        assert "⏳ In Progress" in content
+
+        # Get task ID from filename
+        task_id = task_file.stem.split("-test-task")[0]
+
+        # Complete the task
+        result = runner.invoke(main, ["task", "complete", task_id])
+        assert result.exit_code == 0
+        assert "Task marked as complete" in result.output
+
+        # Verify outcome was updated
+        updated_content = task_file.read_text()
+        assert "✅ Success" in updated_content
+        assert "⏳ In Progress" not in updated_content
+
+    def test_task_complete_with_notes(self, runner, isolated_project):
+        """Test completing a task with notes."""
+        runner.invoke(main, ["init", "complete-notes"])
+        project_dir = isolated_project / "complete-notes"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "task with notes"])
+
+        # Find the task file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-task-with-notes.md"))
+        assert len(task_files) == 1
+        task_file = task_files[0]
+
+        task_id = task_file.stem.split("-task-with")[0]
+
+        # Complete with notes
+        result = runner.invoke(
+            main, ["task", "complete", task_id, "--notes", "All tests passing"]
+        )
+        assert result.exit_code == 0
+
+        # Verify notes were added
+        updated_content = task_file.read_text()
+        assert "✅ Success" in updated_content
+        assert "**Completed:** All tests passing" in updated_content
+
+    def test_task_complete_preserves_existing_notes(self, runner, isolated_project):
+        """Test that completing preserves existing notes."""
+        runner.invoke(main, ["init", "complete-preserve"])
+        project_dir = isolated_project / "complete-preserve"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "preserve test"])
+
+        # Find and modify task file to add existing notes
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-preserve-test.md"))
+        task_file = task_files[0]
+
+        content = task_file.read_text()
+        content = content.replace("## Notes\n", "## Notes\n\nOriginal notes here\n")
+        task_file.write_text(content)
+
+        task_id = task_file.stem.split("-preserve")[0]
+
+        # Complete with additional notes
+        runner.invoke(
+            main, ["task", "complete", task_id, "--notes", "Finished successfully"]
+        )
+
+        # Verify both old and new notes are present
+        updated_content = task_file.read_text()
+        assert "Original notes here" in updated_content
+        assert "**Completed:** Finished successfully" in updated_content
+
+    def test_task_complete_partial_id_match(self, runner, isolated_project):
+        """Test completing task with partial ID."""
+        runner.invoke(main, ["init", "complete-partial"])
+        project_dir = isolated_project / "complete-partial"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "partial match test"])
+
+        # Find the task file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-partial-match-test.md"))
+        task_file = task_files[0]
+
+        # Use only first few chars of timestamp
+        task_id = task_file.stem[:8]  # YYYYMMDD
+
+        # Complete with partial ID
+        result = runner.invoke(main, ["task", "complete", task_id])
+        assert result.exit_code == 0
+
+        # Verify it worked
+        updated_content = task_file.read_text()
+        assert "✅ Success" in updated_content
+
+    def test_task_complete_updates_blocked_task(self, runner, isolated_project):
+        """Test completing a blocked task."""
+        runner.invoke(main, ["init", "complete-blocked"])
+        project_dir = isolated_project / "complete-blocked"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "blocked task"])
+
+        # Find and modify to be blocked
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-blocked-task.md"))
+        task_file = task_files[0]
+
+        content = task_file.read_text()
+        content = content.replace("⏳ In Progress", "🚫 Blocked: dependency issue")
+        task_file.write_text(content)
+
+        task_id = task_file.stem.split("-blocked")[0]
+
+        # Complete it
+        result = runner.invoke(main, ["task", "complete", task_id])
+        assert result.exit_code == 0
+
+        # Verify it's now success, not blocked
+        updated_content = task_file.read_text()
+        assert "✅ Success" in updated_content
+        assert "🚫 Blocked" not in updated_content
