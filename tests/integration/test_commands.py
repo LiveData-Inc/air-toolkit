@@ -124,6 +124,91 @@ class TestInitCommand:
         assert "review" in config["resources"]
         assert "collaborate" in config["resources"]
 
+    def test_init_interactive_mode(self, runner, isolated_project):
+        """Test air init interactive mode."""
+        # Simulate interactive input:
+        # - Project name: interactive-test
+        # - Create directory: y
+        # - Mode: mixed
+        # - Tracking: y
+        # - Add goals: y
+        # - Goal 1: Test goal 1
+        # - Goal 2: Test goal 2
+        # - Goal 3: (empty, finish)
+        # - Confirm: y
+        input_data = "\n".join([
+            "interactive-test",  # project name
+            "y",                 # create directory
+            "",                  # mode (default: mixed)
+            "",                  # tracking (default: yes)
+            "y",                 # add goals
+            "Test goal 1",       # goal 1
+            "Test goal 2",       # goal 2
+            "",                  # empty to finish goals
+            "y",                 # confirm creation
+        ])
+
+        result = runner.invoke(main, ["init", "--interactive"], input=input_data)
+
+        assert result.exit_code == 0
+        assert "AIR Toolkit - Interactive Setup" in result.output
+        assert "Project created successfully" in result.output
+
+        # Check project was created
+        project_dir = isolated_project / "interactive-test"
+        assert project_dir.exists()
+        assert (project_dir / "air-config.json").exists()
+
+        # Check config contains goals
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert config["name"] == "interactive-test"
+        assert config["mode"] == "mixed"
+        assert "goals" in config
+        assert len(config["goals"]) == 2
+        assert "Test goal 1" in config["goals"]
+        assert "Test goal 2" in config["goals"]
+
+    def test_init_interactive_mode_cancelled(self, runner, isolated_project):
+        """Test air init interactive mode when user cancels."""
+        # Simulate cancelling at confirmation
+        input_data = "\n".join([
+            "cancelled-test",    # project name
+            "y",                 # create directory
+            "",                  # mode (default: mixed)
+            "",                  # tracking (default: yes)
+            "n",                 # no goals
+            "n",                 # cancel at confirmation
+        ])
+
+        result = runner.invoke(main, ["init", "--interactive"], input=input_data)
+
+        assert result.exit_code == 0
+        assert "Cancelled" in result.output
+
+        # Project should not be created
+        project_dir = isolated_project / "cancelled-test"
+        assert not project_dir.exists()
+
+    def test_init_interactive_mode_current_directory(self, runner, isolated_project):
+        """Test air init interactive mode in current directory."""
+        # Use default project name (current directory)
+        input_data = "\n".join([
+            "",                  # use default name (current dir)
+            "",                  # mode (default: mixed)
+            "",                  # tracking (default: yes)
+            "n",                 # no goals
+            "y",                 # confirm
+        ])
+
+        result = runner.invoke(main, ["init", "--interactive"], input=input_data)
+
+        assert result.exit_code == 0
+        assert "Using current directory" in result.output
+        assert (isolated_project / "air-config.json").exists()
+
 
 class TestValidateCommand:
     """Tests for air validate command."""
