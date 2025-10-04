@@ -5,6 +5,49 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-10-04
+
+### Added
+- **Enhanced Error Messages** - Helpful error messages with suggestions
+  - New error classes with context and hints
+  - Similar name suggestions using Levenshtein distance
+  - Documentation links for complex errors
+  - Rich formatted error display
+  - Error classes: ProjectNotFoundError, ConfigurationError, ResourceNotFoundError, PathError, GitError, GitHubCLIError, TaskError, ValidationError
+
+- **Progress Indicators** - Visual feedback for long operations
+  - Progress bars with elapsed time
+  - Progress tracking for multi-step workflows
+  - Spinner indicators for indeterminate operations
+  - Status messages with icons
+  - Applied to PR workflow (4-step process)
+
+- **Interactive Init Mode** - Guided project setup
+  - `air init --interactive` or `air init -i`
+  - Interactive prompts for all options
+  - Project name, mode, and goals
+  - Configuration preview before creation
+  - Support for adding project goals interactively
+
+### Infrastructure
+- New utilities module: `src/air/utils/errors.py`
+  - Centralized error handling with AirError base class
+  - Levenshtein distance algorithm for name suggestions
+  - Rich-formatted error display
+- New utilities module: `src/air/utils/progress.py`
+  - Progress indicators and status messages
+  - Context managers for progress tracking
+  - ProgressTracker class for multi-step operations
+
+### Changed
+- Updated `air pr` command to use enhanced error messages and progress tracking
+- Error messages now include actionable suggestions and hints
+- Long operations show progress feedback
+
+### Testing
+- **314 tests total** (was 278) - All passing ✅
+- Added 36 new tests for error handling and progress utilities
+
 ## [0.3.1] - 2025-10-04
 
 ### Added

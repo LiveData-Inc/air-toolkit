@@ -18,6 +18,14 @@ from air.services.pr_generator import (
     git_create_branch_and_commit,
     is_git_repository,
 )
+from air.utils.errors import (
+    GitHubCLIError,
+    ProjectNotFoundError,
+    ResourceError,
+    ResourceNotFoundError,
+    display_error,
+)
+from air.utils.progress import ProgressTracker, show_status
 
 console = Console()
 
@@ -72,10 +80,12 @@ def pr(
       air pr --dry-run               # See what would happen
     """
     # Get project root
-    project_root = get_project_root()
-    if project_root is None:
-        console.print("[red]✗[/red] Not in an AIR project")
-        console.print("[dim]💡 Hint: Run 'air init' to create a project[/dim]")
+    try:
+        project_root = get_project_root()
+        if project_root is None:
+            raise ProjectNotFoundError(Path.cwd())
+    except ProjectNotFoundError as e:
+        display_error(e)
         sys.exit(1)
 
     # Load config
@@ -95,19 +105,30 @@ def pr(
     # Find resource
     target_resource = config.find_resource(resource)
     if not target_resource:
-        console.print(f"[red]✗[/red] Resource '{resource}' not found")
+        all_resources = [r.name for r in config.get_all_resources()]
+        error = ResourceNotFoundError(resource, all_resources)
+        display_error(error)
         sys.exit(1)
 
     # Validate resource is collaborative
     if target_resource.relationship != ResourceRelationship.CONTRIBUTOR:
-        console.print(f"[red]✗[/red] Resource '{resource}' is not a collaborative resource")
-        console.print("[dim]💡 Hint: Use --collaborate when adding resource[/dim]")
+        error = ResourceError(
+            f"Resource '{resource}' is not a collaborative resource",
+            resource_name=resource,
+            suggestion="Use --collaborate flag when adding resource with 'air link add'",
+        )
+        display_error(error)
         sys.exit(1)
 
     # Check resource is a git repository
     resource_path = Path(target_resource.path)
     if not is_git_repository(resource_path):
-        console.print(f"[red]✗[/red] Resource '{resource}' is not a git repository")
+        error = ResourceError(
+            f"Resource '{resource}' is not a git repository",
+            resource_name=resource,
+            suggestion=f"Resource path must be a git repository: {resource_path}",
+        )
+        display_error(error)
         sys.exit(1)
 
     # Detect changes
@@ -121,8 +142,8 @@ def pr(
 
     # Check gh CLI is available
     if not dry_run and not check_gh_cli_available():
-        console.print("[red]✗[/red] GitHub CLI (gh) is not installed or not authenticated")
-        console.print("[dim]💡 Install: brew install gh && gh auth login[/dim]")
+        error = GitHubCLIError("GitHub CLI (gh) is not installed or not authenticated")
+        display_error(error)
         sys.exit(1)
 
     # Generate PR metadata
@@ -149,38 +170,44 @@ def pr(
             console.print(f"  ... and {len(changes.changed_files) - 10} more")
         sys.exit(0)
 
-    # Copy contributions
-    console.print("\n[blue]ℹ[/blue] Copying contributions...")
-    try:
-        copied_files = copy_contributions_to_resource(
-            changes.contribution_dir, resource_path, changes.changed_files
+    # Execute PR workflow with progress tracking
+    console.print()
+    with ProgressTracker("Creating pull request", total_steps=4) as progress:
+        # Step 1: Copy contributions
+        progress.step("Copying files to resource")
+        try:
+            copied_files = copy_contributions_to_resource(
+                changes.contribution_dir, resource_path, changes.changed_files
+            )
+        except Exception as e:
+            console.print(f"\n[red]✗[/red] Failed to copy files: {e}")
+            sys.exit(1)
+
+        # Step 2: Create branch
+        progress.step("Creating git branch")
+        success, error = git_create_branch_and_commit(
+            resource_path, pr_metadata.branch_name, pr_metadata.title, copied_files
         )
-        console.print(f"[green]✓[/green] Copied {len(copied_files)} files")
-    except Exception as e:
-        console.print(f"[red]✗[/red] Failed to copy files: {e}")
-        sys.exit(1)
+        if not success:
+            console.print(f"\n[red]✗[/red] Git operation failed: {error}")
+            sys.exit(1)
 
-    # Create branch and commit
-    console.print("[blue]ℹ[/blue] Creating branch and committing...")
-    success, error = git_create_branch_and_commit(
-        resource_path, pr_metadata.branch_name, pr_metadata.title, copied_files
-    )
-    if not success:
-        console.print(f"[red]✗[/red] Git operation failed: {error}")
-        sys.exit(1)
-    console.print(f"[green]✓[/green] Committed changes to {pr_metadata.branch_name}")
+        # Step 3: Push changes
+        progress.step("Pushing to remote")
+        # (push is part of git_create_branch_and_commit)
 
-    # Create PR
-    console.print("[blue]ℹ[/blue] Creating pull request...")
-    success, result = create_pr_with_gh(
-        resource_path, pr_metadata.branch_name, pr_metadata.title, pr_metadata.body, draft, base
-    )
+        # Step 4: Create PR
+        progress.step("Creating pull request")
+        success, result = create_pr_with_gh(
+            resource_path, pr_metadata.branch_name, pr_metadata.title, pr_metadata.body, draft, base
+        )
 
+    console.print()
     if success:
-        console.print(f"[green]✓[/green] Pull request created successfully!")
+        show_status("Pull request created successfully!", "success")
         console.print(f"\n[bold]{result}[/bold]")
     else:
-        console.print(f"[red]✗[/red] Failed to create PR: {result}")
+        show_status(f"Failed to create PR: {result}", "error")
         sys.exit(1)
 
 
