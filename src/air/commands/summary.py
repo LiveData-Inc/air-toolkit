@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 from rich.markdown import Markdown
 
-from air.core.models import AssessmentConfig
+from air.core.models import AirConfig
 from air.services.filesystem import get_project_root
 from air.services.summary_generator import (
     generate_json_summary,

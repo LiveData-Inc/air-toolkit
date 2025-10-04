@@ -7,7 +7,7 @@ from unittest.mock import mock_open, patch
 
 from air.commands.link import parse_name_path, load_config, save_config
 from air.core.models import (
-    AssessmentConfig,
+    AirConfig,
     ProjectMode,
     Resource,
     ResourceType,
@@ -80,7 +80,7 @@ class TestLoadConfig:
                         "clone": False,
                     }
                 ],
-                "collaborate": [],
+                "develop": [],
             },
             "goals": [],
             "created": "2025-10-03T14:00:00",
@@ -129,7 +129,7 @@ class TestSaveConfig:
 
     def test_save_config(self, tmp_path):
         """Test saving configuration."""
-        config = AssessmentConfig(
+        config = AirConfig(
             name="test-project",
             mode=ProjectMode.MIXED,
         )
@@ -157,7 +157,7 @@ class TestSaveConfig:
 
     def test_save_config_trailing_newline(self, tmp_path):
         """Test that saved config has trailing newline."""
-        config = AssessmentConfig(
+        config = AirConfig(
             name="test-project",
             mode=ProjectMode.MIXED,
         )
@@ -172,7 +172,7 @@ class TestSaveConfig:
 
     def test_save_config_permission_error(self, tmp_path):
         """Test error when cannot write config."""
-        config = AssessmentConfig(
+        config = AirConfig(
             name="test-project",
             mode=ProjectMode.MIXED,
         )

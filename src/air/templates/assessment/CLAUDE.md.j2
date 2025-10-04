@@ -11,18 +11,17 @@ This is an AIR assessment project for analyzing and comparing codebases.
 
 **Your Role:**
 {% if mode == "review" -%}
-- Review linked resources in `review/` (READ-ONLY)
-- Create analysis documents in `analysis/assessments/`
+- Review linked resources in `repos/` (READ-ONLY)
+- Create analysis documents in `analysis/reviews/`
 - Generate executive summary
-{% elif mode == "collaborate" -%}
-- Review linked resources in `collaborate/`
-- Identify improvement opportunities
-- Create contributions in `contributions/`
-- Help submit pull requests
+{% elif mode == "develop" -%}
+- Develop THIS project directly (with .air/ tracking)
+- Work on code in src/, tests/, docs/, etc.
+- All development happens in this project itself
 {% else -%}
-- Review resources in `review/` (READ-ONLY) and `collaborate/`
-- Create analysis for review resources
-- Propose improvements for collaborative resources
+- Review external resources in `repos/` (READ-ONLY)
+- Create analysis for reviewed resources
+- Develop this project with .air/ task tracking
 {% endif -%}
 
 ## CRITICAL: Task Tracking
@@ -65,35 +64,41 @@ Path(filename).write_text(content)
 {% if mode == "review" or mode == "mixed" -%}
 ### Review Resources (READ-ONLY)
 
-Located in `review/` - These are symlinks. NEVER attempt to modify.
+Located in `repos/` - These are symlinks. NEVER attempt to modify.
 
 **Your Tasks:**
 1. Analyze architecture and design patterns
 2. Identify strengths and weaknesses
-3. Create analysis documents in `analysis/assessments/`
-4. Compare implementations if multiple services
+3. Create analysis documents in `analysis/reviews/`
+4. Compare implementations if multiple repos
 
 **Analysis Format:**
-- One file per resource: `analysis/assessments/{resource-name}.md`
-- Comparison document: `analysis/assessments/comparison.md`
+- One file per resource: `analysis/reviews/{resource-name}.md`
+- Comparison document: `analysis/reviews/comparison.md`
 - Executive summary: `analysis/SUMMARY.md`
 
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-### Collaborative Resources
+{% if mode == "develop" or mode == "mixed" -%}
+### Development Resources
 
-Located in `collaborate/` - You can propose improvements.
+{% if mode == "develop" -%}
+This IS your project - work directly on it.
+{% else -%}
+External repos linked in `repos/` with DEVELOPER relationship.
+{% endif -%}
 
 **Your Tasks:**
-1. Review documentation and identify gaps
-2. Identify areas needing clarification
-3. Create improvements in `contributions/{resource-name}/`
-4. We'll submit via `air pr {resource-name}`
+1. Work on code in standard project structure (src/, tests/, docs/)
+2. Use .air/ for task tracking
+3. For external repos with DEVELOPER relationship, create PRs with prepared changes in `contributions/{resource-name}/`
+4. Submit via `air pr {resource-name}`
 
+{% if mode == "mixed" -%}
 **Contribution Format:**
 - Place in `contributions/{resource-name}/`
 - Include clear explanation in commit message
 - Reference original files being improved
+{% endif -%}
 
 {% endif -%}
 
@@ -154,29 +159,29 @@ timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
 
 ### 2. Review Resources
 {% if mode == "review" or mode == "mixed" -%}
-- Read code in `review/{resource}/`
+- Read code in `repos/{resource}/`
 - Document findings as you go
 - Create analysis documents
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-- Read documentation in `collaborate/{resource}/`
-- Note gaps and improvement opportunities
+{% if mode == "develop" or mode == "mixed" -%}
+- Work directly on this project's code
+- Track work in .air/tasks/
+- Follow standard development practices
 {% endif -%}
 
 ### 3. Create Analysis
 {% if mode == "review" or mode == "mixed" -%}
-- Write to `analysis/assessments/{resource}.md`
+- Write to `analysis/reviews/{resource}.md`
 - Include: architecture, patterns, strengths, weaknesses
 - Add comparison if multiple resources
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-- Write to `analysis/improvements/{resource}-gaps.md`
-- List specific improvement suggestions
+{% if mode == "develop" and mode != "mixed" -%}
+- This is a development project - focus on building, not analyzing
 {% endif -%}
 
-### 4. Create Contributions (if collaborative)
-{% if mode == "collaborate" or mode == "mixed" -%}
-- Create in `contributions/{resource}/`
+### 4. Create Contributions (if external DEVELOPER repos)
+{% if mode == "mixed" -%}
+- For external repos with DEVELOPER relationship, create in `contributions/{resource}/`
 - Match original file structure
 - Include clear documentation
 {% endif -%}
@@ -202,7 +207,7 @@ air task archive --all
 
 ## Important Rules
 
-1. **Never Modify Review Resources**: Resources in `review/` are READ-ONLY symlinks
+1. **Never Modify Review Resources**: Resources in `repos/` with REVIEW_ONLY relationship are READ-ONLY symlinks
 2. **Always Track Tasks**: Create task file before starting work
 3. **Use Structured Output**: Follow analysis formats above
 4. **Check Air Availability**: Use `which air` before trying air commands

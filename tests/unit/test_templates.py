@@ -46,7 +46,7 @@ def test_render_template_claude_md():
     """Test rendering CLAUDE.md template."""
     context = {
         "name": "test-project",
-        "mode": "collaborate",
+        "mode": "develop",
         "created": "2025-10-03",
         "goals": [],
     }
@@ -54,7 +54,7 @@ def test_render_template_claude_md():
     content = render_template("assessment/CLAUDE.md.j2", context)
 
     assert "test-project" in content
-    assert "collaborate" in content
+    assert "develop" in content
     assert "CRITICAL" in content
     assert "Task Tracking" in content
 
@@ -72,8 +72,8 @@ def test_render_template_gitignore():
 
     assert "Python" in content
     assert "__pycache__" in content
-    assert "review/*" in content
-    assert "collaborate/*" in content
+    assert "repos/*" in content
+    assert "contributions/*" in content
 
 
 def test_render_assessment_templates_review():
@@ -95,11 +95,11 @@ def test_render_assessment_templates_review():
     assert "Analyze architecture" in templates["README.md"]
 
 
-def test_render_assessment_templates_collaborate():
-    """Test rendering assessment templates for collaborate mode."""
+def test_render_assessment_templates_develop():
+    """Test rendering assessment templates for develop mode."""
     templates = render_assessment_templates(
-        project_name="collab-project",
-        mode="collaborate",
+        project_name="dev-project",
+        mode="develop",
         created=datetime(2025, 10, 3, 10, 0, 0),
     )
 
@@ -107,8 +107,8 @@ def test_render_assessment_templates_collaborate():
     assert "CLAUDE.md" in templates
     assert ".gitignore" in templates
 
-    # Check content is appropriate for collaborate mode
-    assert "collaborative" in templates["README.md"].lower()
+    # Check content is appropriate for develop mode
+    assert "development" in templates["README.md"].lower()
 
 
 def test_render_assessment_templates_mixed():
@@ -154,7 +154,7 @@ def test_create_config_file():
     assert config["created"] == "2025-10-03T10:30:00"
     assert config["goals"] == ["Goal 1"]
     assert "review" in config["resources"]
-    assert "collaborate" in config["resources"]
+    assert "develop" in config["resources"]
 
 
 def test_create_config_file_no_goals():

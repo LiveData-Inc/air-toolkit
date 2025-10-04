@@ -8,7 +8,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from air.core.models import AssessmentConfig
+from air.core.models import AirConfig
 from air.services.filesystem import get_project_root, is_symlink_valid, validate_project_structure
 from air.utils.console import error, info, success, warn
 
@@ -93,28 +93,28 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
                 with open(config_path) as f:
                     config_data = json.load(f)
                     # Validate against Pydantic model
-                    AssessmentConfig(**config_data)
+                    AirConfig(**config_data)
             except Exception as e:
                 errors.append(f"Invalid config: {e}")
         else:
             errors.append("Missing air-config.json")
 
-    # Check links
+    # Check links in repos/ and contributions/ directories
     if check_type in ["links", "all"]:
-        for resource_dir in ["review", "collaborate"]:
-            resource_path = project_root / resource_dir
+        for dir_name in ["repos", "contributions"]:
+            resource_path = project_root / dir_name
             if resource_path.exists():
                 for item in resource_path.iterdir():
                     if item.name == ".gitkeep":
                         continue
                     if item.is_symlink():
                         if not is_symlink_valid(item):
-                            errors.append(f"Broken symlink: {resource_dir}/{item.name}")
+                            errors.append(f"Broken symlink: {dir_name}/{item.name}")
                     elif item.is_dir():
                         # Check if it's a git repository
                         if not (item / ".git").exists():
                             warnings.append(
-                                f"Not a git repository: {resource_dir}/{item.name}"
+                                f"Not a git repository: {dir_name}/{item.name}"
                             )
 
     # Output results

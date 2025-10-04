@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime
 
 from air.core.models import (
-    AssessmentConfig,
+    AirConfig,
     ProjectMode,
     Resource,
     ResourceType,
@@ -13,8 +13,8 @@ from air.core.models import (
 
 
 def test_assessment_config_creation():
-    """Test creating AssessmentConfig."""
-    config = AssessmentConfig(
+    """Test creating AirConfig."""
+    config = AirConfig(
         name="test-project",
         mode=ProjectMode.MIXED,
     )
@@ -24,12 +24,12 @@ def test_assessment_config_creation():
     assert config.version == "2.0.0"
     assert isinstance(config.created, datetime)
     assert "review" in config.resources
-    assert "collaborate" in config.resources
+    assert "develop" in config.resources
 
 
 def test_add_resource():
     """Test adding resource to config."""
-    config = AssessmentConfig(
+    config = AirConfig(
         name="test-project",
         mode=ProjectMode.MIXED,
     )
@@ -49,7 +49,7 @@ def test_add_resource():
 
 def test_find_resource():
     """Test finding resource by name."""
-    config = AssessmentConfig(
+    config = AirConfig(
         name="test-project",
         mode=ProjectMode.MIXED,
     )
@@ -87,7 +87,7 @@ def test_resource_path_expansion():
 
 def test_get_all_resources():
     """Test getting all resources from config."""
-    config = AssessmentConfig(
+    config = AirConfig(
         name="test-project",
         mode=ProjectMode.MIXED,
     )
@@ -103,11 +103,11 @@ def test_get_all_resources():
         name="architecture",
         path="/path/to/architecture",
         type=ResourceType.DOCUMENTATION,
-        relationship=ResourceRelationship.CONTRIBUTOR,
+        relationship=ResourceRelationship.DEVELOPER,
     )
 
     config.add_resource(review_resource, "review")
-    config.add_resource(collab_resource, "collaborate")
+    config.add_resource(collab_resource, "develop")
 
     all_resources = config.get_all_resources()
     assert len(all_resources) == 2

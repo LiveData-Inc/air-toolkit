@@ -54,7 +54,7 @@ class TestInitCommand:
         assert (project_dir / ".air").exists()
         assert (project_dir / ".air/tasks").exists()
         assert (project_dir / ".air/context").exists()
-        assert (project_dir / "review").exists()
+        assert (project_dir / "repos").exists()
         assert (project_dir / "analysis").exists()
 
     def test_init_review_mode(self, runner, isolated_project):
@@ -64,20 +64,23 @@ class TestInitCommand:
         assert result.exit_code == 0
 
         project_dir = isolated_project / "review-proj"
-        assert (project_dir / "review").exists()
-        assert not (project_dir / "collaborate").exists()
+        assert (project_dir / "repos").exists()
+        assert not (project_dir / "develop").exists()
         assert not (project_dir / "contributions").exists()
 
-    def test_init_collaborate_mode(self, runner, isolated_project):
-        """Test air init with collaborate mode."""
-        result = runner.invoke(main, ["init", "collab-proj", "--mode=collaborate"])
+    def test_init_develop_mode(self, runner, isolated_project):
+        """Test air init with develop mode."""
+        result = runner.invoke(main, ["init", "dev-proj", "--mode=develop"])
 
         assert result.exit_code == 0
 
-        project_dir = isolated_project / "collab-proj"
-        assert (project_dir / "collaborate").exists()
-        assert (project_dir / "contributions").exists()
-        assert not (project_dir / "review").exists()
+        project_dir = isolated_project / "dev-proj"
+        # In develop mode, only .air/ is created - this IS your project
+        assert (project_dir / ".air").exists()
+        # No special resource directories in develop mode
+        assert not (project_dir / "repos").exists()
+        assert not (project_dir / "contributions").exists()
+        assert not (project_dir / "analysis").exists()
 
     def test_init_mixed_mode(self, runner, isolated_project):
         """Test air init with mixed mode (default)."""
@@ -86,9 +89,11 @@ class TestInitCommand:
         assert result.exit_code == 0
 
         project_dir = isolated_project / "mixed-proj"
-        assert (project_dir / "review").exists()
-        assert (project_dir / "collaborate").exists()
+        # Mixed mode: repos for external assessment, contributions for PRs
+        assert (project_dir / "repos").exists()
         assert (project_dir / "contributions").exists()
+        assert (project_dir / "analysis").exists()
+        assert (project_dir / ".air").exists()
 
     def test_init_current_directory(self, runner, isolated_project):
         """Test air init in current directory."""
@@ -109,7 +114,7 @@ class TestInitCommand:
 
     def test_init_config_content(self, runner, isolated_project):
         """Test air init creates valid config file."""
-        result = runner.invoke(main, ["init", "config-test", "--mode=collaborate"])
+        result = runner.invoke(main, ["init", "config-test", "--mode=develop"])
 
         assert result.exit_code == 0
 
@@ -119,10 +124,10 @@ class TestInitCommand:
 
         assert config["version"] == "2.0.0"
         assert config["name"] == "config-test"
-        assert config["mode"] == "collaborate"
+        assert config["mode"] == "develop"
         assert "resources" in config
         assert "review" in config["resources"]
-        assert "collaborate" in config["resources"]
+        assert "develop" in config["resources"]
 
     def test_init_interactive_mode(self, runner, isolated_project):
         """Test air init interactive mode."""
@@ -315,7 +320,7 @@ class TestStatusCommand:
 
     def test_status_shows_project_info(self, runner, isolated_project):
         """Test air status displays project information."""
-        runner.invoke(main, ["init", "info-proj", "--mode=collaborate"])
+        runner.invoke(main, ["init", "info-proj", "--mode=develop"])
 
         import os
         os.chdir(isolated_project / "info-proj")
@@ -324,7 +329,7 @@ class TestStatusCommand:
 
         assert result.exit_code == 0
         assert "info-proj" in result.output
-        assert "collaborate" in result.output
+        assert "develop" in result.output
 
 
 class TestWorkflow:
@@ -686,8 +691,8 @@ class TestInitInExistingProject:
 
         # Should be in current directory
         assert (isolated_project / "air-config.json").exists()
-        assert (isolated_project / "review").exists()
-        assert not (isolated_project / "collaborate").exists()
+        assert (isolated_project / "repos").exists()
+        assert not (isolated_project / "develop").exists()
 
     def test_init_in_existing_directory_with_files(self, runner, isolated_project):
         """Test initializing AIR in directory with existing files."""
@@ -799,7 +804,7 @@ class TestLinkCommand:
         assert "Linked review resource: service-a" in result.output
 
         # Verify symlink created
-        link_path = project_dir / "review/service-a"
+        link_path = project_dir / "repos/service-a"
         assert link_path.exists()
         assert link_path.is_symlink()
         assert link_path.resolve() == source_dir
@@ -815,10 +820,10 @@ class TestLinkCommand:
         assert config["resources"]["review"][0]["relationship"] == "review-only"
 
     def test_link_add_collaborate_resource(self, runner, isolated_project):
-        """Test adding a collaborative resource."""
+        """Test adding a development resource."""
         # Create AIR project
-        runner.invoke(main, ["init", "collab-project", "--mode=mixed"])
-        project_dir = isolated_project / "collab-project"
+        runner.invoke(main, ["init", "dev-project", "--mode=mixed"])
+        project_dir = isolated_project / "dev-project"
 
         # Create source directory
         source_dir = isolated_project / "docs"
@@ -831,14 +836,14 @@ class TestLinkCommand:
         # Add resource
         result = runner.invoke(
             main,
-            ["link", "add", f"docs:{source_dir}", "--collaborate", "--type=documentation"]
+            ["link", "add", f"docs:{source_dir}", "--develop", "--type=documentation"]
         )
 
         assert result.exit_code == 0
-        assert "Linked collaborate resource: docs" in result.output
+        assert "Linked develop resource: docs" in result.output
 
-        # Verify symlink
-        link_path = project_dir / "collaborate/docs"
+        # Verify symlink goes to repos/ (all linked repos go there)
+        link_path = project_dir / "repos/docs"
         assert link_path.exists()
         assert link_path.is_symlink()
 
@@ -847,10 +852,10 @@ class TestLinkCommand:
         with open(config_path) as f:
             config = json.load(f)
 
-        assert len(config["resources"]["collaborate"]) == 1
-        assert config["resources"]["collaborate"][0]["name"] == "docs"
-        assert config["resources"]["collaborate"][0]["type"] == "documentation"
-        assert config["resources"]["collaborate"][0]["relationship"] == "contributor"
+        assert len(config["resources"]["develop"]) == 1
+        assert config["resources"]["develop"][0]["name"] == "docs"
+        assert config["resources"]["develop"][0]["type"] == "documentation"
+        assert config["resources"]["develop"][0]["relationship"] == "developer"
 
     def test_link_add_default_review_mode(self, runner, isolated_project):
         """Test that default mode is review when no flag specified."""
@@ -1001,7 +1006,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
 
         result = runner.invoke(main, ["pr", "docs"])
 
@@ -1021,7 +1026,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
 
         result = runner.invoke(main, ["pr", "docs"])
 
@@ -1041,7 +1046,7 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"docs:{source}", "--develop"])
 
         # Create contributions
         contrib_dir = project_dir / "contributions" / "docs"
@@ -1072,8 +1077,8 @@ class TestPRCommand:
         import os
         os.chdir(project_dir)
 
-        runner.invoke(main, ["link", "add", f"docs:{source1}", "--collaborate"])
-        runner.invoke(main, ["link", "add", f"api:{source2}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"docs:{source1}", "--develop"])
+        runner.invoke(main, ["link", "add", f"api:{source2}", "--develop"])
 
         # Create contributions for one resource
         contrib_dir = project_dir / "contributions" / "docs"
@@ -1102,7 +1107,7 @@ class TestPRCommand:
         os.chdir(project_dir)
 
         runner.invoke(main, ["link", "add", f"review-repo:{review_src}", "--review"])
-        runner.invoke(main, ["link", "add", f"collab-repo:{collab_src}", "--collaborate"])
+        runner.invoke(main, ["link", "add", f"collab-repo:{collab_src}", "--develop"])
 
         result = runner.invoke(main, ["link", "list"])
 
@@ -1132,7 +1137,7 @@ class TestPRCommand:
 
         output_data = json.loads(result.output)
         assert "review" in output_data
-        assert "collaborate" in output_data
+        assert "develop" in output_data
         assert len(output_data["review"]) == 1
         assert output_data["review"][0]["name"] == "api"
         assert output_data["review"][0]["type"] == "service"
@@ -1151,7 +1156,7 @@ class TestPRCommand:
         # Add resource
         runner.invoke(main, ["link", "add", f"to-remove:{source_dir}", "--review"])
 
-        link_path = project_dir / "review/to-remove"
+        link_path = project_dir / "repos/to-remove"
         assert link_path.exists()
 
         # Remove resource
@@ -1189,7 +1194,7 @@ class TestPRCommand:
         assert "Keeping symlink" in result.output
 
         # Verify symlink still exists
-        link_path = project_dir / "review/keep-link"
+        link_path = project_dir / "repos/keep-link"
         assert link_path.exists()
 
         # But config updated

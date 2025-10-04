@@ -5,6 +5,86 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-04
+
+### Breaking Changes
+
+**Nomenclature & Architecture Refactoring** - Major clarity improvements with breaking changes:
+
+- **Mode Rename**: `collaborate` → `develop`
+  - More intuitive: you're developing/building, not "collaborating"
+  - Clearer distinction from review mode
+
+- **Relationship Rename**: `CONTRIBUTOR` → `DEVELOPER`
+  - Better reflects active development role
+  - Consistent with "develop" mode terminology
+
+- **Model Rename**: `AssessmentConfig` → `AirConfig`
+  - More generic, works for all modes (review/develop/mixed)
+  - "Assessment" only applies to review activities
+
+- **Directory Changes**:
+  - `review/` → `repos/` - All linked repositories now in `repos/`
+  - `analysis/assessments/` → `analysis/reviews/` - Perfect parallelism: review repos, write reviews
+  - Removed `develop/` directory concept (was confusing in develop mode)
+
+### Architecture Clarification
+
+**REVIEW Mode** - Assessment project structure:
+```
+project/
+├── repos/                 # Symlinks to external code (review-only)
+├── analysis/
+│   └── reviews/          # Your written reviews
+└── .air/                 # Task tracking
+```
+
+**DEVELOP Mode** - Regular development with tracking:
+```
+project/
+├── src/                  # Your code (standard structure)
+├── tests/                # Your tests
+├── docs/                 # Your docs
+└── .air/                 # Task tracking (only special directory)
+```
+
+**MIXED Mode** - Both assessment and development:
+```
+project/
+├── repos/                # External repos (review-only + developer)
+├── analysis/
+│   └── reviews/         # Reviews of external repos
+├── contributions/       # Prepared PRs for developer repos
+├── src/                 # Your code
+├── tests/               # Your tests
+└── .air/                # Task tracking
+```
+
+### Migration Guide
+
+**For existing projects:**
+
+1. **Update mode in air-config.json**: Change `"mode": "collaborate"` to `"mode": "develop"`
+2. **Update relationship**: Change `"relationship": "contributor"` to `"relationship": "developer"`
+3. **Rename directories**:
+   - `mv review/ repos/` (if exists)
+   - `mv analysis/assessments/ analysis/reviews/` (if exists)
+4. **Update resources in air-config.json**: Change `"collaborate": []` to `"develop": []`
+5. **Re-run**: `air validate` to verify new structure
+
+### Changed
+
+- All commands now use `--develop` instead of `--collaborate`
+- All linked repos (both REVIEW_ONLY and DEVELOPER) symlinked to `repos/`
+- Templates updated for new directory structure
+- Documentation updated throughout
+
+### Testing
+
+- **317 tests total** - All passing ✅
+- Updated 9 test files for new nomenclature
+- All integration tests updated for new structure
+
 ## [0.3.2] - 2025-10-04
 
 ### Added

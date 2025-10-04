@@ -11,7 +11,7 @@ class ProjectMode(StrEnum):
     """Assessment project mode."""
 
     REVIEW = "review"
-    COLLABORATE = "collaborate"
+    DEVELOP = "develop"
     MIXED = "mixed"
 
 
@@ -28,7 +28,7 @@ class ResourceRelationship(StrEnum):
     """Relationship to resource."""
 
     REVIEW_ONLY = "review-only"
-    CONTRIBUTOR = "contributor"
+    DEVELOPER = "developer"
 
 
 class ContributionStatus(StrEnum):
@@ -50,7 +50,7 @@ class TaskOutcome(StrEnum):
 
 
 class Contribution(BaseModel):
-    """Proposed contribution to collaborative resource."""
+    """Proposed contribution to development resource."""
 
     source: str  # Path in contributions/
     target: str  # Target path in resource
@@ -60,7 +60,7 @@ class Contribution(BaseModel):
 
 
 class Resource(BaseModel):
-    """Linked resource (review or collaborative)."""
+    """Linked resource (review or development)."""
 
     name: str
     path: str
@@ -79,7 +79,7 @@ class Resource(BaseModel):
         return str(Path(v).expanduser())
 
 
-class AssessmentConfig(BaseModel):
+class AirConfig(BaseModel):
     """Project configuration (air-config.json)."""
 
     version: str = "2.0.0"
@@ -87,7 +87,7 @@ class AssessmentConfig(BaseModel):
     mode: ProjectMode
     created: datetime = Field(default_factory=datetime.now)
     resources: dict[str, list[Resource]] = Field(
-        default_factory=lambda: {"review": [], "collaborate": []}
+        default_factory=lambda: {"review": [], "develop": []}
     )
     goals: list[str] = Field(default_factory=list)
 
@@ -96,7 +96,7 @@ class AssessmentConfig(BaseModel):
 
         Args:
             resource: Resource to add
-            resource_category: "review" or "collaborate"
+            resource_category: "review" or "develop"
         """
         if resource_category not in self.resources:
             self.resources[resource_category] = []
@@ -180,36 +180,30 @@ class ProjectStructure(BaseModel):
         Returns:
             ProjectStructure for that mode
         """
-        base_dirs = [".air", ".air/tasks", ".air/context", ".air/templates", "scripts", "analysis"]
-        base_files = ["README.md", "CLAUDE.md", "air-config.json", ".gitignore"]
-        optional_files = ["repos-to-link.txt"]
-
         if mode == ProjectMode.REVIEW:
+            # Assessment project: repos/ for symlinks, analysis/ for findings
             return cls(
                 mode=mode,
-                directories=base_dirs + ["review", "analysis/assessments"],
-                required_files=base_files,
-                optional_files=optional_files,
+                directories=[".air", ".air/tasks", ".air/context", ".air/templates",
+                           "repos", "analysis", "analysis/reviews"],
+                required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
+                optional_files=["repos-to-link.txt"],
             )
-        elif mode == ProjectMode.COLLABORATE:
+        elif mode == ProjectMode.DEVELOP:
+            # Development project: just add .air/ for task tracking
+            # No special directories - this is your actual project
             return cls(
                 mode=mode,
-                directories=base_dirs
-                + ["collaborate", "analysis/improvements", "contributions"],
-                required_files=base_files,
-                optional_files=optional_files,
+                directories=[".air", ".air/tasks", ".air/context", ".air/templates"],
+                required_files=["air-config.json"],
+                optional_files=[],
             )
         else:  # MIXED
+            # Developing this project AND assessing external repos
             return cls(
                 mode=mode,
-                directories=base_dirs
-                + [
-                    "review",
-                    "collaborate",
-                    "analysis/assessments",
-                    "analysis/improvements",
-                    "contributions",
-                ],
-                required_files=base_files,
-                optional_files=optional_files,
+                directories=[".air", ".air/tasks", ".air/context", ".air/templates",
+                           "repos", "analysis", "analysis/reviews", "contributions"],
+                required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
+                optional_files=["repos-to-link.txt"],
             )

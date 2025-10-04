@@ -36,28 +36,28 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 - Implementation projects owned by other teams
 - Read-only access (symlinks)
 - Output: Analysis documents ABOUT them
-- Location: `review/` directory
+- Location: `repos/` directory
 
 **Collaborative Resources**
 - Shared documentation with write access
 - Can be cloned or symlinked
 - Output: Contributions TO them
-- Location: `collaborate/` directory
+- Location: `repos/` directory
 
 ### 2.2 Project Modes
 
 **Review Mode** (`--mode=review`)
 - Single-purpose: assess other teams' work
-- Creates: `review/`, `analysis/assessments/`
+- Creates: `repos/`, `analysis/reviews/`
 - Workflow: Review → Analyze → Document → Share
 
-**Collaborative Mode** (`--mode=collaborate`)
+**Development Mode** (`--mode=develop`)
 - Single-purpose: improve shared documentation
-- Creates: `collaborate/`, `analysis/improvements/`, `contributions/`
+- Creates: `repos/`, `analysis/improvements/`, `contributions/`
 - Workflow: Review → Analyze → Contribute → PR
 
 **Mixed Mode** (`--mode=mixed`, default)
-- Both review and collaborative resources
+- Both review and developer resources
 - Complete directory structure
 - Supports both workflows
 
@@ -100,12 +100,12 @@ project-name/
 ├── README.md              # Project goals and overview
 ├── CLAUDE.md              # AI assistant instructions
 ├── air-config.json        # Project configuration
-├── review/                # Review-only resources
-├── collaborate/           # Collaborative resources
+├── repos/                # Review-only resources
+├── repos/           # Collaborative resources
 ├── analysis/              # Our analysis
 │   ├── SUMMARY.md
 │   ├── assessments/      # About review resources
-│   └── improvements/     # About collaborative resources
+│   └── improvements/     # About developer resources
 ├── contributions/         # Proposed improvements
 ├── .air/                  # Task tracking
 │   ├── README.md
@@ -128,7 +128,7 @@ project-name/
 
 **Options:**
 - `--review NAME:PATH` - Add review resource (multiple allowed)
-- `--collaborate NAME:PATH` - Add collaborative resource (multiple allowed)
+- `--develop NAME:PATH` - Add collaborative resource (multiple allowed)
 - `--clone` - Clone instead of symlink (for collaborative)
 
 **Configuration File Format (`repos-to-link.txt`):**
@@ -169,7 +169,7 @@ collaborate:architecture:~/repos/architecture-docs
 - Project mode and configuration
 - Linked resources (count by type)
 - Analysis documents created
-- Contribution status (for collaborative resources)
+- Contribution status (for developer resources)
 - Recent AI tasks
 
 **Options:**
@@ -381,11 +381,11 @@ AI Tasks (5 total)
         "type": "implementation",
         "relationship": "review-only",
         "outputs": [
-          "analysis/assessments/service-a-analysis.md"
+          "analysis/reviews/service-a-analysis.md"
         ]
       }
     ],
-    "collaborate": [
+    "develop": [
       {
         "name": "architecture",
         "path": "~/repos/architecture-docs",
@@ -456,7 +456,7 @@ air validate
 air status
 
 # 6. View results
-cat analysis/assessments/comparison.md
+cat analysis/reviews/comparison.md
 
 # 7. Share findings
 # Present to team, create tickets, etc.
@@ -466,11 +466,11 @@ cat analysis/assessments/comparison.md
 
 ```bash
 # 1. Create project
-air init doc-improvement --mode=collaborate
+air init doc-improvement --mode=develop
 
 # 2. Clone documentation
 cd doc-improvement
-air link --collaborate arch:~/repos/architecture --clone
+air link --develop arch:~/repos/architecture --clone
 
 # 3. AI review session
 # .init → AI reviews docs, identifies gaps
@@ -498,7 +498,7 @@ air init inbound-review
 cd inbound-review
 air link --review ehr-inbound:~/repos/ehr-inbound-data-flow
 air link --review change-lib:~/repos/change-command-lib
-air link --collaborate arch:~/repos/cloud-native-architecture --clone
+air link --develop arch:~/repos/cloud-native-architecture --clone
 
 # 3. Classify resources
 air classify --verbose
@@ -608,5 +608,5 @@ choco install air-toolkit # Windows
 ## 10. References
 
 - [AA-ingest-review Project](../AA-ingest-review) - Original inspiration
-- [Two Resource Types Pattern](../AA-ingest-review/docs/two-resource-types-pattern.md)
-- [Assessment Tool v2 Design](../AA-ingest-review/docs/assessment-tool-v2-design.md)
+- [Two Resource Types Pattern](../AA-ingest-repos/docs/two-resource-types-pattern.md)
+- [Assessment Tool v2 Design](../AA-ingest-repos/docs/assessment-tool-v2-design.md)

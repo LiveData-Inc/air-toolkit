@@ -8,7 +8,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from air.core.models import AssessmentConfig, Resource, ResourceType
+from air.core.models import AirConfig, Resource, ResourceType
 from air.services.classifier import classify_resource
 from air.services.filesystem import get_project_root
 
@@ -65,7 +65,7 @@ def classify(
     config_path = project_root / "air-config.json"
     try:
         with open(config_path) as f:
-            config = AssessmentConfig.model_validate_json(f.read())
+            config = AirConfig.model_validate_json(f.read())
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to load config: {e}")
         sys.exit(1)

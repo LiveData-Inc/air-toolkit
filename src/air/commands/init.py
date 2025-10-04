@@ -20,7 +20,7 @@ from air.utils.console import error, info, success, warn
 @click.argument("name", default=None, required=False)
 @click.option(
     "--mode",
-    type=click.Choice(["review", "collaborate", "mixed"]),
+    type=click.Choice(["review", "develop", "mixed"]),
     default="mixed",
     help="Project mode: review-only, collaborative, or mixed",
 )
@@ -149,7 +149,7 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
         create_directory(dir_path)
 
         # Create .gitkeep for resource directories
-        if directory in ["review", "collaborate"]:
+        if directory == "repos":
             gitkeep = dir_path / ".gitkeep"
             create_file(gitkeep, "", overwrite=True)
 
@@ -198,8 +198,8 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
 
     if mode in ["review", "mixed"]:
         print("  air link --review service-a:~/repos/service-a")
-    if mode in ["collaborate", "mixed"]:
-        print("  air link --collaborate docs:~/repos/docs")
+    if mode in ["develop", "mixed"]:
+        print("  air link --develop docs:~/repos/docs")
 
     print("  air validate")
     print("  air status")
@@ -242,13 +242,13 @@ def _init_interactive() -> None:
     # Project mode
     console.print("[cyan]Project mode:[/cyan]")
     console.print("  [bold]review[/bold] - Review existing code only")
-    console.print("  [bold]collaborate[/bold] - Contribute changes back")
-    console.print("  [bold]mixed[/bold] - Both review and collaboration")
+    console.print("  [bold]develop[/bold] - Active development, contribute changes back")
+    console.print("  [bold]mixed[/bold] - Both review and development")
     console.print()
 
     mode_choice = Prompt.ask(
         "Select mode",
-        choices=["review", "collaborate", "mixed"],
+        choices=["review", "develop", "mixed"],
         default="mixed"
     )
 

@@ -126,7 +126,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 feat(commands): add air classify command
 fix(git): handle repositories without remotes
 docs(readme): update installation instructions
-test(core): add tests for AssessmentConfig
+test(core): add tests for AirConfig
 ```
 
 ## 3. Project Structure
@@ -343,7 +343,7 @@ tests/
 ```python
 import pytest
 from air.core.config import ConfigManager
-from air.core.models import AssessmentConfig, ProjectMode
+from air.core.models import AirConfig, ProjectMode
 
 
 def test_load_config(tmp_path):

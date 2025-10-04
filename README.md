@@ -28,7 +28,7 @@ pip install -e .
 
 ## Quick Start
 
-### Complete Workflow (v0.3.1)
+### Complete Workflow (v0.4.0)
 
 ```bash
 # 1. Initialize project
@@ -38,7 +38,7 @@ cd my-assessment
 
 # 2. Link repositories
 air link add service-a:~/repos/service-a --review
-air link add docs:~/repos/docs --collaborate --type=documentation
+air link add docs:~/repos/docs --develop --type=documentation
 
 # List linked resources
 air link list
@@ -73,17 +73,18 @@ air summary
 
 ## Features
 
-### Core Workflow (v0.3.1) ✅
+### Core Workflow (v0.4.0) ✅
 - **Project Initialization** (`air init`)
   - Create new projects or initialize in existing directories
-  - Support for review, collaborate, or mixed modes
+  - Support for review, develop, or mixed modes
   - Automatic directory structure and template generation
 
 - **Repository Linking** (`air link`)
   - Link resources with NAME:PATH format
-  - Review-only (read-only) or collaborative modes
+  - Review-only (read-only) or developer modes
   - Resource types: implementation, documentation, library, service
   - Symlink-based (no copying)
+  - All linked repos go in `repos/` directory
   - List and manage linked resources
 
 - **Task Tracking** (`air task new`)

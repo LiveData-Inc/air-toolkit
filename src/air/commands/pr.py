@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from air.core.models import AssessmentConfig, ResourceRelationship
+from air.core.models import AirConfig, ResourceRelationship
 from air.services.filesystem import get_project_root
 from air.services.pr_generator import (
     check_gh_cli_available,
@@ -92,7 +92,7 @@ def pr(
     config_path = project_root / "air-config.json"
     try:
         with open(config_path) as f:
-            config = AssessmentConfig.model_validate_json(f.read())
+            config = AirConfig.model_validate_json(f.read())
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to load config: {e}")
         sys.exit(1)
@@ -111,11 +111,11 @@ def pr(
         sys.exit(1)
 
     # Validate resource is collaborative
-    if target_resource.relationship != ResourceRelationship.CONTRIBUTOR:
+    if target_resource.relationship != ResourceRelationship.DEVELOPER:
         error = ResourceError(
             f"Resource '{resource}' is not a collaborative resource",
             resource_name=resource,
-            suggestion="Use --collaborate flag when adding resource with 'air link add'",
+            suggestion="Use --develop flag when adding resource with 'air link add'",
         )
         display_error(error)
         sys.exit(1)
@@ -211,16 +211,16 @@ def pr(
         sys.exit(1)
 
 
-def _list_collaborative_resources(project_root: Path, config: AssessmentConfig) -> None:
+def _list_collaborative_resources(project_root: Path, config: AirConfig) -> None:
     """List collaborative resources with contribution status."""
     # Get collaborative resources
     collab_resources = [
-        r for r in config.get_all_resources() if r.relationship == ResourceRelationship.CONTRIBUTOR
+        r for r in config.get_all_resources() if r.relationship == ResourceRelationship.DEVELOPER
     ]
 
     if not collab_resources:
         console.print("[yellow]⚠[/yellow] No collaborative resources found")
-        console.print("[dim]💡 Add with: air link add NAME:PATH --collaborate[/dim]")
+        console.print("[dim]💡 Add with: air link add NAME:PATH --develop[/dim]")
         return
 
     console.print("[bold]Collaborative Resources:[/bold]\n")

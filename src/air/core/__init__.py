@@ -1,7 +1,7 @@
 """Core business logic for AIR toolkit."""
 
 from .models import (
-    AssessmentConfig,
+    AirConfig,
     Contribution,
     ContributionStatus,
     ProjectMode,
@@ -14,7 +14,7 @@ from .models import (
 )
 
 __all__ = [
-    "AssessmentConfig",
+    "AirConfig",
     "Contribution",
     "ContributionStatus",
     "ProjectMode",

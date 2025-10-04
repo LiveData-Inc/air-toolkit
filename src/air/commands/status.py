@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from air.core.models import AssessmentConfig
+from air.core.models import AirConfig
 from air.services.filesystem import get_project_root
 from air.utils.console import error
 
@@ -20,7 +20,7 @@ console = Console()
 @click.option(
     "--type",
     "resource_type",
-    type=click.Choice(["review", "collaborate", "all"]),
+    type=click.Choice(["review", "develop", "all"]),
     default="all",
     help="Filter by resource type",
 )
@@ -79,7 +79,7 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
     try:
         with open(config_path) as f:
             config_data = json.load(f)
-            config = AssessmentConfig(**config_data)
+            config = AirConfig(**config_data)
     except Exception as e:
         if output_format == "json":
             print(json.dumps({"success": False, "error": f"Invalid config: {e}"}))
@@ -94,8 +94,8 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
         if resource_type in ["review", "all"]:
             review_resources.append(resource)
 
-    for resource in config.resources.get("collaborate", []):
-        if resource_type in ["collaborate", "all"]:
+    for resource in config.resources.get("develop", []):
+        if resource_type in ["develop", "all"]:
             collaborate_resources.append(resource)
 
     # Count analysis files
@@ -124,7 +124,7 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
             },
             "resources": {
                 "review": len(review_resources),
-                "collaborate": len(collaborate_resources),
+                "develop": len(collaborate_resources),
                 "total": len(review_resources) + len(collaborate_resources),
             },
             "analysis": {
@@ -167,7 +167,7 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
             console.print(table)
             console.print()
 
-        if resource_type in ["collaborate", "all"] and collaborate_resources:
+        if resource_type in ["develop", "all"] and collaborate_resources:
             table = Table(title="Collaborative Resources", style="green")
             table.add_column("Name", style="green")
             table.add_column("Type", style="magenta")

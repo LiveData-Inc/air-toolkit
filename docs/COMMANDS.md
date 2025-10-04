@@ -56,7 +56,7 @@ air init [NAME] [OPTIONS]
 - `--mode=MODE` - Project mode (default: `mixed`)
   - `review` - Review-only mode
   - `collaborate` - Collaborative mode
-  - `mixed` - Both review and collaborative
+  - `mixed` - Both review and developer
 - `--track / --no-track` - Initialize .air/ tracking (default: enabled)
 
 #### Examples
@@ -68,7 +68,7 @@ air init my-review
 # Create review-only project
 air init service-review --mode=review
 
-# Create collaborative project without tracking
+# Create developer project without tracking
 air init docs --mode=collaborate --no-track
 
 # Initialize in current directory
@@ -86,7 +86,7 @@ project-name/
 ├── CLAUDE.md
 ├── air-config.json
 ├── .gitignore
-├── review/
+├── repos/
 ├── analysis/
 │   └── assessments/
 ├── .air/
@@ -115,7 +115,7 @@ project-name/
 ├── CLAUDE.md
 ├── air-config.json
 ├── .gitignore
-├── review/
+├── repos/
 ├── collaborate/
 ├── analysis/
 │   ├── SUMMARY.md
@@ -150,8 +150,8 @@ air link [OPTIONS]
 #### Options
 
 - `--review NAME:PATH` - Add review-only resource (repeatable)
-- `--collaborate NAME:PATH` - Add collaborative resource (repeatable)
-- `--clone` - Clone instead of symlink (for `--collaborate`)
+- `--develop NAME:PATH` - Add developer resource (repeatable)
+- `--clone` - Clone instead of symlink (for `--develop`)
 
 If no options provided, reads from `repos-to-link.txt`.
 
@@ -162,17 +162,17 @@ If no options provided, reads from `repos-to-link.txt`.
 air link --review service-a:~/repos/service-a
 air link --review service-b:~/repos/service-b
 
-# Link collaborative repository
-air link --collaborate arch:~/repos/architecture
+# Link developer repository
+air link --develop arch:~/repos/architecture
 
-# Clone collaborative repository
-air link --collaborate arch:~/repos/architecture --clone
+# Clone developer repository
+air link --develop arch:~/repos/architecture --clone
 
 # Link multiple at once
 air link \
   --review service-a:~/repos/service-a \
   --review service-b:~/repos/service-b \
-  --collaborate arch:~/repos/arch --clone
+  --develop arch:~/repos/arch --clone
 
 # Read from configuration file
 air link
@@ -196,7 +196,7 @@ collaborate:architecture:~/repos/cloud-native-architecture
 
 **Review Resources:**
 - Always created as symlinks (read-only)
-- Placed in `review/` directory
+- Placed in `repos/` directory
 - Original repository not modified
 
 **Collaborative Resources:**
@@ -250,7 +250,7 @@ air validate --fix
 **Structure Check:**
 - Required directories exist
 - `air-config.json` present
-- Mode-appropriate structure (review/, collaborate/, etc.)
+- Mode-appropriate structure (repos/, collaborate/, etc.)
 
 **Links Check:**
 - Symlinks point to valid locations
@@ -271,12 +271,12 @@ air validate --fix
 Structure:
   ✓ README.md
   ✓ air-config.json
-  ✓ review/
+  ✓ repos/
   ✓ analysis/assessments/
 
 Links:
-  ✓ review/service-a -> /Users/user/repos/service-a
-  ✓ review/service-b -> /Users/user/repos/service-b
+  ✓ repos/service-a -> /Users/user/repos/service-a
+  ✓ repos/service-b -> /Users/user/repos/service-b
 
 Config:
   ✓ Valid JSON
@@ -307,7 +307,7 @@ air status [OPTIONS]
 
 - `--type=TYPE` - Filter by type (default: `all`)
   - `review` - Show only review resources
-  - `collaborate` - Show only collaborative resources
+  - `collaborate` - Show only developer resources
   - `all` - Show all resources
 - `--contributions` - Show contribution tracking details
 
@@ -368,7 +368,7 @@ Next Actions:
 
 ### air classify
 
-Classify resources by type (review vs collaborative).
+Classify resources by type (review vs developer).
 
 #### Usage
 
@@ -439,21 +439,21 @@ For ambiguous resources:
 
 ```
 Resource: shared-utils
-Could be either review or collaborative.
+Could be either review or developer.
 
 Indicators:
   - Contains implementation code
   - Also contains extensive documentation
   - Has write access
 
-Classify as (review/collaborate)? collaborate
+Classify as (repos/collaborate)? collaborate
 ```
 
 ---
 
 ### air pr
 
-Create pull request for collaborative resource.
+Create pull request for developer resource.
 
 #### Usage
 
@@ -463,7 +463,7 @@ air pr [RESOURCE] [OPTIONS]
 
 #### Arguments
 
-- `RESOURCE` - Name of collaborative resource (optional - lists resources if omitted)
+- `RESOURCE` - Name of developer resource (optional - lists resources if omitted)
 
 #### Options
 
@@ -476,7 +476,7 @@ air pr [RESOURCE] [OPTIONS]
 #### Examples
 
 ```bash
-# List collaborative resources with contribution status
+# List developer resources with contribution status
 air pr
 
 # Create PR for resource (auto-generated title/body)
@@ -510,7 +510,7 @@ air pr docs --dry-run
   - Install: `brew install gh` (macOS) or see [GitHub CLI docs](https://cli.github.com/)
   - Authenticate: `gh auth login`
 - Resource must be a git repository
-- Resource must be marked as collaborative (`--collaborate` flag when linking)
+- Resource must be marked as developer (`--develop` flag when linking)
 - Contributions must exist in `contributions/{resource}/` directory
 
 #### Auto-Generated PR Metadata
@@ -576,7 +576,7 @@ Files to be contributed:
 
 #### Listing Collaborative Resources
 
-When no resource is specified, shows all collaborative resources with contribution status:
+When no resource is specified, shows all developer resources with contribution status:
 
 ```
 Collaborative Resources:

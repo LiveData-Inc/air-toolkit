@@ -182,7 +182,7 @@ def test_validate_project_structure_valid(tmp_path):
 
     # Create directories
     for dir_name in [".ai", ".air/tasks", ".air/context", ".air/templates",
-                      "scripts", "analysis", "review", "analysis/assessments"]:
+                      "scripts", "analysis", "repos", "analysis/reviews"]:
         (tmp_path / dir_name).mkdir(parents=True, exist_ok=True)
 
     errors = validate_project_structure(tmp_path, "review")

@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from air.core.models import AssessmentConfig, Resource, ResourceRelationship, ResourceType
+from air.core.models import AirConfig, Resource, ResourceRelationship, ResourceType
 from air.services.filesystem import create_symlink, get_project_root
 from air.utils.console import error, info, success, warn
 
@@ -47,7 +47,7 @@ def parse_name_path(name_path: str) -> tuple[str, str]:
     return name, path
 
 
-def load_config(project_root: Path) -> AssessmentConfig:
+def load_config(project_root: Path) -> AirConfig:
     """Load project configuration.
 
     Args:
@@ -71,7 +71,7 @@ def load_config(project_root: Path) -> AssessmentConfig:
     try:
         with open(config_path) as f:
             config_data = json.load(f)
-        return AssessmentConfig(**config_data)
+        return AirConfig(**config_data)
     except Exception as e:
         error(
             f"Failed to load configuration: {e}",
@@ -80,7 +80,7 @@ def load_config(project_root: Path) -> AssessmentConfig:
         )
 
 
-def save_config(project_root: Path, config: AssessmentConfig) -> None:
+def save_config(project_root: Path, config: AirConfig) -> None:
     """Save project configuration.
 
     Args:
@@ -123,8 +123,8 @@ def link() -> None:
     help="Link as review-only resource",
 )
 @click.option(
-    "--collaborate",
-    "is_collaborate",
+    "--develop",
+    "is_develop",
     is_flag=True,
     help="Link as collaborative resource",
 )
@@ -136,14 +136,14 @@ def link() -> None:
     help="Resource type",
 )
 def link_add(
-    name_path: str, is_review: bool, is_collaborate: bool, resource_type: str
+    name_path: str, is_review: bool, is_develop: bool, resource_type: str
 ) -> None:
     """Add a linked resource.
 
     \b
     Examples:
       air link add service-a:~/repos/service-a --review
-      air link add docs:~/repos/docs --collaborate
+      air link add docs:~/repos/docs --develop
       air link add api:~/repos/api --review --type=service
     """
     # Validate project
@@ -156,23 +156,23 @@ def link_add(
         )
 
     # Determine mode
-    if is_review and is_collaborate:
+    if is_review and is_develop:
         error(
-            "Cannot specify both --review and --collaborate",
+            "Cannot specify both --review and --develop",
             hint="Choose one mode for the resource",
             exit_code=1,
         )
 
-    if not is_review and not is_collaborate:
+    if not is_review and not is_develop:
         # Default to review mode
         is_review = True
         info("Defaulting to review mode (read-only)")
 
-    category = "review" if is_review else "collaborate"
+    category = "review" if is_review else "develop"
     relationship = (
         ResourceRelationship.REVIEW_ONLY
         if is_review
-        else ResourceRelationship.CONTRIBUTOR
+        else ResourceRelationship.DEVELOPER
     )
 
     # Parse name and path
@@ -207,8 +207,10 @@ def link_add(
             exit_code=1,
         )
 
-    # Create symlink
-    link_dir = project_root / category
+    # Create symlink in repos/ directory
+    # Note: Both review and develop resources go in repos/
+    # The difference is the relationship (REVIEW_ONLY vs DEVELOPER)
+    link_dir = project_root / "repos"
     link_path = link_dir / name
 
     if link_path.exists():
@@ -218,7 +220,7 @@ def link_add(
             exit_code=1,
         )
 
-    info(f"Creating symlink: {category}/{name} -> {source_path}")
+    info(f"Creating symlink: repos/{name} -> {source_path}")
     create_symlink(source_path, link_path)
 
     # Create resource entry
@@ -274,14 +276,14 @@ def link_list(output_format: str) -> None:
                 }
                 for r in config.resources.get("review", [])
             ],
-            "collaborate": [
+            "develop": [
                 {
                     "name": r.name,
                     "path": r.path,
                     "type": r.type,
                     "relationship": r.relationship,
                 }
-                for r in config.resources.get("collaborate", [])
+                for r in config.resources.get("develop", [])
             ],
         }
         print(json.dumps(result, indent=2))
@@ -289,7 +291,7 @@ def link_list(output_format: str) -> None:
 
     # Human-readable output
     review_resources = config.resources.get("review", [])
-    collab_resources = config.resources.get("collaborate", [])
+    collab_resources = config.resources.get("develop", [])
 
     if not review_resources and not collab_resources:
         info("No resources linked")
@@ -360,7 +362,7 @@ def link_remove(name: str, keep_link: bool) -> None:
 
     # Determine category
     category = None
-    for cat in ["review", "collaborate"]:
+    for cat in ["review", "develop"]:
         if resource in config.resources.get(cat, []):
             category = cat
             break
@@ -372,14 +374,14 @@ def link_remove(name: str, keep_link: bool) -> None:
             exit_code=2,
         )
 
-    # Remove symlink
-    link_path = project_root / category / name
+    # Remove symlink from repos/ directory
+    link_path = project_root / "repos" / name
     if link_path.exists() or link_path.is_symlink():
         if not keep_link:
-            info(f"Removing symlink: {category}/{name}")
+            info(f"Removing symlink: repos/{name}")
             link_path.unlink()
         else:
-            warn(f"Keeping symlink: {category}/{name}")
+            warn(f"Keeping symlink: repos/{name}")
 
     # Remove from configuration
     config.resources[category] = [

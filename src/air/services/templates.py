@@ -141,7 +141,7 @@ def create_config_file(
         "name": project_name,
         "mode": mode,
         "created": created.isoformat(),
-        "resources": {"review": [], "collaborate": []},
+        "resources": {"review": [], "develop": []},
         "goals": goals or [],
     }
 

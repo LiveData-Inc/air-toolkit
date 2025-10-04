@@ -13,30 +13,29 @@ This is an AIR (AI Review) assessment project for analyzing and comparing multip
 This is a **review-only** project. All linked repositories are for analysis purposes only.
 
 **Workflow:**
-1. Review linked resources in `review/`
-2. Create analysis documents in `analysis/assessments/`
+1. Review linked resources in `repos/`
+2. Create analysis documents in `analysis/reviews/`
 3. Generate summary in `analysis/SUMMARY.md`
 
-{% elif mode == "collaborate" -%}
-This is a **collaborative** project. You can contribute improvements to linked repositories.
+{% elif mode == "develop" -%}
+This is a **development** project with AIR task tracking enabled.
 
 **Workflow:**
-1. Review linked resources in `collaborate/`
-2. Identify improvement opportunities
-3. Create contributions in `contributions/`
-4. Submit pull requests via `air pr`
+1. Work on code in standard project structure (src/, tests/, docs/)
+2. Use .air/tasks/ for tracking your work
+3. Follow standard development practices
 
 {% else -%}
-This is a **mixed-mode** project supporting both review and collaborative workflows.
+This is a **mixed-mode** project supporting both review and development workflows.
 
 **Review Workflow:**
-1. Review resources in `review/`
-2. Create analysis in `analysis/assessments/`
+1. Review external resources in `repos/`
+2. Create analysis in `analysis/reviews/`
 
-**Collaborative Workflow:**
-1. Review resources in `collaborate/`
-2. Create contributions in `contributions/`
-3. Submit pull requests via `air pr`
+**Development Workflow:**
+1. Work on this project's code directly
+2. Track work in .air/tasks/
+3. For external repos with DEVELOPER relationship, create contributions and submit via `air pr`
 
 {% endif -%}
 
@@ -47,13 +46,18 @@ This is a **mixed-mode** project supporting both review and collaborative workfl
 ```bash
 {% if mode == "review" or mode == "mixed" -%}
 # Link review-only resources
-air link --review service-a:~/repos/service-a
-air link --review service-b:~/repos/service-b
+air link add --review service-a:~/repos/service-a
+air link add --review service-b:~/repos/service-b
 
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-# Link collaborative resources
-air link --collaborate docs:~/repos/documentation
+{% if mode == "mixed" -%}
+# Link development resources (for contributing back)
+air link add --develop docs:~/repos/documentation
+
+{% endif -%}
+{% if mode == "develop" -%}
+# In develop mode, link external repos you'll contribute to
+air link add --develop upstream-project:~/repos/upstream-project
 
 {% endif -%}
 ```
@@ -78,34 +82,33 @@ air status
 ├── CLAUDE.md              # AI assistant instructions
 ├── air-config.json        # Project configuration
 {% if mode == "review" or mode == "mixed" -%}
-├── review/                # Review-only resources (symlinks)
+├── repos/                 # Linked repositories (symlinks)
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-├── collaborate/           # Collaborative resources (symlinks/clones)
-{% endif -%}
+{% if mode == "review" or mode == "mixed" -%}
 ├── analysis/              # Your analysis
 │   ├── SUMMARY.md         # Executive summary
-{% if mode == "review" or mode == "mixed" -%}
-│   ├── assessments/       # Analysis of review resources
+│   └── reviews/       # Analysis of reviewed repos
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-│   └── improvements/      # Feedback on collaborative resources
+{% if mode == "mixed" -%}
+├── contributions/         # Proposed improvements to external repos
 {% endif -%}
-{% if mode == "collaborate" or mode == "mixed" -%}
-├── contributions/         # Proposed improvements
+├── .air/                  # AI task tracking
+│   ├── tasks/             # Task files
+│   ├── context/           # Architecture, conventions
+│   └── templates/         # Custom templates
+{% if mode == "develop" -%}
+├── src/                   # Your source code
+├── tests/                 # Your tests
+└── docs/                  # Your documentation
 {% endif -%}
-├── .air/                   # AI task tracking
-│   ├── tasks/            # Task files
-│   └── context/          # Architecture, conventions
-└── scripts/              # Utility scripts
 ```
 
 ## Commands
 
 ```bash
 # Project management
-air init <name>            # Create new project
-air link                   # Link repositories
+air init [name]            # Create new project
+air link add NAME:PATH     # Link repositories
 air validate               # Validate structure
 air status                 # Show project status
 
@@ -114,8 +117,8 @@ air task new <desc>        # Create task file
 air task list              # List tasks
 air summary                # Generate summary
 
-{% if mode == "collaborate" or mode == "mixed" -%}
-# Contributions
+{% if mode == "mixed" or mode == "develop" -%}
+# Contributions (for DEVELOPER relationship repos)
 air pr <resource>          # Create pull request
 
 {% endif -%}
@@ -132,11 +135,18 @@ air version                # Show version
 - {{ goal }}
 {% endfor -%}
 {% else -%}
+{% if mode == "review" -%}
 - [ ] Review architecture and design patterns
 - [ ] Identify gaps and improvement opportunities
 - [ ] Create comprehensive analysis
-{% if mode == "collaborate" or mode == "mixed" -%}
-- [ ] Contribute improvements back to repositories
+{% elif mode == "develop" -%}
+- [ ] Build and test features
+- [ ] Maintain code quality
+- [ ] Track development work with .air/tasks/
+{% else -%}
+- [ ] Review external repositories
+- [ ] Develop this project
+- [ ] Track all work in .air/tasks/
 {% endif -%}
 {% endif -%}
 

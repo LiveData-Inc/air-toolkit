@@ -205,7 +205,7 @@ class Resource(BaseModel):
     contributions: list[Contribution] = Field(default_factory=list)
 
 
-class AssessmentConfig(BaseModel):
+class AirConfig(BaseModel):
     """Project configuration (air-config.json)."""
     version: str = "2.0.0"
     name: str
@@ -512,7 +512,7 @@ class AirPlugin:
         """Register custom commands."""
         pass
 
-    def on_project_init(self, config: AssessmentConfig) -> None:
+    def on_project_init(self, config: AirConfig) -> None:
         """Hook: project initialization."""
         pass
 
