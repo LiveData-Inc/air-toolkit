@@ -5,6 +5,77 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added - Enhanced Analysis Depth
+
+**Deep Code Analysis** - Four specialized analyzers provide actionable insights
+
+#### New Analyzers
+
+- **SecurityAnalyzer** - Detects security vulnerabilities
+  - Hardcoded secrets and API keys
+  - SQL injection risks
+  - Weak cryptography (MD5, SHA1, DES)
+  - Use of eval/exec
+  - Debug mode enabled
+  - Insecure deserialization
+  - Shell injection risks
+  - Missing security headers
+  - Config files not in .gitignore
+
+- **CodeStructureAnalyzer** - Analyzes repository structure
+  - File and line counts
+  - Language detection and distribution
+  - Large file detection (>500 lines)
+  - Missing test/docs directories
+
+- **ArchitectureAnalyzer** - Analyzes architecture and dependencies
+  - Dependency analysis (pinned vs unpinned)
+  - Circular import detection
+  - Architectural pattern detection (API, models, services)
+
+- **QualityAnalyzer** - Detects code quality issues
+  - Long functions (>100 lines)
+  - Too many parameters (>5)
+  - Excessive comments
+  - Missing docstrings
+  - Missing README
+  - Low test coverage
+
+#### Enhanced Analysis Command
+
+- `air analyze` now runs comprehensive deep analysis
+- Focus flag controls which analyzers run:
+  - `--focus=security` - Security issues only
+  - `--focus=architecture` - Architecture analysis only
+  - `--focus=quality` - Quality issues only
+  - No flag - All analyzers (comprehensive)
+- Findings include severity levels (critical/high/medium/low/info)
+- Results saved as structured JSON with metadata
+
+### Testing
+
+- **370 tests total** (was 356) - All passing ✅
+- Added 14 new analyzer tests:
+  - SecurityAnalyzer: hardcoded secrets, SQL injection, weak crypto
+  - CodeStructureAnalyzer: file counts, large files, structure
+  - QualityAnalyzer: long functions, many parameters, documentation
+  - ArchitectureAnalyzer: dependencies, patterns
+  - Integration test for all analyzers
+
+### Impact
+
+**Before:**
+- Analysis: Basic classification only (tech stack, languages)
+- Findings per repo: ~1 (classification summary)
+- Depth: Superficial
+
+**After:**
+- Analysis: Multi-dimensional (security + quality + architecture + structure)
+- Findings per repo: 10-50+ actionable items
+- Depth: Identifies real issues with severity levels and suggestions
+
 ## [0.6.0] - 2025-10-04
 
 ### Added - Agent Coordination System (MVP)

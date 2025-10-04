@@ -8,6 +8,12 @@ from pathlib import Path
 import click
 
 from air.services.agent_manager import generate_agent_id, spawn_background_agent, update_agent_status
+from air.services.analyzers import (
+    ArchitectureAnalyzer,
+    CodeStructureAnalyzer,
+    QualityAnalyzer,
+    SecurityAnalyzer,
+)
 from air.services.classifier import classify_resource
 from air.services.filesystem import get_project_root
 from air.utils.console import error, info, success
@@ -53,14 +59,14 @@ def analyze(
         )
         return
 
-    # Run analysis inline (for MVP: just classification)
+    # Run analysis
     try:
         info(f"Analyzing: {resource}")
 
         if focus:
             info(f"Focus area: {focus}")
 
-        # Classify the resource
+        # Always start with classification
         result = classify_resource(resource)
 
         info(f"Type: {result.resource_type.value}")
@@ -72,8 +78,8 @@ def analyze(
             info(f"Frameworks: {', '.join(result.detected_frameworks)}")
         info(f"Confidence: {result.confidence:.0%}")
 
-        # Write findings (simple for MVP)
-        findings = [
+        # Gather findings from classification
+        all_findings = [
             {
                 "category": "classification",
                 "severity": "info",
@@ -86,12 +92,64 @@ def analyze(
             }
         ]
 
+        # Run deep analysis based on focus
+        analyzers = []
+
+        if focus == "security" or not focus:
+            analyzers.append(SecurityAnalyzer(resource))
+
+        if focus == "architecture" or not focus:
+            analyzers.append(ArchitectureAnalyzer(resource))
+
+        if focus == "quality" or not focus:
+            analyzers.append(QualityAnalyzer(resource))
+
+        if not focus:  # Always run structure analysis when no focus
+            analyzers.append(CodeStructureAnalyzer(resource))
+
+        # Run analyzers and collect findings
+        for analyzer in analyzers:
+            info(f"Running {analyzer.name} analysis...")
+            analyzer_result = analyzer.analyze()
+
+            # Add summary to findings
+            all_findings.append(
+                {
+                    "category": analyzer.name,
+                    "severity": "info",
+                    "type": "summary",
+                    "summary": analyzer_result.summary,
+                }
+            )
+
+            # Add individual findings
+            for finding in analyzer_result.findings:
+                all_findings.append(finding.to_dict())
+
+            # Show summary
+            if analyzer_result.summary:
+                summary_items = [f"{k}: {v}" for k, v in analyzer_result.summary.items()]
+                info(f"{analyzer.name}: {', '.join(summary_items[:3])}")
+
+        # Count findings by severity
+        severity_counts = {}
+        for finding in all_findings:
+            sev = finding.get("severity", "info")
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+
+        info(
+            f"Total findings: {len(all_findings)} "
+            f"(critical: {severity_counts.get('critical', 0)}, "
+            f"high: {severity_counts.get('high', 0)}, "
+            f"medium: {severity_counts.get('medium', 0)})"
+        )
+
         # Save findings to analysis directory
         analysis_dir = project_root / "analysis" / "reviews"
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
         findings_file = analysis_dir / f"{resource.name}-findings.json"
-        findings_file.write_text(json.dumps(findings, indent=2))
+        findings_file.write_text(json.dumps(all_findings, indent=2))
 
         success(f"Analysis complete: {findings_file}")
 
