@@ -22,6 +22,7 @@ Complete reference for all AIR commands.
   - [air analyze](#air-analyze)
   - [air status --agents](#air-status---agents)
   - [air findings](#air-findings)
+  - [air wait](#air-wait)
 - [Task Tracking Commands](#task-tracking-commands)
   - [air task](#air-task)
   - [air track](#air-track)
@@ -935,6 +936,98 @@ service-c    ℹ️  Low    Style           Long function detected
 
 Total: 4 findings (2 high, 1 medium, 1 low)
 ```
+
+---
+
+### air wait
+
+Wait for background agents to complete (v0.6.0+).
+
+**Usage:**
+
+```bash
+air wait [OPTIONS]
+```
+
+**Options:**
+
+- `--all` - Wait for all running agents
+- `--agents TEXT` - Comma-separated agent IDs to wait for
+- `--timeout INTEGER` - Timeout in seconds (optional)
+- `--interval INTEGER` - Check interval in seconds (default: 5)
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# Wait for all agents
+air wait --all
+
+# Wait for specific agents
+air wait --agents analysis-1,analysis-2
+
+# With timeout (exit after 300 seconds)
+air wait --all --timeout=300
+
+# JSON format for scripts
+air wait --all --format=json
+
+# Custom check interval (poll every 2 seconds)
+air wait --all --interval=2
+```
+
+**Output:**
+
+```
+Waiting for agents to complete...
+Timeout: None
+All agents complete (elapsed: 45s)
+
+✓ 3 agent(s) completed successfully
+```
+
+**JSON Output:**
+
+```json
+{
+  "success": true,
+  "message": "All agents complete",
+  "elapsed": 45,
+  "agents": [
+    {
+      "id": "analysis-1",
+      "status": "complete",
+      "started": "2025-10-04T16:00:00"
+    }
+  ]
+}
+```
+
+**Behavior:**
+
+- Blocks until all specified agents complete or timeout expires
+- Auto-detects terminated processes
+- Exits with code 0 on success, 1 on failure or timeout
+- Shows failed agents if any fail during execution
+
+**Use Case: Coordination Workflows**
+
+The `air wait` command is designed for Claude to coordinate multi-agent workflows:
+
+```bash
+# Claude spawns workers
+air analyze repos/service-a --background --id=worker-1
+air analyze repos/service-b --background --id=worker-2
+air analyze repos/service-c --background --id=worker-3
+
+# Claude waits for all to complete
+air wait --all
+
+# Claude aggregates results
+air findings --all
+```
+
+See [AGENT-COORDINATION.md](AGENT-COORDINATION.md) for workflow patterns.
 
 ---
 

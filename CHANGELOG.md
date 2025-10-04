@@ -18,16 +18,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Background mode: `air analyze repos/service-a --background --id=analysis-1`
   - Focus areas: `--focus=security|architecture|performance`
   - Generates findings in `analysis/reviews/<resource>-findings.json`
+  - Agents auto-update status on completion
 
 - **`air status --agents`** - View all background agent status
   - Shows agent ID, status, start time, and progress
   - Human-readable table and JSON formats
+  - Auto-detects terminated processes and updates status
   - Example: `air status --agents`
 
 - **`air findings --all`** - Aggregate findings from all analyses
   - Filter by severity: `--severity=high|medium|low`
   - JSON and table output formats
   - Example: `air findings --all --severity=high`
+
+- **`air wait`** - Wait for background agents to complete
+  - Blocks until agents finish (no polling needed)
+  - `--all` flag to wait for all agents
+  - `--agents` flag for specific agent IDs
+  - `--timeout` to prevent indefinite waiting
+  - Example: `air wait --all`
 
 #### New Infrastructure
 
@@ -45,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Track agent status (running, complete, failed)
   - Load agent metadata and progress
   - List all agents with sorting
+  - **Cross-platform process checking** using psutil
+  - Auto-detect terminated processes and update status
+  - Determine success/failure from stderr content
 
 #### Utilities
 
@@ -52,8 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Testing
 
-- **344 tests total** (was 337) - All passing ✅
-- Added 7 new agent coordination integration tests:
+- **356 tests total** (was 337) - All passing ✅
+- Added 7 agent coordination integration tests:
   - `test_analyze_command_inline` - Inline analysis
   - `test_analyze_command_background` - Background agent spawning
   - `test_status_agents_command` - Agent status display
@@ -61,11 +73,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `test_findings_command` - Findings aggregation
   - `test_findings_json_format` - JSON findings
   - `test_multiple_parallel_analyses` - Parallel execution
+- Added 12 `air wait` command tests:
+  - Basic wait functionality (--all, --agents flags)
+  - JSON output format
+  - Timeout handling
+  - Integration with background agents
+  - Failed agent detection
+  - Sequential wait workflows
 
 ### Documentation
 
-- Updated `docs/COMMANDS.md` with new "Agent Coordination Commands" section
-- Added documentation for `air analyze`, `air status --agents`, `air findings`
+- **New:** `docs/AGENT-COORDINATION.md` - Complete guide to agent coordination patterns
+- **New:** `docs/examples/CLAUDE-WORKFLOW-GAP-ANALYSIS.md` - Step-by-step gap analysis workflow
+- **New:** `docs/examples/claude-gap-analysis-pattern.md` - Claude-native coordination
+- **New:** `docs/examples/director-gap-analysis.md` - Conceptual director pattern
+- **New:** `docs/tutorials/parallel-analysis-quickstart.md` - Hands-on tutorial
+- Updated `docs/COMMANDS.md` with Agent Coordination Commands section
+- Added documentation for `air analyze`, `air status --agents`, `air findings`, `air wait`
 - Updated version to 0.6.0
 
 ### Use Cases
@@ -77,8 +101,8 @@ air analyze repos/service-a --background --id=analysis-1
 air analyze repos/service-b --background --id=analysis-2
 air analyze repos/service-c --background --id=analysis-3
 
-# Monitor progress
-air status --agents
+# Wait for all to complete
+air wait --all
 
 # View combined findings
 air findings --all
@@ -89,8 +113,26 @@ air findings --all
 # Run security-focused analysis
 air analyze repos/api-service --background --id=security-review --focus=security
 
+# Wait for completion
+air wait --agents security-review
+
 # Check findings
 air findings --all --severity=high
+```
+
+**Library-Service Gap Analysis:**
+```bash
+# Spawn workers to analyze library and service
+air analyze repos/library --background --id=lib-current --focus=capabilities
+air analyze repos/library-roadmap --background --id=lib-future --focus=roadmap
+air analyze repos/service --background --id=service-needs --focus=requirements
+
+# Wait for analysis to complete
+air wait --all
+
+# Claude aggregates findings and creates gap analysis
+air findings --all --format=json
+# Creates: analysis/gap-analysis.md, analysis/integration-plan.md
 ```
 
 ### Technical Details
@@ -98,6 +140,23 @@ air findings --all --severity=high
 - Background agents run as detached subprocesses (start_new_session=True)
 - Agent metadata stored in JSON for easy querying
 - Findings aggregated from multiple JSON files
+- Cross-platform process management via psutil
+- Agent status auto-updates when processes terminate
+- `air wait` provides blocking coordination primitive
+
+### Bug Fixes
+
+- **Agent status bug**: Fixed agents showing as "running" after process termination
+  - `air status --agents` now uses psutil to check if PIDs are alive
+  - Auto-updates status to "complete" or "failed" based on stderr
+  - Works cross-platform (macOS, Linux, Windows)
+- **Agent completion**: Background agents now update their own status on exit
+  - Success: status="complete"
+  - Failure: status="failed" with error details
+
+### Dependencies
+
+- Added `psutil>=5.9.0` for cross-platform process management
 - Process management via Python subprocess module (simple, cross-platform)
 
 ### Future Enhancements (v0.6.x)
