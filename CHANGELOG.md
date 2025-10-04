@@ -5,6 +5,23 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-10-03
+
+### Added
+- **`air task complete`** - Mark tasks as complete
+  - Update task outcome to ✅ Success from any status
+  - `--notes` option to add completion notes
+  - Partial task ID matching support
+  - Preserves all existing task content and sections
+  - 9 unit tests + 7 integration tests
+
+### Fixed
+- Template trailing newline after `## Notes` section for proper pattern matching
+- Timezone handling in `test_summary_since_filter` test
+
+### Testing
+- **186 tests total** - All passing ✅
+
 ## [0.2.0] - 2025-10-03
 
 ### Added
