@@ -20,9 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **air link add** command signature updated:
   - `--path` and `--name` now explicit options (no longer NAME:PATH)
+  - `--review` is now the default relationship (no flag needed for review mode)
   - `--type` is now optional (defaults to "implementation" if not specified)
-  - Interactive mode triggers when path, name, or relationship missing
-  - Non-interactive mode requires --path, --name, and --review or --develop
+  - Interactive mode triggers when path or name missing
+  - Minimal usage: `air link add --path PATH --name NAME` (uses review + implementation defaults)
 
 ### Deprecated
 - **NAME:PATH format** - Shows deprecation warning, will be removed in v0.5.0
@@ -35,9 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented all interactive features and prompts
 
 ### Testing
-- **317 tests total** - All passing ✅
+- **318 tests total** - All passing ✅
 - Updated 7 link command integration tests for new format
-- Tests cover interactive detection, deprecation warnings, and validation
+- Added test for default review behavior
+- Tests cover interactive detection, deprecation warnings, defaults, and validation
 
 ## [0.4.0] - 2025-10-04
 

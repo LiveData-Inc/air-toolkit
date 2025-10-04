@@ -178,9 +178,9 @@ air link add --path PATH --name NAME --review|--develop [--type TYPE]
 
 - `--path PATH` - Path to repository (required)
 - `--name NAME` - Resource name/alias (required)
-- `--review` - Link as review-only resource (read-only)
+- `--review` - Link as review-only resource (read-only) **[default]**
 - `--develop` - Link as developer resource (can contribute)
-- `--type TYPE` - Resource type: `implementation`, `documentation`, `library`, `service`
+- `--type TYPE` - Resource type: `implementation`, `documentation`, `library`, `service` (default: `implementation`)
 
 **Examples:**
 
@@ -188,14 +188,17 @@ air link add --path PATH --name NAME --review|--develop [--type TYPE]
 # Interactive mode
 air link add
 
-# Non-interactive - review resource
+# Minimal - uses defaults (review mode, implementation type)
+air link add --path ~/repos/service-a --name service-a
+
+# Explicit review resource with type
 air link add --path ~/repos/service-a --name service-a --review --type implementation
 
-# Non-interactive - develop resource
+# Develop resource
 air link add --path ~/repos/architecture --name arch --develop --type documentation
 
 # With partial args (prompts for missing)
-air link add --path ~/repos/mylib --name mylib
+air link add --path ~/repos/mylib
 ```
 
 **Interactive Features:**

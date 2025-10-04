@@ -365,10 +365,14 @@ def link_add(
         if not name:
             name = parsed_name
 
+    # Default to review mode if neither flag specified
+    if not is_review and not is_develop:
+        is_review = True
+
     # Detect if we need interactive mode
-    # We need interactive if missing path, name, OR relationship
-    # Note: resource_type is optional and defaults to "implementation"
-    needs_interactive = not all([path, name, (is_review or is_develop)])
+    # We need interactive if missing path OR name
+    # Note: relationship defaults to review, resource_type defaults to "implementation"
+    needs_interactive = not all([path, name])
 
     if needs_interactive:
         # Enter interactive mode
@@ -390,12 +394,7 @@ def link_add(
             exit_code=1,
         )
 
-    if not is_review and not is_develop:
-        error(
-            "Must specify --review or --develop in non-interactive mode",
-            exit_code=1,
-        )
-
+    # Note: is_review is already set to True as default above if neither flag was specified
     category = "review" if is_review else "develop"
     relationship = (
         ResourceRelationship.REVIEW_ONLY

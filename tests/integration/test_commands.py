@@ -939,6 +939,35 @@ class TestLinkCommand:
         assert result.exit_code == 1
         assert "already linked" in result.output
 
+    def test_link_add_defaults_to_review(self, runner, isolated_project):
+        """Test that --review is the default when no relationship specified."""
+        runner.invoke(main, ["init", "default-project", "--mode=mixed"])
+        project_dir = isolated_project / "default-project"
+
+        source_dir = isolated_project / "lib"
+        source_dir.mkdir()
+
+        import os
+        os.chdir(project_dir)
+
+        # No --review or --develop specified, should default to review
+        result = runner.invoke(
+            main,
+            ["link", "add", "--path", str(source_dir), "--name", "lib", "--type=library"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked review resource: lib" in result.output
+
+        # Verify it's in review category
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["name"] == "lib"
+        assert config["resources"]["review"][0]["relationship"] == "review-only"
+
     def test_link_list_empty(self, runner, isolated_project):
         """Test listing when no resources linked."""
         runner.invoke(main, ["init", "empty-project"])
