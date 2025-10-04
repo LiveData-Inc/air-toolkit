@@ -1,11 +1,13 @@
 """Analyze repositories using AI agents."""
 
 import json
+import sys
+import traceback
 from pathlib import Path
 
 import click
 
-from air.services.agent_manager import generate_agent_id, spawn_background_agent
+from air.services.agent_manager import generate_agent_id, spawn_background_agent, update_agent_status
 from air.services.classifier import classify_resource
 from air.services.filesystem import get_project_root
 from air.utils.console import error, info, success
@@ -52,42 +54,57 @@ def analyze(
         return
 
     # Run analysis inline (for MVP: just classification)
-    info(f"Analyzing: {resource}")
+    try:
+        info(f"Analyzing: {resource}")
 
-    if focus:
-        info(f"Focus area: {focus}")
+        if focus:
+            info(f"Focus area: {focus}")
 
-    # Classify the resource
-    result = classify_resource(resource)
+        # Classify the resource
+        result = classify_resource(resource)
 
-    info(f"Type: {result.resource_type.value}")
-    if result.technology_stack:
-        info(f"Technology: {result.technology_stack}")
-    if result.detected_languages:
-        info(f"Languages: {', '.join(result.detected_languages)}")
-    if result.detected_frameworks:
-        info(f"Frameworks: {', '.join(result.detected_frameworks)}")
-    info(f"Confidence: {result.confidence:.0%}")
+        info(f"Type: {result.resource_type.value}")
+        if result.technology_stack:
+            info(f"Technology: {result.technology_stack}")
+        if result.detected_languages:
+            info(f"Languages: {', '.join(result.detected_languages)}")
+        if result.detected_frameworks:
+            info(f"Frameworks: {', '.join(result.detected_frameworks)}")
+        info(f"Confidence: {result.confidence:.0%}")
 
-    # Write findings (simple for MVP)
-    findings = [
-        {
-            "category": "classification",
-            "severity": "info",
-            "type": result.resource_type.value,
-            "technology_stack": result.technology_stack,
-            "confidence": result.confidence,
-            "languages": result.detected_languages,
-            "frameworks": result.detected_frameworks,
-            "reasoning": result.reasoning,
-        }
-    ]
+        # Write findings (simple for MVP)
+        findings = [
+            {
+                "category": "classification",
+                "severity": "info",
+                "type": result.resource_type.value,
+                "technology_stack": result.technology_stack,
+                "confidence": result.confidence,
+                "languages": result.detected_languages,
+                "frameworks": result.detected_frameworks,
+                "reasoning": result.reasoning,
+            }
+        ]
 
-    # Save findings to analysis directory
-    analysis_dir = project_root / "analysis" / "reviews"
-    analysis_dir.mkdir(parents=True, exist_ok=True)
+        # Save findings to analysis directory
+        analysis_dir = project_root / "analysis" / "reviews"
+        analysis_dir.mkdir(parents=True, exist_ok=True)
 
-    findings_file = analysis_dir / f"{resource.name}-findings.json"
-    findings_file.write_text(json.dumps(findings, indent=2))
+        findings_file = analysis_dir / f"{resource.name}-findings.json"
+        findings_file.write_text(json.dumps(findings, indent=2))
 
-    success(f"Analysis complete: {findings_file}")
+        success(f"Analysis complete: {findings_file}")
+
+        # Update agent status if running as background agent
+        if agent_id:
+            update_agent_status(agent_id, "complete")
+
+    except Exception as e:
+        error_msg = f"Analysis failed: {e}"
+        error(error_msg)
+
+        # Update agent status if running as background agent
+        if agent_id:
+            update_agent_status(agent_id, "failed", error=str(e), traceback=traceback.format_exc())
+
+        sys.exit(1)

@@ -30,6 +30,7 @@ dependencies = [
     "pyyaml>=6.0",       # YAML config support
     "gitpython>=3.1.0",  # Git operations
     "jinja2>=3.1.0",     # Template rendering
+    "psutil>=5.9.0",     # Cross-platform process management
 ]
 
 [project.optional-dependencies]

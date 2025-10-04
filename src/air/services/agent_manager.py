@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import psutil
+
 from air.utils.console import success
 from air.utils.paths import safe_filename
 
@@ -35,6 +37,25 @@ def get_agent_dir(agent_id: str) -> Path:
         Path to agent directory
     """
     return Path(".air/agents") / agent_id
+
+
+def is_process_running(pid: int | None) -> bool:
+    """Check if a process is still running (cross-platform).
+
+    Args:
+        pid: Process ID
+
+    Returns:
+        True if process is running, False otherwise
+    """
+    if pid is None:
+        return False
+
+    try:
+        process = psutil.Process(pid)
+        return process.is_running()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return False
 
 
 def spawn_background_agent(
@@ -72,6 +93,9 @@ def spawn_background_agent(
 
     if resource_path:
         cmd_args.append(resource_path)
+
+    # Add agent ID so background process can update its status
+    cmd_args.extend(["--id", agent_id])
 
     # Add args as flags
     for key, value in args.items():
@@ -144,6 +168,8 @@ def update_agent_status(agent_id: str, status: str, **kwargs: Any) -> None:
 def list_agents() -> list[dict[str, Any]]:
     """List all agents.
 
+    Auto-updates status for agents whose processes have terminated.
+
     Returns:
         List of agent metadata dicts
     """
@@ -156,7 +182,32 @@ def list_agents() -> list[dict[str, Any]]:
         metadata_file = agent_dir / "metadata.json"
         if metadata_file.exists():
             try:
-                agents.append(json.loads(metadata_file.read_text()))
+                metadata = json.loads(metadata_file.read_text())
+
+                # Check if process is still running
+                if metadata.get("status") == "running":
+                    pid = metadata.get("pid")
+                    if not is_process_running(pid):
+                        # Process has terminated - update status based on exit
+                        # Check for errors in stderr
+                        stderr_file = agent_dir / "stderr.log"
+                        has_errors = False
+                        if stderr_file.exists():
+                            stderr_content = stderr_file.read_text().strip()
+                            has_errors = len(stderr_content) > 0
+
+                        # Update status
+                        if has_errors:
+                            metadata["status"] = "failed"
+                            metadata["failed"] = datetime.now().isoformat()
+                        else:
+                            metadata["status"] = "complete"
+                            metadata["completed"] = datetime.now().isoformat()
+
+                        # Save updated metadata
+                        metadata_file.write_text(json.dumps(metadata, indent=2))
+
+                agents.append(metadata)
             except json.JSONDecodeError:
                 # Skip corrupted metadata
                 continue
