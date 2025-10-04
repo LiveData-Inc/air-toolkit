@@ -1,6 +1,6 @@
 # AIR Toolkit - Feature Specification
 
-**Version:** 0.3.1
+**Version:** 0.4.1
 **Status:** Active
 **Last Updated:** 2025-10-04
 
