@@ -103,7 +103,7 @@ def task_new(description: str, prompt: str | None) -> None:
 @task.command("list")
 @click.option(
     "--status",
-    type=click.Choice(["all", "in-progress", "success", "blocked"]),
+    type=click.Choice(["all", "in-progress", "success", "blocked", "partial"]),
     default="all",
     help="Filter by task status",
 )
@@ -126,18 +126,38 @@ def task_new(description: str, prompt: str | None) -> None:
     default="human",
     help="Output format",
 )
+@click.option(
+    "--sort",
+    type=click.Choice(["date", "title", "status"]),
+    default="date",
+    help="Sort tasks by field",
+)
+@click.option(
+    "--search",
+    help="Search tasks by keyword (title or prompt)",
+)
 def task_list(
-    status: str, include_archived: bool, archived_only: bool, output_format: str
+    status: str,
+    include_archived: bool,
+    archived_only: bool,
+    output_format: str,
+    sort: str,
+    search: str | None,
 ) -> None:
     """List all task files.
 
     \b
     Examples:
-      air task list                    # List active tasks
-      air task list --all              # Include archived
-      air task list --archived         # Only archived
-      air task list --format=json      # JSON output
+      air task list                           # List active tasks
+      air task list --all                     # Include archived
+      air task list --archived                # Only archived
+      air task list --status=success          # Only completed tasks
+      air task list --sort=title              # Sort by title
+      air task list --search=authentication   # Search for keyword
+      air task list --format=json             # JSON output
     """
+    from air.services.task_parser import parse_task_file
+
     project_root = get_project_root()
     if not project_root:
         error(
@@ -151,39 +171,110 @@ def task_list(
 
     tasks_dict = list_tasks(tasks_root, archive_root, include_archived, archived_only)
 
+    # Collect all tasks with parsed info for filtering/sorting
+    task_items = []
+    for task_file in tasks_dict["active"]:
+        try:
+            task_info = parse_task_file(task_file)
+            task_items.append({"file": task_file, "info": task_info, "archived": False})
+        except Exception:
+            # Skip files that can't be parsed
+            pass
+
+    for task_file in tasks_dict["archived"]:
+        try:
+            task_info = parse_task_file(task_file)
+            task_items.append({"file": task_file, "info": task_info, "archived": True})
+        except Exception:
+            pass
+
+    # Filter by status
+    if status != "all":
+        status_map = {
+            "in-progress": "in_progress",
+            "success": "success",
+            "blocked": "blocked",
+            "partial": "partial",
+        }
+        filter_status = status_map.get(status, status)
+        task_items = [t for t in task_items if t["info"].outcome == filter_status]
+
+    # Search by keyword
+    if search:
+        search_lower = search.lower()
+        task_items = [
+            t for t in task_items
+            if (search_lower in (t["info"].title or "").lower()) or
+               (search_lower in (t["info"].prompt or "").lower())
+        ]
+
+    # Sort tasks
+    if sort == "title":
+        task_items.sort(key=lambda t: (t["info"].title or "").lower())
+    elif sort == "status":
+        task_items.sort(key=lambda t: t["info"].outcome or "")
+    else:  # date (default)
+        task_items.sort(key=lambda t: t["info"].timestamp or t["file"].name, reverse=True)
+
+    # Separate active and archived for display
+    active_items = [t for t in task_items if not t["archived"]]
+    archived_items = [t for t in task_items if t["archived"]]
+
     if output_format == "json":
         result = {
-            "active": [str(t.relative_to(project_root)) for t in tasks_dict["active"]],
-            "archived": [str(t.relative_to(project_root)) for t in tasks_dict["archived"]],
-            "total_active": len(tasks_dict["active"]),
-            "total_archived": len(tasks_dict["archived"]),
+            "active": [
+                {
+                    "filename": str(t["file"].relative_to(project_root)),
+                    "title": t["info"].title,
+                    "status": t["info"].outcome,
+                    "date": t["info"].date,
+                }
+                for t in active_items
+            ],
+            "archived": [
+                {
+                    "filename": str(t["file"].relative_to(project_root)),
+                    "title": t["info"].title,
+                    "status": t["info"].outcome,
+                    "date": t["info"].date,
+                }
+                for t in archived_items
+            ],
+            "total_active": len(active_items),
+            "total_archived": len(archived_items),
         }
         print(json.dumps(result, indent=2))
         return
 
     # Human-readable output
+    status_emoji = {
+        "success": "✅",
+        "in_progress": "⏳",
+        "partial": "⚠️",
+        "blocked": "🚫",
+    }
+
     if not archived_only:
         console.print("[bold]Active Tasks[/bold]\n")
-        if tasks_dict["active"]:
-            for task_file in tasks_dict["active"]:
-                console.print(f"  • {task_file.name}")
+        if active_items:
+            for task_item in active_items:
+                emoji = status_emoji.get(task_item["info"].outcome or "in_progress", "❓")
+                console.print(f"  {emoji} {task_item['file'].name} - {task_item['info'].title}")
         else:
             console.print("  [dim]No active tasks[/dim]")
 
     if include_archived or archived_only:
         console.print("\n[bold]Archived Tasks[/bold]\n")
-        if tasks_dict["archived"]:
-            for task_file in tasks_dict["archived"]:
-                # Show relative path from archive root
-                rel_path = task_file.relative_to(archive_root)
-                console.print(f"  • {rel_path}")
+        if archived_items:
+            for task_item in archived_items:
+                emoji = status_emoji.get(task_item["info"].outcome or "in_progress", "❓")
+                rel_path = task_item["file"].relative_to(archive_root)
+                console.print(f"  {emoji} {rel_path} - {task_item['info'].title}")
         else:
             console.print("  [dim]No archived tasks[/dim]")
 
     # Summary
-    total_active = len(tasks_dict["active"])
-    total_archived = len(tasks_dict["archived"])
-    console.print(f"\n[dim]Active: {total_active}, Archived: {total_archived}[/dim]")
+    console.print(f"\n[dim]Active: {len(active_items)}, Archived: {len(archived_items)}[/dim]")
 
 
 @task.command("complete")
@@ -287,6 +378,148 @@ def task_complete(task_id: str, notes: str | None) -> None:
 
     info(f"Updated task file: .air/tasks/{task_file.name}")
     success(f"Task marked as complete: {task_id}")
+
+
+@task.command("status")
+@click.argument("task_id")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["human", "json"]),
+    default="human",
+    help="Output format",
+)
+def task_status(task_id: str, output_format: str) -> None:
+    """Show task details.
+
+    \b
+    Examples:
+      air task status 20251003-1200
+      air task status 20251003-1200 --format=json
+    """
+    from air.services.task_parser import parse_task_file
+    from air.utils.console import info
+
+    project_root = get_project_root()
+    if not project_root:
+        error(
+            "Not in an AIR project",
+            hint="Run 'air init' to create a project or 'cd' to project directory",
+            exit_code=1,
+        )
+
+    tasks_root = project_root / ".air/tasks"
+    archive_root = tasks_root / "archive"
+
+    # Find task file by ID prefix - check active first, then archive
+    if not task_id.endswith(".md"):
+        pattern = f"{task_id}-*.md"
+    else:
+        pattern = task_id
+
+    # Search in active tasks
+    matching = list(tasks_root.glob(pattern))
+
+    # If not found in active, search archive
+    if not matching:
+        matching = list(archive_root.rglob(pattern))
+        if matching:
+            info(f"Task found in archive: {matching[0].relative_to(archive_root)}")
+
+    if not matching:
+        error(
+            f"Task not found: {task_id}",
+            hint="Use 'air task list --all' to see all tasks",
+            exit_code=1,
+        )
+
+    if len(matching) > 1:
+        error(
+            f"Multiple tasks match '{task_id}'",
+            hint=f"Be more specific. Matches: {', '.join(t.name for t in matching)}",
+            exit_code=1,
+        )
+
+    task_file = matching[0]
+
+    # Parse task file
+    task_info = parse_task_file(task_file)
+
+    if output_format == "json":
+        # JSON output
+        output = {
+            "filename": task_info.filename,
+            "title": task_info.title,
+            "date": task_info.date,
+            "prompt": task_info.prompt,
+            "actions": task_info.actions,
+            "files_changed": task_info.files_changed,
+            "outcome": task_info.outcome,
+            "notes": task_info.notes,
+            "timestamp": task_info.timestamp.isoformat() if task_info.timestamp else None,
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        # Human-readable output
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+
+        # Determine status emoji
+        status_emoji = {
+            "success": "✅",
+            "in_progress": "⏳",
+            "partial": "⚠️",
+            "blocked": "🚫",
+        }.get(task_info.outcome or "in_progress", "❓")
+
+        # Build display
+        console.print()
+        console.print(Panel(
+            f"[bold]{task_info.title}[/bold]",
+            title=f"{status_emoji} Task Status",
+            border_style="blue",
+        ))
+        console.print()
+
+        # Metadata
+        console.print(f"[dim]File:[/dim] {task_info.filename}")
+        if task_info.date:
+            console.print(f"[dim]Date:[/dim] {task_info.date}")
+        if task_info.timestamp:
+            console.print(f"[dim]ID:[/dim] {task_info.timestamp.strftime('%Y%m%d-%H%M')}")
+        console.print()
+
+        # Prompt
+        if task_info.prompt:
+            console.print("[bold]Prompt[/bold]")
+            console.print(f"  {task_info.prompt}")
+            console.print()
+
+        # Actions
+        if task_info.actions and any(a.strip() and a.strip() not in ["1.", "-"] for a in task_info.actions):
+            console.print("[bold]Actions Taken[/bold]")
+            for action in task_info.actions:
+                if action.strip() and action.strip() not in ["1.", "-"]:
+                    console.print(f"  • {action}")
+            console.print()
+
+        # Files Changed
+        if task_info.files_changed and any(f.strip() and f.strip() != "-" for f in task_info.files_changed):
+            console.print("[bold]Files Changed[/bold]")
+            for file in task_info.files_changed:
+                if file.strip() and file.strip() != "-":
+                    console.print(f"  • {file}")
+            console.print()
+
+        # Outcome
+        console.print(f"[bold]Outcome:[/bold] {status_emoji} {task_info.outcome or 'In Progress'}")
+        console.print()
+
+        # Notes
+        if task_info.notes and task_info.notes.strip():
+            console.print("[bold]Notes[/bold]")
+            console.print(Markdown(task_info.notes))
+            console.print()
 
 
 @task.command("archive")

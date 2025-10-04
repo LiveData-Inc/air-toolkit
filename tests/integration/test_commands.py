@@ -1457,3 +1457,269 @@ class TestTaskCompleteCommand:
         updated_content = task_file.read_text()
         assert "✅ Success" in updated_content
         assert "🚫 Blocked" not in updated_content
+
+
+class TestTaskStatusCommand:
+    """Tests for air task status command."""
+
+    def test_task_status_not_in_air_project(self, runner, isolated_project):
+        """Test error when not in AIR project."""
+        result = runner.invoke(main, ["task", "status", "20251003-1200"])
+
+        assert result.exit_code == 1
+        assert "Not in an AIR project" in result.output
+
+    def test_task_status_task_not_found(self, runner, isolated_project):
+        """Test error when task doesn't exist."""
+        runner.invoke(main, ["init", "status-test"])
+        project_dir = isolated_project / "status-test"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["task", "status", "nonexistent"])
+
+        assert result.exit_code == 1
+        assert "Task not found" in result.output
+
+    def test_task_status_basic(self, runner, isolated_project):
+        """Test viewing task status."""
+        runner.invoke(main, ["init", "status-basic"])
+        project_dir = isolated_project / "status-basic"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        result = runner.invoke(main, ["task", "new", "test task"])
+        assert result.exit_code == 0
+
+        # Find the task file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-test-task.md"))
+        assert len(task_files) == 1
+        task_file = task_files[0]
+
+        # Get task ID from filename
+        task_id = task_file.stem.split("-test-task")[0]
+
+        # View status
+        result = runner.invoke(main, ["task", "status", task_id])
+        assert result.exit_code == 0
+        assert "Test task" in result.output
+        assert "Task Status" in result.output
+
+    def test_task_status_json_format(self, runner, isolated_project):
+        """Test JSON output format."""
+        runner.invoke(main, ["init", "status-json"])
+        project_dir = isolated_project / "status-json"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "json task"])
+
+        # Find the task file
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-json-task.md"))
+        task_file = task_files[0]
+        task_id = task_file.stem.split("-json-task")[0]
+
+        # Get status as JSON
+        result = runner.invoke(main, ["task", "status", task_id, "--format=json"])
+        assert result.exit_code == 0
+
+        # Parse JSON
+        import json
+        output = json.loads(result.output)
+
+        assert "filename" in output
+        assert "title" in output
+        assert "outcome" in output
+        assert output["title"] == "Json task"
+        assert output["outcome"] == "in_progress"
+
+    def test_task_status_completed_task(self, runner, isolated_project):
+        """Test status of completed task."""
+        runner.invoke(main, ["init", "status-complete"])
+        project_dir = isolated_project / "status-complete"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create and complete a task
+        runner.invoke(main, ["task", "new", "completed task"])
+
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-completed-task.md"))
+        task_file = task_files[0]
+        task_id = task_file.stem.split("-completed-task")[0]
+
+        # Complete it
+        runner.invoke(main, ["task", "complete", task_id])
+
+        # View status
+        result = runner.invoke(main, ["task", "status", task_id])
+        assert result.exit_code == 0
+        assert "Completed task" in result.output
+        assert "✅" in result.output or "Success" in result.output
+
+    def test_task_status_archived_task(self, runner, isolated_project):
+        """Test viewing status of archived task."""
+        runner.invoke(main, ["init", "status-archive"])
+        project_dir = isolated_project / "status-archive"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "archived task"])
+
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-archived-task.md"))
+        task_file = task_files[0]
+        task_id = task_file.stem.split("-archived-task")[0]
+
+        # Archive it
+        runner.invoke(main, ["task", "archive", task_id])
+
+        # View status of archived task
+        result = runner.invoke(main, ["task", "status", task_id])
+        assert result.exit_code == 0
+        assert "Task found in archive" in result.output
+        assert "Archived task" in result.output
+
+    def test_task_status_partial_id(self, runner, isolated_project):
+        """Test status with partial task ID."""
+        runner.invoke(main, ["init", "status-partial"])
+        project_dir = isolated_project / "status-partial"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a task
+        runner.invoke(main, ["task", "new", "partial id test"])
+
+        tasks_dir = project_dir / ".air/tasks"
+        task_files = list(tasks_dir.glob("*-partial-id-test.md"))
+        task_file = task_files[0]
+
+        # Use only date part of ID
+        task_id = task_file.stem[:8]  # YYYYMMDD
+
+        # View status with partial ID
+        result = runner.invoke(main, ["task", "status", task_id])
+        assert result.exit_code == 0
+        assert "Partial id test" in result.output
+
+
+class TestTaskListEnhanced:
+    """Tests for enhanced task list filtering and sorting."""
+
+    def test_task_list_filter_by_status(self, runner, isolated_project):
+        """Test filtering tasks by status - verify flag works."""
+        runner.invoke(main, ["init", "list-filter"])
+        project_dir = isolated_project / "list-filter"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create a simple task
+        runner.invoke(main, ["task", "new", "test task one"])
+
+        # Test that status filter doesn't error
+        result = runner.invoke(main, ["task", "list", "--status=in-progress"])
+        assert result.exit_code == 0
+
+        # Test other status values don't error
+        result = runner.invoke(main, ["task", "list", "--status=success"])
+        assert result.exit_code == 0
+
+        result = runner.invoke(main, ["task", "list", "--status=all"])
+        assert result.exit_code == 0
+
+    def test_task_list_sort_by_title(self, runner, isolated_project):
+        """Test sorting tasks by title."""
+        runner.invoke(main, ["init", "list-sort"])
+        project_dir = isolated_project / "list-sort"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks with different titles
+        runner.invoke(main, ["task", "new", "zebra task"])
+        runner.invoke(main, ["task", "new", "alpha task"])
+
+        # Sort by title
+        result = runner.invoke(main, ["task", "list", "--sort=title"])
+        assert result.exit_code == 0
+
+        # Alpha should come before Zebra
+        alpha_pos = result.output.lower().find("alpha task")
+        zebra_pos = result.output.lower().find("zebra task")
+        assert alpha_pos < zebra_pos
+
+    def test_task_list_search_keyword(self, runner, isolated_project):
+        """Test searching tasks by keyword."""
+        runner.invoke(main, ["init", "list-search"])
+        project_dir = isolated_project / "list-search"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks
+        runner.invoke(main, ["task", "new", "implement authentication"])
+        runner.invoke(main, ["task", "new", "fix database issue"])
+
+        # Search for "auth"
+        result = runner.invoke(main, ["task", "list", "--search=auth"])
+        assert result.exit_code == 0
+        assert "authentication" in result.output.lower()
+        assert "database" not in result.output.lower()
+
+    def test_task_list_json_with_filters(self, runner, isolated_project):
+        """Test JSON output with filters."""
+        runner.invoke(main, ["init", "list-json"])
+        project_dir = isolated_project / "list-json"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks
+        runner.invoke(main, ["task", "new", "test task"])
+
+        # Get filtered list as JSON
+        result = runner.invoke(main, ["task", "list", "--format=json"])
+        assert result.exit_code == 0
+
+        # Parse JSON
+        import json
+        output = json.loads(result.output)
+
+        assert "active" in output
+        assert "total_active" in output
+        assert len(output["active"]) >= 1
+        assert "title" in output["active"][0]
+        assert "status" in output["active"][0]
+
+    def test_task_list_combined_filters(self, runner, isolated_project):
+        """Test combining multiple filters."""
+        runner.invoke(main, ["init", "list-combined"])
+        project_dir = isolated_project / "list-combined"
+
+        import os
+        os.chdir(project_dir)
+
+        # Create tasks
+        runner.invoke(main, ["task", "new", "authentication work"])
+        runner.invoke(main, ["task", "new", "database work"])
+
+        # Test combining search with other filters
+        result = runner.invoke(main, ["task", "list", "--search=auth", "--sort=title"])
+        assert result.exit_code == 0
+        assert "authentication" in result.output.lower()
+
+        # Test status filter combined with sort
+        result = runner.invoke(main, ["task", "list", "--status=in-progress", "--sort=date"])
+        assert result.exit_code == 0

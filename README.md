@@ -157,11 +157,16 @@ air link remove NAME [--keep-link]   # Remove resource
 # Task Tracking
 air task new DESCRIPTION             # Create task file
   --prompt TEXT                      # Custom prompt
+air task status ID                   # Show task details
+  --format json                      # JSON output
 air task complete ID                 # Mark task as complete
   --notes TEXT                       # Add completion notes
 air task list [OPTIONS]              # List tasks
   --all                              # Include archived
   --archived                         # Only archived
+  --status STATUS                    # Filter by status
+  --sort FIELD                       # Sort by date/title/status
+  --search TERM                      # Search by keyword
   --format json                      # JSON output
 air task archive ID [OPTIONS]        # Archive tasks
   --all                              # Archive all

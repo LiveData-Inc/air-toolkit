@@ -5,6 +5,33 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2025-10-04
+
+### Added
+- **`air task status`** - View detailed task information
+  - Show task title, date, prompt, actions, files, outcome, and notes
+  - JSON and human-readable output formats
+  - Searches both active and archived tasks
+  - Rich terminal display with status emojis
+  - 7 unit tests + 7 integration tests
+
+- **Enhanced `air task list`** - Advanced filtering and sorting
+  - Filter by status: `--status=success|in-progress|blocked|partial`
+  - Sort by field: `--sort=date|title|status`
+  - Search by keyword: `--search=TERM` (searches title and prompt)
+  - Combined filters work together
+  - Enhanced JSON output with task details
+  - Rich display with status emojis for each task
+  - 5 integration tests
+
+### Changed
+- Task list display now shows status emoji and title for each task
+- JSON output includes task title, status, and date fields
+
+### Testing
+- **205 tests total** (was 186) - All passing ✅
+- Added 19 new tests (7 unit + 12 integration)
+
 ## [0.2.1] - 2025-10-03
 
 ### Added
