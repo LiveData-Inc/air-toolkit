@@ -294,24 +294,15 @@ def _init_interactive() -> None:
 
     # Call init with collected parameters
     console.print()
+    ctx = click.get_current_context()
+
+    # Temporarily disable interactive mode to avoid recursion
     if create_dir:
-        init.invoke(
-            click.get_current_context(),
-            name=project_name,
-            mode=mode_choice,
-            track=track,
-            create_dir=True,
-            interactive=False
-        )
+        ctx.invoke(init, name=project_name, mode=mode_choice, track=track,
+                   create_dir=True, interactive=False)
     else:
-        init.invoke(
-            click.get_current_context(),
-            name=None,
-            mode=mode_choice,
-            track=track,
-            create_dir=False,
-            interactive=False
-        )
+        ctx.invoke(init, name=None, mode=mode_choice, track=track,
+                   create_dir=False, interactive=False)
 
     # Add goals to config if provided
     if goals:
