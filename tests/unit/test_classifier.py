@@ -175,27 +175,28 @@ class TestLibraryClassification:
 
         result = classify_resource(tmp_path)
         # Should be library (no bin field in package.json)
-        assert result.resource_type in [ResourceType.LIBRARY, ResourceType.IMPLEMENTATION]
+        assert result.resource_type == ResourceType.LIBRARY
 
-    def test_not_library_with_main(self, tmp_path: Path) -> None:
-        """Test that application with main is not classified as library."""
+    def test_application_also_library(self, tmp_path: Path) -> None:
+        """Test that applications are now also classified as library (simplified model)."""
         (tmp_path / "setup.py").write_text("from setuptools import setup")
         (tmp_path / "app.py").write_text('if __name__ == "__main__":\n    main()')
 
         result = classify_resource(tmp_path)
-        assert result.resource_type != ResourceType.LIBRARY
+        # In new model, all code repos are "library" (including apps)
+        assert result.resource_type == ResourceType.LIBRARY
 
 
 class TestImplementationClassification:
-    """Test implementation classification."""
+    """Test code repository classification (now defaults to library)."""
 
     def test_classify_python_app(self, tmp_path: Path) -> None:
-        """Test classification of Python application."""
+        """Test classification of Python application (classified as library)."""
         (tmp_path / "app.py").write_text('if __name__ == "__main__":\n    print("hello")')
         (tmp_path / "utils.py").write_text("def helper(): pass")
 
         result = classify_resource(tmp_path)
-        assert result.resource_type == ResourceType.IMPLEMENTATION
+        assert result.resource_type == ResourceType.LIBRARY
 
     def test_classify_mixed_repo(self, tmp_path: Path) -> None:
         """Test classification of mixed code/docs repository."""
@@ -209,12 +210,8 @@ class TestImplementationClassification:
         (tmp_path / "README.md").write_text("# Project")
 
         result = classify_resource(tmp_path)
-        # Should prefer implementation when more code than docs
-        assert result.resource_type in [
-            ResourceType.IMPLEMENTATION,
-            ResourceType.LIBRARY,
-            ResourceType.DOCUMENTATION,
-        ]
+        # With mixed content, should classify as library (default for code)
+        assert result.resource_type == ResourceType.LIBRARY
 
 
 class TestEdgeCases:

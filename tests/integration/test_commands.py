@@ -797,7 +797,7 @@ class TestLinkCommand:
         # Add resource using new flag format
         result = runner.invoke(
             main,
-            ["link", "add", "--path", str(source_dir), "--name", "service-a", "--review", "--type=implementation"]
+            ["link", "add", "--path", str(source_dir), "--name", "service-a", "--review", "--type=library"]
         )
 
         assert result.exit_code == 0
@@ -816,7 +816,7 @@ class TestLinkCommand:
 
         assert len(config["resources"]["review"]) == 1
         assert config["resources"]["review"][0]["name"] == "service-a"
-        assert config["resources"]["review"][0]["type"] == "implementation"
+        assert config["resources"]["review"][0]["type"] == "library"
         assert config["resources"]["review"][0]["relationship"] == "review-only"
 
     def test_link_add_collaborate_resource(self, runner, isolated_project):
@@ -911,7 +911,7 @@ class TestLinkCommand:
 
         result = runner.invoke(
             main,
-            ["link", "add", "--path", "/nonexistent/path", "--name", "missing", "--review", "--type=implementation"]
+            ["link", "add", "--path", "/nonexistent/path", "--name", "missing", "--review", "--type=library"]
         )
 
         assert result.exit_code == 1
@@ -931,10 +931,10 @@ class TestLinkCommand:
         os.chdir(project_dir)
 
         # Add first resource
-        runner.invoke(main, ["link", "add", "--path", str(source1), "--name", "repo", "--review", "--type=implementation"])
+        runner.invoke(main, ["link", "add", "--path", str(source1), "--name", "repo", "--review", "--type=library"])
 
         # Try to add with same name
-        result = runner.invoke(main, ["link", "add", "--path", str(source2), "--name", "repo", "--review", "--type=implementation"])
+        result = runner.invoke(main, ["link", "add", "--path", str(source2), "--name", "repo", "--review", "--type=library"])
 
         assert result.exit_code == 1
         assert "already linked" in result.output

@@ -44,7 +44,7 @@ def classify(
     Analyzes linked resources and classifies them by detecting:
       - Programming languages (Python, JavaScript, Go, etc.)
       - Frameworks (Django, React, Spring, etc.)
-      - Resource type (implementation, documentation, library, service)
+      - Resource type (library, documentation, service)
 
     \b
     Examples:

@@ -166,9 +166,8 @@ class ProjectMode(StrEnum):
 
 class ResourceType(StrEnum):
     """Type of linked resource."""
-    IMPLEMENTATION = "implementation"
-    DOCUMENTATION = "documentation"
     LIBRARY = "library"
+    DOCUMENTATION = "documentation"
     SERVICE = "service"
 
 

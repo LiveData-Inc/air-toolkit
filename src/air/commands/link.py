@@ -200,12 +200,13 @@ def _interactive_link_add(
         else ResourceRelationship.DEVELOPER
     )
 
-    # Step 4: Auto-detect type?
+    # Step 4: Auto-classify (opt-out, default: YES)
+    tech_stack = None
     if not resource_type:
         console.print()
         auto_detect = Confirm.ask(
-            "[cyan]Auto-detect resource type?[/cyan]",
-            default=False
+            "[cyan]Auto-classify resource?[/cyan]",
+            default=True  # Changed to opt-out
         )
 
         if auto_detect:
@@ -215,9 +216,11 @@ def _interactive_link_add(
             console.print("🔍 Analyzing repository...")
             try:
                 result = classify_resource(source_path)
+                tech_stack = result.technology_stack
                 console.print(
-                    f"✓ Detected: [bold]{result.resource_type}[/bold] "
-                    f"(confidence: {result.confidence:.0%})"
+                    f"✓ Detected: [bold]{result.resource_type}[/bold]"
+                    + (f" ({result.technology_stack})" if result.technology_stack else "")
+                    + f" (confidence: {result.confidence:.0%})"
                 )
                 if result.detected_languages:
                     console.print(f"  Languages: {', '.join(result.detected_languages)}")
@@ -225,7 +228,7 @@ def _interactive_link_add(
                     console.print(f"  Frameworks: {', '.join(result.detected_frameworks)}")
 
                 use_detected = Confirm.ask(
-                    f"Use detected type '{result.resource_type}'?",
+                    f"Use detected classification?",
                     default=True
                 )
 
@@ -239,18 +242,19 @@ def _interactive_link_add(
             console.print()
             resource_type = Prompt.ask(
                 "[cyan]Resource type[/cyan]",
-                choices=["implementation", "documentation", "library", "service"],
-                default="implementation"
+                choices=["library", "documentation", "service"],
+                default="library"  # Changed default from "implementation"
             )
 
     # Step 5: Confirmation
     console.print()
+    tech_display = f" ({tech_stack})" if tech_stack else ""
     console.print(Panel.fit(
         f"[bold]📋 Review Configuration:[/bold]\n\n"
         f"  Name:         [cyan]{resource_name}[/cyan]\n"
         f"  Path:         {source_path}\n"
         f"  Relationship: [cyan]{category}[/cyan] ({'read-only' if is_review else 'contribute'})\n"
-        f"  Type:         [cyan]{resource_type}[/cyan]",
+        f"  Type:         [cyan]{resource_type}{tech_display}[/cyan]",
         border_style="green",
         title="Confirmation"
     ))
@@ -279,6 +283,7 @@ def _interactive_link_add(
         name=resource_name,
         path=str(source_path),
         type=ResourceType(resource_type),
+        technology_stack=tech_stack,
         relationship=relationship,
         clone=False,
     )
@@ -318,7 +323,7 @@ def link() -> None:
 @click.option(
     "--type",
     "resource_type",
-    type=click.Choice(["implementation", "documentation", "library", "service"]),
+    type=click.Choice(["library", "documentation", "service"]),
     help="Resource type",
 )
 def link_add(
@@ -331,13 +336,13 @@ def link_add(
 ) -> None:
     """Add a linked resource.
 
-    Interactive by default. Provide all options for non-interactive use.
+    Interactive by default with auto-classification. Provide all options for non-interactive use.
 
     \b
     Examples:
-      air link add                                    # Interactive mode
+      air link add                                    # Interactive mode with auto-classify
       air link add --path ~/repos/service-a --review  # Semi-interactive
-      air link add --path ~/repos/service-a --name service-a --review --type service  # Non-interactive
+      air link add --path ~/repos/service-a --name service-a --review --type library  # Non-interactive
 
       # Deprecated (still works, will be removed in v0.5.0):
       air link add service-a:~/repos/service-a --review
@@ -371,7 +376,7 @@ def link_add(
 
     # Detect if we need interactive mode
     # We need interactive if missing path OR name
-    # Note: relationship defaults to review, resource_type defaults to "implementation"
+    # Note: relationship defaults to review, resource_type defaults to "library"
     needs_interactive = not all([path, name])
 
     if needs_interactive:
@@ -405,7 +410,7 @@ def link_add(
     # Use provided values
     path_str = path
     resource_name = name
-    res_type = resource_type or "implementation"
+    res_type = resource_type or "library"  # Changed default from "implementation"
 
     # Expand and validate path
     source_path = Path(path_str).expanduser().resolve()
@@ -449,11 +454,12 @@ def link_add(
     info(f"Creating symlink: repos/{resource_name} -> {source_path}")
     create_symlink(source_path, link_path)
 
-    # Create resource entry
+    # Create resource entry (non-interactive: no auto-classification)
     resource = Resource(
         name=resource_name,
         path=str(source_path),
         type=ResourceType(res_type),
+        technology_stack=None,  # Non-interactive mode doesn't auto-classify
         relationship=relationship,
         clone=False,
     )

@@ -18,9 +18,8 @@ class ProjectMode(StrEnum):
 class ResourceType(StrEnum):
     """Type of linked resource."""
 
-    IMPLEMENTATION = "implementation"
-    DOCUMENTATION = "documentation"
     LIBRARY = "library"
+    DOCUMENTATION = "documentation"
     SERVICE = "service"
 
 
@@ -65,6 +64,7 @@ class Resource(BaseModel):
     name: str
     path: str
     type: ResourceType
+    technology_stack: str | None = None  # e.g., "Python/FastAPI", "TypeScript/React"
     relationship: ResourceRelationship
     clone: bool = False
     outputs: list[str] = Field(default_factory=list)

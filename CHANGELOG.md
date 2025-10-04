@@ -5,6 +5,54 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-10-04
+
+### Breaking Changes
+- **Resource Type Simplification** - Renamed `implementation` → `library`
+  - All code repositories now classified as `library` (simpler, clearer)
+  - Only 3 types remain: `library`, `documentation`, `service`
+  - Tests updated: 318 passing ✅
+
+### Added
+- **Technology Stack Field** - New `technology_stack` field on all resources
+  - Captures language + framework (e.g., "Python/FastAPI", "TypeScript/React")
+  - Auto-populated during classification
+  - Displayed in confirmation panel and listings
+  - Stored in `air-config.json`
+
+- **Auto-Classification Now Default** - Changed from opt-in to opt-out
+  - Interactive prompt now defaults to YES for auto-classify
+  - Shows detected stack in output (e.g., "library (Python/Django)")
+  - Can still skip classification if desired
+
+### Changed
+- **Classifier Updates:**
+  - Returns `technology_stack` in ClassificationResult
+  - Helper function `_generate_technology_stack()` creates stack strings
+  - All code repos default to `library` type
+  - Service detection unchanged (requires deployment configs)
+  - Documentation detection unchanged (>70% doc files)
+
+- **Link Command:**
+  - Default type changed from `implementation` to `library`
+  - Auto-classification prompt defaults to True (was False)
+  - Displays technology stack in confirmation panel
+  - Non-interactive mode sets `technology_stack=None`
+
+### Documentation
+- Updated all docs to use `library` instead of `implementation`
+- COMMANDS.md reflects new 3-type system
+- ARCHITECTURE.md updated with correct ResourceType enum
+- SPECIFICATION.md examples updated
+
+### Migration
+Existing configs with `"type": "implementation"` will need manual update to `"type": "library"`.
+The system still accepts it but it's deprecated.
+
+### Future (v0.4.3+)
+- User suggested: `mixed` type for monorepos with multiple projects
+- User suggested: Path autocomplete and command history (up/down arrows)
+
 ## [0.4.1] - 2025-10-04
 
 ### Added

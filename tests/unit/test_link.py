@@ -75,7 +75,7 @@ class TestLoadConfig:
                     {
                         "name": "service-a",
                         "path": "/path/to/service-a",
-                        "type": "implementation",
+                        "type": "library",
                         "relationship": "review-only",
                         "clone": False,
                     }
@@ -137,7 +137,7 @@ class TestSaveConfig:
         resource = Resource(
             name="service-a",
             path="/path/to/service-a",
-            type=ResourceType.IMPLEMENTATION,
+            type=ResourceType.LIBRARY,
             relationship=ResourceRelationship.REVIEW_ONLY,
         )
         config.add_resource(resource, "review")

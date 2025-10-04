@@ -1,5 +1,5 @@
 """AIR - AI Review & Development Toolkit."""
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __author__ = "LiveData Inc"
 __description__ = "AI-assisted development and multi-project assessment toolkit"

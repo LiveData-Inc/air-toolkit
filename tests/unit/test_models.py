@@ -37,7 +37,7 @@ def test_add_resource():
     resource = Resource(
         name="service-a",
         path="/path/to/service-a",
-        type=ResourceType.IMPLEMENTATION,
+        type=ResourceType.LIBRARY,
         relationship=ResourceRelationship.REVIEW_ONLY,
     )
 
@@ -57,7 +57,7 @@ def test_find_resource():
     resource = Resource(
         name="service-a",
         path="/path/to/service-a",
-        type=ResourceType.IMPLEMENTATION,
+        type=ResourceType.LIBRARY,
         relationship=ResourceRelationship.REVIEW_ONLY,
     )
 
@@ -76,7 +76,7 @@ def test_resource_path_expansion():
     resource = Resource(
         name="test",
         path="~/repos/test",
-        type=ResourceType.IMPLEMENTATION,
+        type=ResourceType.LIBRARY,
         relationship=ResourceRelationship.REVIEW_ONLY,
     )
 
@@ -95,7 +95,7 @@ def test_get_all_resources():
     review_resource = Resource(
         name="service-a",
         path="/path/to/service-a",
-        type=ResourceType.IMPLEMENTATION,
+        type=ResourceType.LIBRARY,
         relationship=ResourceRelationship.REVIEW_ONLY,
     )
 

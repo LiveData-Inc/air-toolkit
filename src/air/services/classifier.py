@@ -10,6 +10,7 @@ class ClassificationResult(NamedTuple):
     """Result of resource classification."""
 
     resource_type: ResourceType
+    technology_stack: str | None  # e.g., "Python/FastAPI", "TypeScript/React"
     confidence: float  # 0.0 to 1.0
     detected_languages: list[str]
     detected_frameworks: list[str]
@@ -70,6 +71,35 @@ SERVICE_PATTERNS = [
 ]
 
 
+def _generate_technology_stack(languages: list[str], frameworks: list[str]) -> str | None:
+    """Generate technology stack string from detected languages and frameworks.
+
+    Args:
+        languages: Detected languages
+        frameworks: Detected frameworks
+
+    Returns:
+        Technology stack string like "Python/FastAPI" or "TypeScript/React"
+    """
+    if not languages and not frameworks:
+        return None
+
+    # Prioritize the first detected language
+    primary_lang = languages[0].capitalize() if languages else None
+
+    # Find the most relevant framework
+    primary_framework = frameworks[0].capitalize() if frameworks else None
+
+    if primary_lang and primary_framework:
+        return f"{primary_lang}/{primary_framework}"
+    elif primary_lang:
+        return primary_lang
+    elif primary_framework:
+        return primary_framework
+
+    return None
+
+
 def classify_resource(resource_path: Path) -> ClassificationResult:
     """Classify a resource by analyzing its structure.
 
@@ -81,7 +111,8 @@ def classify_resource(resource_path: Path) -> ClassificationResult:
     """
     if not resource_path.exists() or not resource_path.is_dir():
         return ClassificationResult(
-            resource_type=ResourceType.IMPLEMENTATION,
+            resource_type=ResourceType.LIBRARY,
+            technology_stack=None,
             confidence=0.0,
             detected_languages=[],
             detected_frameworks=[],
@@ -102,8 +133,10 @@ def classify_resource(resource_path: Path) -> ClassificationResult:
     # Classify based on scores
     total_score = doc_score + code_score + service_score
     if total_score == 0:
+        tech_stack = _generate_technology_stack(languages, frameworks)
         return ClassificationResult(
-            resource_type=ResourceType.IMPLEMENTATION,
+            resource_type=ResourceType.LIBRARY,
+            technology_stack=tech_stack,
             confidence=0.0,
             detected_languages=languages,
             detected_frameworks=frameworks,
@@ -115,9 +148,14 @@ def classify_resource(resource_path: Path) -> ClassificationResult:
     code_ratio = code_score / total_score
 
     # Determine resource type
+    tech_stack = _generate_technology_stack(languages, frameworks)
+
     if doc_ratio > 0.7:
+        # Documentation-heavy (e.g., Markdown/MkDocs)
+        doc_stack = "Markdown" if not tech_stack else tech_stack
         return ClassificationResult(
             resource_type=ResourceType.DOCUMENTATION,
+            technology_stack=doc_stack,
             confidence=min(doc_ratio, 0.95),
             detected_languages=languages,
             detected_frameworks=frameworks,
@@ -127,28 +165,27 @@ def classify_resource(resource_path: Path) -> ClassificationResult:
         # Has deployment configs and code
         return ClassificationResult(
             resource_type=ResourceType.SERVICE,
+            technology_stack=tech_stack,
             confidence=min(service_ratio + 0.4, 0.95),
             detected_languages=languages,
             detected_frameworks=frameworks,
-            reasoning=f"Deployable service with {', '.join(languages)} code",
-        )
-    elif _is_library(resource_path, languages):
-        return ClassificationResult(
-            resource_type=ResourceType.LIBRARY,
-            confidence=0.8,
-            detected_languages=languages,
-            detected_frameworks=frameworks,
-            reasoning="Library/package structure without executable entry points",
+            reasoning=f"Deployable service with {tech_stack or 'unknown stack'}",
         )
     else:
-        # Default to implementation
-        confidence = 0.6 if languages else 0.4
+        # Default to library (any code repository)
+        confidence = 0.8 if _is_library(resource_path, languages) else 0.6
+        reasoning = (
+            "Library/package structure"
+            if _is_library(resource_path, languages)
+            else f"Code repository ({tech_stack or 'unknown stack'})"
+        )
         return ClassificationResult(
-            resource_type=ResourceType.IMPLEMENTATION,
+            resource_type=ResourceType.LIBRARY,
+            technology_stack=tech_stack,
             confidence=confidence,
             detected_languages=languages,
             detected_frameworks=frameworks,
-            reasoning=f"General implementation project with {', '.join(languages) if languages else 'unknown language'}",
+            reasoning=reasoning,
         )
 
 

@@ -1,6 +1,6 @@
 # AIR Toolkit - Feature Specification
 
-**Version:** 0.4.1
+**Version:** 0.4.2
 **Status:** Active
 **Last Updated:** 2025-10-04
 
@@ -378,7 +378,7 @@ AI Tasks (5 total)
       {
         "name": "service-a",
         "path": "~/repos/service-a",
-        "type": "implementation",
+        "type": "library",
         "relationship": "review-only",
         "outputs": [
           "analysis/reviews/service-a-analysis.md"

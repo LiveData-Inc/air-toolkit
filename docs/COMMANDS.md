@@ -180,7 +180,7 @@ air link add --path PATH --name NAME --review|--develop [--type TYPE]
 - `--name NAME` - Resource name/alias (required)
 - `--review` - Link as review-only resource (read-only) **[default]**
 - `--develop` - Link as developer resource (can contribute)
-- `--type TYPE` - Resource type: `implementation`, `documentation`, `library`, `service` (default: `implementation`)
+- `--type TYPE` - Resource type: `library`, `documentation`, `service` (default: `library`)
 
 **Examples:**
 
@@ -188,11 +188,11 @@ air link add --path PATH --name NAME --review|--develop [--type TYPE]
 # Interactive mode
 air link add
 
-# Minimal - uses defaults (review mode, implementation type)
+# Minimal - uses defaults (review mode, library type)
 air link add --path ~/repos/service-a --name service-a
 
 # Explicit review resource with type
-air link add --path ~/repos/service-a --name service-a --review --type implementation
+air link add --path ~/repos/service-a --name service-a --review --type library
 
 # Develop resource
 air link add --path ~/repos/architecture --name arch --develop --type documentation
@@ -497,11 +497,11 @@ air classify --update
 Resource Classification:
 
 Review-Only (2):
-  ✓ service-a (implementation)
+  ✓ service-a (library)
     Reason: Contains Python implementation code
     Analysis: analysis/assessments/service-a.md
 
-  ✓ service-b (implementation)
+  ✓ service-b (library)
     Reason: Service implementation
     Analysis: analysis/assessments/service-b.md
 
