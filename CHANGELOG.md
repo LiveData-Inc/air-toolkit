@@ -5,6 +5,112 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-10-04
+
+### Added - Agent Coordination System (MVP)
+
+**Parallel Analysis Tracking** - Run multiple analyses concurrently and aggregate results
+
+#### New Commands
+
+- **`air analyze`** - Analyze repositories with AI-powered insights
+  - Inline mode: `air analyze repos/service-a`
+  - Background mode: `air analyze repos/service-a --background --id=analysis-1`
+  - Focus areas: `--focus=security|architecture|performance`
+  - Generates findings in `analysis/reviews/<resource>-findings.json`
+
+- **`air status --agents`** - View all background agent status
+  - Shows agent ID, status, start time, and progress
+  - Human-readable table and JSON formats
+  - Example: `air status --agents`
+
+- **`air findings --all`** - Aggregate findings from all analyses
+  - Filter by severity: `--severity=high|medium|low`
+  - JSON and table output formats
+  - Example: `air findings --all --severity=high`
+
+#### New Infrastructure
+
+- **`.air/agents/` directory** - One subdirectory per background agent
+  - `metadata.json` - Agent configuration and status
+  - `stdout.log` - Agent output stream
+  - `stderr.log` - Agent error stream
+
+- **`.air/shared/` directory** - Shared state between agents (reserved for future use)
+
+#### New Services
+
+- **`agent_manager.py`** - Agent lifecycle management
+  - Spawn background agents as detached subprocesses
+  - Track agent status (running, complete, failed)
+  - Load agent metadata and progress
+  - List all agents with sorting
+
+#### Utilities
+
+- **`format_relative_time()`** - Display timestamps as "5m ago", "2h ago", etc.
+
+### Testing
+
+- **344 tests total** (was 337) - All passing ✅
+- Added 7 new agent coordination integration tests:
+  - `test_analyze_command_inline` - Inline analysis
+  - `test_analyze_command_background` - Background agent spawning
+  - `test_status_agents_command` - Agent status display
+  - `test_status_agents_json_format` - JSON output
+  - `test_findings_command` - Findings aggregation
+  - `test_findings_json_format` - JSON findings
+  - `test_multiple_parallel_analyses` - Parallel execution
+
+### Documentation
+
+- Updated `docs/COMMANDS.md` with new "Agent Coordination Commands" section
+- Added documentation for `air analyze`, `air status --agents`, `air findings`
+- Updated version to 0.6.0
+
+### Use Cases
+
+**Parallel Repository Analysis:**
+```bash
+# Spawn 3 background agents
+air analyze repos/service-a --background --id=analysis-1
+air analyze repos/service-b --background --id=analysis-2
+air analyze repos/service-c --background --id=analysis-3
+
+# Monitor progress
+air status --agents
+
+# View combined findings
+air findings --all
+```
+
+**Focused Security Review:**
+```bash
+# Run security-focused analysis
+air analyze repos/api-service --background --id=security-review --focus=security
+
+# Check findings
+air findings --all --severity=high
+```
+
+### Technical Details
+
+- Background agents run as detached subprocesses (start_new_session=True)
+- Agent metadata stored in JSON for easy querying
+- Findings aggregated from multiple JSON files
+- Process management via Python subprocess module (simple, cross-platform)
+
+### Future Enhancements (v0.6.x)
+
+See `.air/tasks/20251004-1520-mvp-parallel-analysis-tracking.md` for roadmap:
+- M1: Automated spawning with `air spawn` command
+- M2: Shared findings database (SQLite)
+- M3: Parallel execution pipeline with dependencies
+- M4: Resource management (token budgets, rate limits)
+- M5: Advanced features (retry, GitHub integration, templates)
+
+---
+
 ## [0.5.11] - 2025-10-04
 
 ### Changed

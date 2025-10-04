@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.5.11
+**Version:** 0.6.0
 **Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
@@ -18,6 +18,10 @@ Complete reference for all AIR commands.
 - [Code Review Commands](#code-review-commands)
   - [air review](#air-review)
   - [air claude](#air-claude)
+- [Agent Coordination Commands](#agent-coordination-commands)
+  - [air analyze](#air-analyze)
+  - [air status --agents](#air-status---agents)
+  - [air findings](#air-findings)
 - [Task Tracking Commands](#task-tracking-commands)
   - [air task](#air-task)
   - [air track](#air-track)
@@ -793,6 +797,143 @@ air claude context
 
 # Get context in markdown
 air claude context --format=markdown
+```
+
+---
+
+## Agent Coordination Commands
+
+Commands for running parallel analyses and coordinating multiple AI agents (v0.6.0+).
+
+---
+
+### air analyze
+
+Analyze a repository using AI-powered classification and insights.
+
+**Usage:**
+
+```bash
+air analyze RESOURCE_PATH [OPTIONS]
+```
+
+**Options:**
+
+- `--background` - Run analysis in background as an agent
+- `--id TEXT` - Agent identifier (for background mode)
+- `--focus TEXT` - Analysis focus area (security, architecture, performance)
+
+**Examples:**
+
+```bash
+# Inline analysis (runs immediately)
+air analyze repos/service-a
+
+# Focused analysis
+air analyze repos/service-a --focus=security
+
+# Background analysis (spawn agent)
+air analyze repos/service-a --background --id=security-analysis
+
+# Multiple parallel analyses
+air analyze repos/service-a --background --id=analysis-1
+air analyze repos/service-b --background --id=analysis-2
+air analyze repos/service-c --background --id=analysis-3
+```
+
+**Output:**
+
+- **Inline mode**: Displays classification results to terminal
+- **Background mode**: Spawns detached agent, writes to `.air/agents/<id>/`
+
+**Files Created:**
+
+- `analysis/reviews/<resource>-findings.json` - Analysis findings
+- `.air/agents/<id>/metadata.json` - Agent metadata (background only)
+- `.air/agents/<id>/stdout.log` - Agent output (background only)
+
+---
+
+### air status --agents
+
+Show status of all background agents.
+
+**Usage:**
+
+```bash
+air status --agents [--format=FORMAT]
+```
+
+**Options:**
+
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# Human-readable table
+air status --agents
+
+# JSON format for scripts
+air status --agents --format=json
+```
+
+**Output Example:**
+
+```
+Active Agents
+
+Agent       Status     Started    Progress
+analysis-1  ⏳ Running 5m ago     Analyzing database queries...
+analysis-2  ✓ Complete 10m ago
+analysis-3  ⏳ Running 2m ago     Reviewing security patterns...
+
+Total: 3 agents (2 running, 1 complete, 0 failed)
+```
+
+---
+
+### air findings
+
+View and aggregate analysis findings from all agents.
+
+**Usage:**
+
+```bash
+air findings [OPTIONS]
+```
+
+**Options:**
+
+- `--all` - Show findings from all analyses (recommended)
+- `--severity TEXT` - Filter by severity: high, medium, low
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# View all findings
+air findings --all
+
+# High-severity findings only
+air findings --all --severity=high
+
+# JSON format for processing
+air findings --all --format=json
+```
+
+**Output Example:**
+
+```
+Analysis Findings
+
+Source       Severity  Category        Description
+service-a    ⚠️  High   Security        No password hashing
+service-a    ⚡ Medium Performance     Missing database index
+service-b    ⚠️  High   Security        SQL injection risk
+service-c    ℹ️  Low    Style           Long function detected
+
+Total: 4 findings (2 high, 1 medium, 1 low)
 ```
 
 ---
