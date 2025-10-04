@@ -274,6 +274,87 @@ class TestValidateCommand:
         assert result.exit_code == 3
         assert "Validation failed" in result.output
 
+    def test_validate_detects_missing_symlink(self, runner, isolated_project):
+        """Test air validate detects resource configured but symlink missing."""
+        import os
+        import shutil
+
+        # Create project
+        runner.invoke(main, ["init", "missing-link-proj"])
+        project_dir = isolated_project / "missing-link-proj"
+
+        # Create a temp resource to link
+        resource_dir = isolated_project / "temp-resource"
+        resource_dir.mkdir()
+        (resource_dir / "README.md").write_text("# Test Resource")
+
+        os.chdir(project_dir)
+
+        # Add resource link
+        runner.invoke(
+            main,
+            [
+                "link",
+                "add",
+                "--path",
+                str(resource_dir),
+                "--name",
+                "test-resource",
+                "--review",
+                "--type=library",
+            ],
+        )
+
+        # Now remove the symlink (but not the config entry)
+        symlink_path = project_dir / "repos" / "test-resource"
+        symlink_path.unlink()
+
+        # Validate should detect missing symlink
+        result = runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 3
+        assert "Missing resource: repos/test-resource" in result.output
+
+    def test_validate_detects_broken_symlink(self, runner, isolated_project):
+        """Test air validate detects broken symlink (target removed)."""
+        import os
+        import shutil
+
+        # Create project
+        runner.invoke(main, ["init", "broken-link-proj"])
+        project_dir = isolated_project / "broken-link-proj"
+
+        # Create a temp resource to link
+        resource_dir = isolated_project / "temp-resource"
+        resource_dir.mkdir()
+        (resource_dir / "README.md").write_text("# Test Resource")
+
+        os.chdir(project_dir)
+
+        # Add resource link
+        runner.invoke(
+            main,
+            [
+                "link",
+                "add",
+                "--path",
+                str(resource_dir),
+                "--name",
+                "test-resource",
+                "--review",
+                "--type=library",
+            ],
+        )
+
+        # Remove the target directory (making symlink broken)
+        shutil.rmtree(resource_dir)
+
+        # Validate should detect broken symlink
+        result = runner.invoke(main, ["validate"])
+
+        assert result.exit_code == 3
+        assert "Broken symlink: repos/test-resource" in result.output
+
 
 class TestStatusCommand:
     """Tests for air status command."""

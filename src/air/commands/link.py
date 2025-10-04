@@ -533,24 +533,48 @@ def link_list(output_format: str) -> None:
     if review_resources:
         console.print("\n[bold]Review Resources (Read-Only)[/bold]\n")
         table = Table(show_header=True)
+        table.add_column("Status", width=8)
         table.add_column("Name")
         table.add_column("Type")
         table.add_column("Path")
 
         for resource in review_resources:
-            table.add_row(resource.name, resource.type, resource.path)
+            # Check if resource path exists
+            resource_path = Path(resource.path)
+            link_path = project_root / "repos" / resource.name
+
+            if link_path.exists() and resource_path.exists():
+                status = "[green]✓ valid[/green]"
+            elif link_path.exists() and not resource_path.exists():
+                status = "[red]✗ broken[/red]"
+            else:
+                status = "[yellow]⚠ missing[/yellow]"
+
+            table.add_row(status, resource.name, resource.type, resource.path)
 
         console.print(table)
 
     if collab_resources:
         console.print("\n[bold]Collaborative Resources[/bold]\n")
         table = Table(show_header=True)
+        table.add_column("Status", width=8)
         table.add_column("Name")
         table.add_column("Type")
         table.add_column("Path")
 
         for resource in collab_resources:
-            table.add_row(resource.name, resource.type, resource.path)
+            # Check if resource path exists
+            resource_path = Path(resource.path)
+            link_path = project_root / "repos" / resource.name
+
+            if link_path.exists() and resource_path.exists():
+                status = "[green]✓ valid[/green]"
+            elif link_path.exists() and not resource_path.exists():
+                status = "[red]✗ broken[/red]"
+            else:
+                status = "[yellow]⚠ missing[/yellow]"
+
+            table.add_row(status, resource.name, resource.type, resource.path)
 
         console.print(table)
 

@@ -5,6 +5,34 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2025-10-04
+
+### Fixed
+- **Broken Symlink Detection** - All commands now properly handle missing or broken symlinks
+  - `air validate` now cross-references config with filesystem to detect missing resources
+  - `air validate` detects when configured resources are missing from `repos/` directory
+  - `air validate` detects when symlinks exist but target directories have been removed
+  - `air link list` now shows status indicators: ✓ valid, ✗ broken, ⚠ missing
+  - `air status` now shows status indicators for all resources
+  - `air classify` fails gracefully with helpful message if resource path not found
+  - `air pr` fails gracefully with helpful message if resource path not found
+
+### Changed
+- **Enhanced UX** - Better visibility into resource health
+  - Status column added to `air link list` output (shows valid/broken/missing)
+  - Status column added to `air status` resource tables
+  - Clear error messages guide users to run `air validate` when paths are missing
+
+### Testing
+- **320 tests total** (was 318) - All passing ✅
+- Added 2 new integration tests for symlink validation
+
+### Use Case
+This fix addresses a common scenario: when a user manually removes a symlink or the target directory,
+the config still references the resource. Previously, `air validate` wouldn't detect this, and
+`air link list` would show the resource as if it were valid. Now all commands properly detect and
+report broken or missing resources.
+
 ## [0.4.2] - 2025-10-04
 
 ### Breaking Changes

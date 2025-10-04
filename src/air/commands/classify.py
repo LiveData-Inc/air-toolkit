@@ -94,6 +94,18 @@ def classify(
 
     for resource in resources:
         resource_path = Path(resource.path)
+
+        # Check if resource path exists
+        if not resource_path.exists():
+            console.print(
+                f"[red]✗[/red] Resource '{resource.name}' path not found: {resource_path}"
+            )
+            console.print(
+                f"[dim]💡 Hint: The symlink or directory may have been removed. "
+                f"Run 'air validate' to check project structure[/dim]"
+            )
+            sys.exit(1)
+
         result = classify_resource(resource_path)
 
         results.append(

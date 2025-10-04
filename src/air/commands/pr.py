@@ -120,8 +120,18 @@ def pr(
         display_error(error)
         sys.exit(1)
 
-    # Check resource is a git repository
+    # Check resource path exists
     resource_path = Path(target_resource.path)
+    if not resource_path.exists():
+        error = PathError(
+            f"Resource path not found: {resource_path}",
+            path=resource_path,
+            suggestion="The symlink or directory may have been removed. Run 'air validate' to check project structure",
+        )
+        display_error(error)
+        sys.exit(1)
+
+    # Check resource is a git repository
     if not is_git_repository(resource_path):
         error = ResourceError(
             f"Resource '{resource}' is not a git repository",

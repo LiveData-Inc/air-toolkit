@@ -101,6 +101,29 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
 
     # Check links in repos/ and contributions/ directories
     if check_type in ["links", "all"]:
+        # First, check that configured resources actually exist
+        config_path = project_root / "air-config.json"
+        if config_path.exists():
+            try:
+                with open(config_path) as f:
+                    config_data = json.load(f)
+                    config = AirConfig(**config_data)
+
+                    # Check all configured resources
+                    for resource in config.get_all_resources():
+                        # Check if symlink/directory exists in repos/
+                        link_path = project_root / "repos" / resource.name
+                        if not link_path.exists():
+                            errors.append(
+                                f"Missing resource: repos/{resource.name} "
+                                f"(configured in air-config.json but not found)"
+                            )
+                        elif link_path.is_symlink() and not is_symlink_valid(link_path):
+                            errors.append(f"Broken symlink: repos/{resource.name}")
+            except Exception as e:
+                errors.append(f"Failed to validate resources from config: {e}")
+
+        # Then, check for unexpected/orphaned items in repos/ and contributions/
         for dir_name in ["repos", "contributions"]:
             resource_path = project_root / dir_name
             if resource_path.exists():
