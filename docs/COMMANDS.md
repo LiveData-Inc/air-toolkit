@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.3.1
+**Version:** 0.5.0
 **Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
@@ -15,6 +15,9 @@ Complete reference for all AIR commands.
   - [air status](#air-status)
   - [air classify](#air-classify)
   - [air pr](#air-pr)
+- [Code Review Commands](#code-review-commands)
+  - [air review](#air-review)
+  - [air claude](#air-claude)
 - [Task Tracking Commands](#task-tracking-commands)
   - [air task](#air-task)
   - [air track](#air-track)
@@ -666,6 +669,71 @@ Collaborative Resources:
 └──────────┴──────────────┴───────────────┴─────────────┘
 
 💡 Run 'air pr RESOURCE' to create a pull request
+```
+
+---
+
+## Code Review Commands
+
+Commands for AI-powered code review and assistant integration.
+
+---
+
+### air review
+
+Generate code review context from git changes.
+
+#### Usage
+
+```bash
+air review [OPTIONS] [FILES]...
+```
+
+#### Options
+
+- `--base TEXT` - Base branch to compare against (default: `main`)
+- `--pr` - Review current PR branch against base
+- `--format [json|markdown]` - Output format (default: `json`)
+
+#### Arguments
+
+- `FILES` - Specific files to review (optional)
+
+#### Examples
+
+```bash
+# Review uncommitted changes
+air review
+
+# Review PR branch
+air review --pr
+
+# Review specific files
+air review src/api/routes.py
+```
+
+#### Integration with Claude Code
+
+Use the `/air-review` slash command in Claude Code.
+
+---
+
+### air claude
+
+AI assistant helper commands for getting project context.
+
+#### Subcommands
+
+- `context` - Get comprehensive project context for AI assistants
+
+#### Examples
+
+```bash
+# Get context in JSON (for AI)
+air claude context
+
+# Get context in markdown
+air claude context --format=markdown
 ```
 
 ---

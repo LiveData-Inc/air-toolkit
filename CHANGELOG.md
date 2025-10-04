@@ -5,6 +5,77 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-10-04
+
+### Added
+
+- **`air review` command** - AI-powered code review integration
+  - Generate review context from git changes
+  - Review uncommitted changes: `air review`
+  - Review PR branch: `air review --pr`
+  - Review specific files: `air review src/file.py`
+  - JSON output optimized for AI consumption
+  - Markdown output for human readability
+  - Includes git diff, file stats, and AIR project context
+
+- **`air claude` command group** - AI assistant helper commands
+  - `air claude context` - Get comprehensive project context for AI
+  - Returns project status, recent tasks, linked resources, coding standards
+  - JSON and markdown output formats
+  - Optimized for AI parsing and decision-making
+
+- **Claude Code Slash Commands** - Seamless workflow integration
+  - `.claude/commands/air-review.md` - Code review workflow
+  - `.claude/commands/air-begin.md` - Start AIR-tracked work session
+  - `.claude/commands/air-done.md` - Complete and commit work
+  - Enables `/air-review`, `/air-begin`, `/air-done` in Claude Code
+
+- **Architecture Documentation** - Future roadmap
+  - `docs/CODE-REVIEW.md` - AI-powered code review design (16-week plan)
+  - `docs/MCP-SERVER.md` - Model Context Protocol integration (8-week plan)
+  - Complete with API specs, data flows, implementation phases
+
+### Changed
+
+- **Version bumped to 0.5.0** - First code review release
+- CLI now includes `review` and `claude` commands
+- Project context available to AI assistants via structured APIs
+
+### Testing
+
+- **333 tests total** (was 325) - All passing ✅
+- Added 8 new integration tests for review commands
+- Test coverage for git operations, JSON parsing, error handling
+
+### Documentation
+
+- Added review command documentation
+- Updated README.md with architecture docs links
+- Task files for implementation tracking
+
+### Use Cases
+
+**Local Code Review:**
+```bash
+# Before committing
+air review
+
+# Claude Code analyzes changes with full context
+/air-review
+```
+
+**AI-Assisted Development:**
+```bash
+# Get project context for AI
+air claude context
+
+# Start tracked work
+/air-begin
+
+# Complete and commit
+/air-done
+```
+
 ## [0.4.3] - 2025-10-04
 
 ### Added

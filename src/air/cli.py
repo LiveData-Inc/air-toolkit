@@ -11,6 +11,8 @@ from air.commands import (
     status,
     classify,
     pr,
+    review,
+    claude,
     task,
     track,
     summary,
@@ -50,6 +52,10 @@ main.add_command(validate.validate)
 main.add_command(status.status)
 main.add_command(classify.classify)
 main.add_command(pr.pr)
+main.add_command(review.review)
+
+# AI assistant commands
+main.add_command(claude.claude)
 
 # Task tracking commands
 main.add_command(task.task)
