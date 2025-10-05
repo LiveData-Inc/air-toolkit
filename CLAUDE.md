@@ -169,7 +169,7 @@ air status --format=json
 
 AIR (AI Review) is a Python CLI toolkit for AI-assisted development and multi-project code assessment.
 
-**Status**: v0.3.0 - Resource classification implemented, ready for PyPI distribution
+**Status**: v0.6.0 - Production-ready with deep analysis, dependency-aware multi-repo analysis, and agent coordination
 
 Review these before starting:
 - `.air/context/architecture.md` - System architecture (needs updating)
@@ -231,59 +231,85 @@ python -m build
 ### Component Structure
 ```
 src/air/
-├── cli.py              # Click-based CLI entry point
-├── commands/           # Command implementations (9 files, mostly stubs)
-│   ├── init.py        # Create assessment projects
-│   ├── link.py        # Link repositories
-│   ├── validate.py    # Validate structure
-│   ├── status.py      # Show project status
-│   ├── classify.py    # Auto-classify resources
-│   ├── pr.py          # Create pull requests
-│   ├── task.py        # Task management (new/list/complete)
-│   ├── track.py       # Initialize tracking
-│   └── summary.py     # Generate summaries
-├── core/              # Business logic (mostly TODO)
-│   └── models.py      # Pydantic data models ✅
-├── services/          # Infrastructure (stubs only)
+├── cli.py              # Click-based CLI entry point ✅
+├── commands/           # Command implementations (11 command groups) ✅
+│   ├── init.py        # Create assessment projects ✅
+│   ├── link.py        # Link repositories ✅
+│   ├── validate.py    # Validate structure ✅
+│   ├── status.py      # Show project status ✅
+│   ├── classify.py    # Auto-classify resources ✅
+│   ├── pr.py          # Create pull requests ✅
+│   ├── task.py        # Task management (new/list/complete/archive) ✅
+│   ├── summary.py     # Generate summaries ✅
+│   ├── review.py      # Code review context ✅
+│   ├── analyze.py     # Deep code analysis ✅
+│   └── agent.py       # Agent coordination (wait/findings) ✅
+├── core/              # Business logic ✅
+│   ├── models.py      # Pydantic data models ✅
+│   └── enums.py       # StrEnum definitions ✅
+├── services/          # Infrastructure ✅
+│   ├── filesystem.py  # File operations ✅
+│   ├── templates.py   # Jinja2 rendering ✅
+│   ├── validator.py   # Validation logic ✅
+│   ├── git.py         # Git operations ✅
+│   ├── classifier.py  # Resource classification ✅
+│   ├── pr_generator.py # PR creation ✅
+│   ├── task_parser.py # Task parsing ✅
+│   ├── summary_generator.py # Summaries ✅
+│   ├── task_archive.py # Archiving ✅
+│   ├── agent_manager.py # Agent coordination ✅
+│   ├── analyzers/     # Code analyzers (5 types) ✅
+│   └── detectors/     # Dependency detectors ✅
 ├── utils/             # Helpers ✅
-│   ├── console.py     # Rich console output
-│   ├── dates.py       # Date/time formatting
-│   └── paths.py       # Path manipulation
-└── templates/         # Jinja2 templates (to be created)
+│   ├── console.py     # Rich console output ✅
+│   ├── dates.py       # Date/time formatting ✅
+│   ├── paths.py       # Path manipulation ✅
+│   ├── tables.py      # Table rendering ✅
+│   ├── errors.py      # Error handling ✅
+│   └── progress.py    # Progress indicators ✅
+└── templates/         # Jinja2 templates (embedded) ✅
 ```
 
 ### Data Models (Pydantic)
 Key models in `src/air/core/models.py`:
-- `AssessmentConfig`: Project configuration (air-config.json)
-- `Resource`: Linked repository metadata
+- `AirConfig`: Project configuration (air-config.json) - formerly AssessmentConfig
+- `Resource`: Linked repository metadata with technology stack
 - `Contribution`: Proposed code changes
 - `TaskFile`: Parsed task file metadata
 - `ProjectStructure`: Expected directory structure
+- `ClassificationResult`: Resource classification data
+- `AnalysisResult`: Code analysis findings
+- `DependencyResult`: Dependency detection data
 
-Enums (all use StrEnum):
-- `ProjectMode`: review, collaborate, mixed
-- `ResourceType`: implementation, documentation, library, service
-- `ResourceRelationship`: review-only, contributor
+Enums (all use StrEnum in `src/air/core/enums.py`):
+- `ProjectMode`: review, develop, mixed (formerly collaborate → develop)
+- `ResourceType`: library, documentation, service (simplified from implementation → library)
+- `ResourceRelationship`: REVIEW_ONLY, DEVELOPER (formerly CONTRIBUTOR → DEVELOPER)
 - `ContributionStatus`: proposed, draft, submitted, merged
 - `TaskOutcome`: in-progress, success, partial, blocked
+- `AnalysisFocus`: security, performance, architecture, quality, all
+- `Severity`: critical, high, medium, low, info
+- `DependencyType`: PACKAGE, IMPORT, API
 
-### Assessment Project Structure
+### AIR Project Structure
 Created by `air init`:
 ```
 project-name/
-├── air-config.json        # AssessmentConfig (JSON)
+├── air-config.json        # AirConfig (JSON)
 ├── README.md              # Project overview
 ├── CLAUDE.md              # AI guidance
 ├── .gitignore
-├── .air/                   # Task tracking
-│   ├── tasks/            # YYYYMMDD-HHMM-description.md
+├── .air/                   # Task tracking & agent coordination
+│   ├── tasks/            # YYYYMMDD-NNN-HHMM-description.md (ordinal-based)
+│   ├── agents/           # Background agent metadata (v0.6.0)
+│   │   └── {agent-id}/   # Per-agent directory with metadata.json, logs
 │   ├── context/          # Architecture, conventions
 │   └── templates/        # Task templates
-├── review/               # Review-only repos (symlinks)
-├── collaborate/          # Contributor repos (symlinks)
+├── repos/                # All linked repos (symlinks) - formerly review/collaborate
 ├── analysis/             # Analysis outputs
-│   ├── assessments/      # Review analysis
-│   └── improvements/     # Improvement proposals
+│   ├── reviews/          # Review analysis (formerly assessments)
+│   ├── improvements/     # Improvement proposals
+│   └── dependency-graph.json # Multi-repo dependency graph (v0.6.0)
 ├── contributions/        # Staged contributions
 └── scripts/              # Utility scripts
 ```
@@ -309,10 +335,12 @@ project-name/
 - pydantic >=2.0.0 (data validation)
 - pyyaml >=6.0 (YAML support)
 - gitpython >=3.1.0 (git operations)
+- jinja2 >=3.1.0 (template rendering)
+- psutil >=5.9.0 (cross-platform process management)
 
 **Dev:**
-- pytest, pytest-cov
-- black, ruff, mypy
+- pytest >=7.0.0, pytest-cov >=4.0.0
+- black >=23.0.0, ruff >=0.1.0, mypy >=1.0.0
 
 ### Rich Console Helpers
 Use from `src/air/utils/console.py`:
@@ -330,32 +358,68 @@ error("Failed to validate", exit_code=1)
 ## Implementation Status
 
 ### Completed ✅
-- Package structure and pyproject.toml
-- CLI framework (Click) with command routing
-- Pydantic data models
-- Utility modules (console, dates, paths)
-- Comprehensive documentation (68KB)
 
-### Needs Implementation ⏳
-**Phase 1 (High Priority):**
-1. `air init` - Create project structure
-2. `air link` - Create symlinks/clone repos
-3. `air validate` - Check structure
-4. `air status` - Show project info
-5. Services: filesystem, templates, validator, git
+**Core Commands (v0.1.0-v0.4.0):**
+- ✅ `air init` - Project initialization (interactive and non-interactive)
+- ✅ `air link` - Repository linking with auto-classification
+- ✅ `air validate` - Structure validation with auto-fix
+- ✅ `air status` - Project status and agent tracking
+- ✅ `air task new/list/status/complete/archive` - Complete task lifecycle
+- ✅ `air summary` - Summary generation (markdown/JSON/text)
 
-**Phase 2 (Medium Priority):**
-- Task tracking commands (task new/list, track init, summary)
-- Template system (Jinja2)
+**Advanced Features (v0.3.0-v0.6.0):**
+- ✅ `air classify` - Auto-classify resources with tech stack detection
+- ✅ `air pr` - Pull request creation with GitHub CLI integration
+- ✅ `air review` - Code review context generation
+- ✅ `air analyze` - Deep code analysis (5 specialized analyzers)
+- ✅ `air analyze --all` - Dependency-aware multi-repo analysis
+- ✅ `air wait` - Agent coordination and waiting
+- ✅ `air findings` - Aggregate analysis findings
 
-**Phase 3 (Lower Priority):**
-- `air classify` - Auto-classify resources
-- `air pr` - Create pull requests
+**Services & Infrastructure:**
+- ✅ Filesystem operations with symlink support
+- ✅ Template system (Jinja2) with embedded templates
+- ✅ Validator with auto-fix capabilities
+- ✅ Git operations (GitPython)
+- ✅ Resource classifier (11+ languages, 10+ frameworks)
+- ✅ PR generator with GitHub CLI integration
+- ✅ Task parser and archiving system
+- ✅ Summary generator (multiple formats)
+- ✅ 5 specialized analyzers (Security, Performance, Quality, Architecture, Structure)
+- ✅ Pluggable dependency detectors (Python, JavaScript, Go)
+- ✅ Agent manager with cross-platform process tracking
 
-### Testing
-- Basic unit tests in `tests/unit/`
-- Target: >80% coverage
-- Need integration tests
+**Testing:**
+- ✅ 372 tests total (all passing)
+- ✅ ~200 unit tests
+- ✅ ~172 integration tests
+- ✅ >80% code coverage achieved
+- ✅ Comprehensive test suite for all features
+
+**Distribution:**
+- ✅ PyPI publishing (v0.6.0 available)
+- ✅ Cross-platform support (macOS, Linux, Windows)
+- ✅ Proper package structure with embedded templates
+
+### Future Enhancements (v0.7.0+)
+
+**Analysis Improvements:**
+- Additional language support (Java, Ruby, PHP, Rust, C#)
+- Custom analyzer plugins
+- Analysis caching for faster re-runs
+- Incremental analysis (only changed files)
+
+**Agent Coordination:**
+- Shared findings database (SQLite)
+- Automated spawning with `air spawn` command
+- Parallel execution pipeline with dependencies
+- Resource management (token budgets, rate limits)
+
+**Integration:**
+- MCP (Model Context Protocol) server implementation
+- GitHub Actions integration
+- VS Code extension
+- Web UI for analysis results
 
 ---
 

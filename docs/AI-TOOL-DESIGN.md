@@ -36,7 +36,7 @@ air status
 
 # Machine-readable: JSON
 air status --format=json
-# {"name":"my-review","mode":"mixed","resources":{"review":3,"collaborate":2}}
+# {"name":"my-review","mode":"mixed","resources":{"review":3,"develop":2}}
 ```
 
 **Benefits:**

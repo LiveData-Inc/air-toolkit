@@ -91,7 +91,7 @@ AIR (AI Review) is a unified toolkit providing two complementary capabilities:
 - Generate air-config.json
 
 **Options:**
-- `--mode=review|collaborate|mixed` - Project mode (default: mixed)
+- `--mode=review|develop|mixed` - Project mode (default: mixed)
 - `--track/--no-track` - Initialize .air/ tracking (default: true)
 
 **Output Structure (Mixed Mode):**
@@ -104,7 +104,7 @@ project-name/
 ├── repos/           # Collaborative resources
 ├── analysis/              # Our analysis
 │   ├── SUMMARY.md
-│   ├── assessments/      # About review resources
+│   ├── reviews/      # About review resources
 │   └── improvements/     # About developer resources
 ├── contributions/         # Proposed improvements
 ├── .air/                  # Task tracking

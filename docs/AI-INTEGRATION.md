@@ -87,7 +87,7 @@ This is an AIR assessment project comparing:
 
 ### Analysis Location
 
-- Store comparisons in `analysis/assessments/`
+- Store comparisons in `analysis/reviews/`
 - Store architecture feedback in `analysis/improvements/`
 - Create SUMMARY.md with executive overview
 
@@ -175,7 +175,7 @@ air summary --output=analysis/SUMMARY.md
 ```
 analysis/
 ├── SUMMARY.md              # AI: Executive overview here
-├── assessments/            # AI: Analysis of review resources
+├── reviews/            # AI: Analysis of review resources
 │   ├── service-a.md
 │   └── comparison.md
 └── improvements/           # AI: Feedback on collaborative resources
@@ -183,7 +183,7 @@ analysis/
 ```
 
 **AI reads structure and knows:**
-- Assessments go in `assessments/`
+- Assessments go in `reviews/`
 - Architecture feedback goes in `improvements/`
 - Summary goes in root
 
@@ -211,7 +211,7 @@ air link --review service-b:~/repos/service-b
 # - Documents findings in task file
 
 # 5. AI creates analysis document
-# analysis/assessments/service-comparison.md
+# analysis/reviews/service-comparison.md
 
 # 6. AI marks task complete
 # (AI internally): air task complete 20251003-1200
@@ -229,7 +229,7 @@ cat analysis/SUMMARY.md
 ```bash
 # 1. Setup with collaborative resource
 air init doc-review
-air link --collaborate arch:~/repos/architecture --clone
+air link --develop arch:~/repos/architecture --clone
 
 # 2. AI reviews documentation
 # AI creates: analysis/improvements/gaps.md
@@ -295,7 +295,7 @@ air summary --output=WORK-SUMMARY.md
 - Track contribution status
 
 **AIR Support:**
-- `collaborate/` directory for docs
+- `repos/` directory for docs
 - `contributions/` for improvements
 - `air pr` to submit changes
 - Clear feedback loop
@@ -369,13 +369,13 @@ AI: Reads task files, sees what was done, continues
 
 Store analysis in structured documents:
 
-- `analysis/assessments/*.md` - For review-only resources
+- `analysis/reviews/*.md` - For review-only resources
 - `analysis/improvements/*.md` - For collaborative resources
 - `analysis/SUMMARY.md` - Executive overview
 
 ## Contributing to Collaborative Resources
 
-For resources in `collaborate/`:
+For resources in `repos/`:
 
 1. Create improvements in `contributions/[resource]/`
 2. Notify human when ready
@@ -394,7 +394,7 @@ air classify            # Classify resources
 
 ## What NOT to Do
 
-- ❌ Do NOT modify resources in `review/` or `collaborate/`
+- ❌ Do NOT modify resources in `review/` or `repos/`
 - ❌ Do NOT skip task file creation
 - ❌ Do NOT lose track of your work
 - ✅ DO document everything
@@ -418,7 +418,7 @@ Your goals for this project:
 3. [Goal 3]
 
 Deliverables expected:
-- [ ] `analysis/assessments/[specific-analysis].md`
+- [ ] `analysis/reviews/[specific-analysis].md`
 - [ ] `analysis/SUMMARY.md`
 - [ ] `.air/tasks/` - Complete task files
 
@@ -449,7 +449,7 @@ Claude: Reading .air/README.md and CLAUDE.md...
 Claude: Creating task file: .air/tasks/20251003-1200-review-repos.md
 Claude: Reading repos/service-a/...
 Claude: Reading repos/service-b/...
-Claude: Creating analysis/assessments/comparison.md...
+Claude: Creating analysis/reviews/comparison.md...
 Claude: Updating task file...
 Claude: Task complete. See analysis/SUMMARY.md
 ```
@@ -472,7 +472,7 @@ Claude: Task complete. See analysis/SUMMARY.md
 openai-assistant \
   --instructions-from CLAUDE.md \
   --task "Review repos/service-a" \
-  --output analysis/assessments/service-a.md
+  --output analysis/reviews/service-a.md
 ```
 
 ### 6.3 GitHub Copilot
@@ -535,7 +535,7 @@ jobs:
 Agent 1 (Code Analyzer):
   - Analyzes implementation
   - Creates technical assessment
-  - Documents in analysis/assessments/
+  - Documents in analysis/reviews/
 
 Agent 2 (Documentation Reviewer):
   - Reviews architecture docs

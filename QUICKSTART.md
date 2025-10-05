@@ -1,6 +1,6 @@
-# AIR Toolkit - Quick Start (v0.3.0)
+# AIR Toolkit - Quick Start (v0.6.0)
 
-Get started with AIR in 5 minutes - complete workflow now available!
+Get started with AIR in 5 minutes - complete workflow with advanced code analysis!
 
 ## Installation
 
@@ -36,10 +36,13 @@ air init my-review --mode=mixed
 cd my-review
 
 # Link a repository to review
-air link add myapp:~/repos/myapp --review
+air link add ~/repos/myapp --name myapp --review
 
 # Create your first task
 air task new "analyze architecture"
+
+# Run deep code analysis
+air analyze repos/myapp
 
 # Validate project structure
 air validate
@@ -55,23 +58,41 @@ my-review/
 ├── air-config.json      # Project configuration
 ├── README.md            # Project overview
 ├── CLAUDE.md            # AI assistant instructions
-├── .air/                # Task tracking
-│   ├── tasks/           # Task files go here
+├── .air/                # Task tracking & agent coordination
+│   ├── tasks/           # Task files (YYYYMMDD-NNN-HHMM format)
+│   ├── agents/          # Background agents (v0.6.0)
 │   └── context/         # Project context
-├── review/              # Linked resources (symlinks)
+├── repos/               # All linked repositories (symlinks)
 ├── analysis/            # Your analysis documents
+│   ├── reviews/         # Code reviews
+│   └── dependency-graph.json  # Multi-repo dependencies
 └── scripts/             # Helper scripts
 ```
 
-## Quick Commands (v0.3.0)
+## Quick Commands (v0.6.0)
 
 ### Repository Linking
 ```bash
-air link add PATH [OPTIONS]             # Link repository
-air link add ~/repos/service --name service --review
+air link add PATH [OPTIONS]             # Link repository (fast, non-interactive)
+air link add ~/repos/service            # Uses folder name, auto-detects type
+air link add ~/repos/service --name myservice --review
 air link add ~/docs --name docs --develop --type=documentation
-air link list                           # List resources
+air link add ~/repos/lib -i             # Interactive mode
+air link list                           # List resources with status
 air link remove NAME                    # Remove resource
+air link remove -i                      # Interactive removal (numbered list)
+```
+
+### Code Analysis (v0.6.0)
+```bash
+air analyze repos/myapp                 # Comprehensive analysis (all analyzers)
+air analyze repos/myapp --focus=security  # Security-focused
+air analyze --all                       # Analyze all repos (dependency order)
+air analyze --gap library-name          # Gap analysis
+air analyze repos/myapp --background --id=analysis-1  # Background mode
+air wait --all                          # Wait for background agents
+air findings --all                      # Aggregate findings
+air status --agents                     # View agent status
 ```
 
 ### Task Management
@@ -118,19 +139,25 @@ air validate                # Check project structure
 
 2. **Link resources:**
    ```bash
-   air link add target:~/repos/target-project --review
-   air link add comparison:~/repos/comparison-project --review
+   air link add ~/repos/target-project --name target --review
+   air link add ~/repos/comparison-project --name comparison --review
    ```
 
-3. **Create task:**
+3. **Run deep analysis:**
    ```bash
-   air task new "analyze architecture" --prompt "Compare service architectures"
+   # Analyze all repos in dependency order
+   air analyze --all
+
+   # Or specific repo with focused analysis
+   air analyze repos/target --focus=security
    ```
 
-4. **Analyze and document:**
-   - Read code in `review/target/`
-   - Write analysis to `analysis/assessments/target.md`
-   - Create comparison documents
+4. **Create task and document findings:**
+   ```bash
+   air task new "security audit" --prompt "Review security findings from analysis"
+   # Review findings in analysis/reviews/target-findings.json
+   # Write summary to analysis/reviews/security-audit.md
+   ```
 
 5. **Generate summary:**
    ```bash
@@ -142,17 +169,17 @@ air validate                # Check project structure
    air task archive --all
    ```
 
-### Collaborate Workflow (Contribute)
+### Development Workflow (Contribute)
 
-1. **Create collaborative project:**
+1. **Create development project:**
    ```bash
-   air init docs-improve --mode=collaborate
+   air init docs-improve --mode=develop
    cd docs-improve
    ```
 
 2. **Link documentation repositories:**
    ```bash
-   air link add docs:~/repos/docs-project --collaborate --type=documentation
+   air link add ~/repos/docs-project --name docs --develop --type=documentation
    ```
 
 3. **Create task:**
@@ -161,7 +188,7 @@ air validate                # Check project structure
    ```
 
 4. **Create contributions:**
-   - Review docs in `collaborate/docs/`
+   - Review docs in `repos/docs/`
    - Place improved docs in `contributions/docs/`
    - Follow original structure
 
@@ -170,13 +197,10 @@ air validate                # Check project structure
    air summary --output=IMPROVEMENTS.md
    ```
 
-6. **Submit** (coming soon: `air pr`):
+6. **Submit pull request:**
    ```bash
-   # Manual PR for now
-   cd collaborate/docs
-   git checkout -b improve-docs
-   # Copy contributions, commit, push
-   gh pr create
+   # Use air pr command
+   air pr docs --title "Improve API documentation" --body "Added examples and clarified usage"
    ```
 
 ## AI Assistant Integration
@@ -213,16 +237,16 @@ AI assistants following the CLAUDE.md instructions will:
 air init project --mode=review
 ```
 - **Purpose**: Analyze codebases (READ-ONLY)
-- **Directories**: `review/`, `analysis/assessments/`
-- **Use case**: Compare implementations, identify patterns
+- **Directories**: `repos/`, `analysis/reviews/`
+- **Use case**: Compare implementations, identify patterns, security analysis
 
-### Collaborate Mode
+### Develop Mode
 ```bash
-air init project --mode=collaborate
+air init project --mode=develop
 ```
-- **Purpose**: Contribute improvements
-- **Directories**: `collaborate/`, `contributions/`
-- **Use case**: Documentation improvements, code contributions
+- **Purpose**: AI-assisted development with task tracking
+- **Directories**: Standard project structure with `.air/` tracking
+- **Use case**: Regular development with automatic task tracking
 
 ### Mixed Mode (Default)
 ```bash
@@ -230,9 +254,9 @@ air init project --mode=mixed
 # or simply:
 air init project
 ```
-- **Purpose**: Both review and collaborate
+- **Purpose**: Both review and development
 - **Directories**: All of the above
-- **Use case**: Complex assessments with some contributions
+- **Use case**: Complex assessments with contributions to linked repos
 
 ## Task Archiving
 
@@ -295,13 +319,22 @@ cat docs/COMMANDS.md
 https://github.com/LiveData-Inc/air-toolkit/issues
 ```
 
-## Quick Reference (v0.3.0)
+## Quick Reference (v0.6.0)
 
 | Command | Description |
 |---------|-------------|
 | `air init [NAME]` | Create or initialize project |
-| `air link add PATH` | Link repository |
-| `air link list` | List linked resources |
+| `air link add PATH` | Link repository (auto-detects name/type) |
+| `air link add PATH -i` | Interactive linking |
+| `air link list` | List linked resources with status |
+| `air analyze REPO` | Comprehensive code analysis |
+| `air analyze --all` | Analyze all repos (dependency order) |
+| `air analyze --gap LIB` | Gap analysis |
+| `air wait --all` | Wait for background agents |
+| `air findings --all` | Aggregate analysis findings |
+| `air status --agents` | View background agent status |
+| `air review` | Generate code review context |
+| `air pr RESOURCE` | Create pull request |
 | `air task new DESC` | Create task file |
 | `air task status <id>` | View task details |
 | `air task complete <id>` | Mark task as complete |
@@ -310,11 +343,10 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | `air task list --search=TERM` | Search tasks |
 | `air summary` | Generate summary |
 | `air validate` | Validate project structure |
+| `air validate --fix` | Auto-fix broken symlinks |
 | `air status` | Show project status |
 | `air classify` | Auto-classify resources |
-| `air classify --update` | Classify and update config |
 | `air task archive --all` | Archive all tasks |
-| `air task restore <id>` | Restore archived task |
 
 ---
 

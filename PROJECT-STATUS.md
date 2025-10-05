@@ -1,374 +1,373 @@
 # AIR Toolkit - Project Status
 
-**Created:** 2025-10-03
-**Status:** Initial Setup Complete ✅
+**Current Version:** 0.6.0
+**Last Updated:** 2025-10-05
+**Status:** Production-Ready with Advanced Features ✅
 
-## What Has Been Created
+## Executive Summary
 
-### 1. Python Package Structure ✅
+AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, and parallel agent coordination.
 
-Complete installable Python package with:
+**Key Metrics:**
+- **372 tests** - All passing ✅
+- **Version:** 0.6.0 (production-ready)
+- **Distribution:** Available on PyPI (`pip install air-toolkit`)
+- **Commands:** 11 command groups, 30+ subcommands
+- **Analysis:** 5 specialized analyzers with pluggable architecture
+- **Languages:** Python 3.10+, cross-platform (macOS, Linux, Windows)
+
+## What's Working (v0.6.0)
+
+### ✅ Core Workflow (Complete)
+
+**Project Management:**
+- `air init` - Create new projects or initialize in existing directories
+- `air init --mode=review|develop|mixed` - Support for all project types
+- `air init --interactive` - Guided project setup
+- Smart directory detection and validation
+
+**Repository Linking:**
+- `air link add PATH` - Fast non-interactive linking with smart defaults
+- `air link add PATH -i` - Interactive mode with guided prompts
+- `air link list` - Display resources with status indicators (✓ valid, ✗ broken, ⚠ missing)
+- `air link remove NAME` - Unlink resources
+- Auto-classification of resource types and technology stacks
+- Symlink-based (no file copying)
+
+**Task Tracking:**
+- `air task new DESCRIPTION` - Create timestamped task files (YYYYMMDD-NNN-HHMM format)
+- `air task list` - Filter, sort, search tasks
+- `air task status ID` - View detailed task information
+- `air task complete ID` - Mark tasks complete
+- `air task archive` - Archive and restore system
+
+**Validation & Status:**
+- `air validate` - Check project structure and symlinks
+- `air validate --fix` - Auto-recreate missing/broken symlinks
+- `air status` - Show project information and resource status
+- `air status --agents` - View background agent status
+
+**Summary & Reporting:**
+- `air summary` - Generate summaries (markdown/JSON/text)
+- `air summary --format=json` - Machine-readable output
+- `air summary --since=DATE` - Filter by date
+- Rich terminal rendering with statistics
+
+### ✅ Advanced Analysis (v0.6.0)
+
+**Deep Code Analysis:**
+- `air analyze REPO` - Comprehensive code analysis with 5 specialized analyzers:
+  - **SecurityAnalyzer** - 14 security pattern types (secrets, SQL injection, weak crypto, etc.)
+  - **PerformanceAnalyzer** - 7 performance anti-patterns (N+1 queries, nested loops, etc.)
+  - **CodeStructureAnalyzer** - Repository structure analysis
+  - **ArchitectureAnalyzer** - Dependency and pattern detection
+  - **QualityAnalyzer** - Code quality metrics
+- `air analyze --focus=security|performance|architecture|quality` - Focused analysis
+- Findings include severity levels (critical/high/medium/low/info)
+- Results saved as structured JSON
+
+**Dependency-Aware Analysis:**
+- `air analyze --all` - Analyze all linked repos in dependency order
+- `air analyze --all --no-order` - Parallel analysis (disable ordering)
+- `air analyze --gap LIBRARY` - Gap analysis for library and dependents
+- Pluggable dependency detectors (Python, JavaScript, Go)
+- Dependency graph generation and topological sorting
+- Version mismatch detection
+
+**Resource Classification:**
+- `air classify` - Auto-detect language, framework, and resource type
+- Detects 11+ programming languages
+- Detects 10+ major frameworks
+- Confidence scoring and technology stack generation
+- `air classify --update` - Update air-config.json automatically
+
+### ✅ Agent Coordination (v0.6.0)
+
+**Parallel Analysis:**
+- `air analyze --background --id=NAME` - Spawn background agents
+- `air wait --all` - Wait for agents to complete
+- `air wait --agents ID1,ID2` - Wait for specific agents
+- `air findings --all` - Aggregate findings from all analyses
+- Cross-platform process management via psutil
+
+**Agent Management:**
+- `.air/agents/` directory structure for agent tracking
+- Metadata tracking (status, progress, start time)
+- Auto-detect terminated processes
+- Rich status display with relative timestamps
+
+### ✅ Code Review Integration (v0.5.0)
+
+**AI-Powered Review:**
+- `air review` - Generate review context from git changes
+- `air review --pr` - Review PR branch
+- `air claude context` - Get project context for AI
+- Claude Code slash commands: `/air-review`, `/air-begin`, `/air-done`
+- JSON output optimized for AI consumption
+
+### ✅ Pull Request Workflow (v0.3.1)
+
+**PR Automation:**
+- `air pr RESOURCE` - Create pull requests for collaborative resources
+- Auto-generate PR titles and descriptions from task files
+- Custom options: `--title`, `--body`, `--draft`, `--base`
+- GitHub CLI integration
+- Dry-run mode for preview
+
+### ✅ Package Distribution
+
+**PyPI Publishing:**
+- Available on PyPI: `pip install air-toolkit`
+- Cross-platform wheel distribution
+- Proper template packaging
+- Version 0.6.0 published
+
+## Architecture
+
+### Package Structure
 
 ```
 air-toolkit/
-├── pyproject.toml          # Package configuration
-├── README.md               # Project overview
-├── LICENSE                 # MIT License
-├── .gitignore             # Python gitignore
-├── src/air/               # Source code
-│   ├── __init__.py
-│   ├── cli.py             # CLI entry point
-│   ├── commands/          # Command modules (9 files)
-│   ├── core/              # Business logic
-│   │   ├── models.py      # Pydantic data models
-│   │   └── __init__.py
-│   ├── services/          # Infrastructure services (stubs)
-│   ├── templates/         # Jinja2 templates (to be added)
-│   └── utils/             # Utilities
-│       ├── console.py     # Rich console helpers
-│       ├── dates.py       # Date/time utilities
-│       └── paths.py       # Path helpers
-├── tests/                 # Test suite
-│   └── unit/
-│       ├── test_models.py
-│       └── test_utils.py
-└── docs/                  # Documentation
-    ├── SPECIFICATION.md   # Complete feature spec
-    ├── ARCHITECTURE.md    # Technical design
-    ├── DEVELOPMENT.md     # Development guide
-    ├── COMMANDS.md        # Command reference
-    └── AI-INTEGRATION.md  # AI integration guide
+├── src/air/
+│   ├── cli.py              # Main CLI entry point ✅
+│   ├── commands/           # Command implementations ✅
+│   │   ├── init.py        # Project initialization ✅
+│   │   ├── link.py        # Repository linking ✅
+│   │   ├── validate.py    # Validation ✅
+│   │   ├── status.py      # Status reporting ✅
+│   │   ├── classify.py    # Resource classification ✅
+│   │   ├── pr.py          # Pull requests ✅
+│   │   ├── task.py        # Task management ✅
+│   │   ├── summary.py     # Summary generation ✅
+│   │   ├── review.py      # Code review ✅
+│   │   ├── analyze.py     # Deep analysis ✅
+│   │   └── agent.py       # Agent coordination ✅
+│   ├── core/
+│   │   ├── models.py      # Pydantic models ✅
+│   │   └── enums.py       # StrEnum definitions ✅
+│   ├── services/          # Business logic ✅
+│   │   ├── filesystem.py  # File operations ✅
+│   │   ├── templates.py   # Jinja2 rendering ✅
+│   │   ├── validator.py   # Validation ✅
+│   │   ├── git.py         # Git operations ✅
+│   │   ├── classifier.py  # Classification ✅
+│   │   ├── pr_generator.py # PR creation ✅
+│   │   ├── task_parser.py # Task parsing ✅
+│   │   ├── summary_generator.py # Summaries ✅
+│   │   ├── task_archive.py # Archiving ✅
+│   │   ├── analyzers/     # Code analyzers ✅
+│   │   ├── detectors/     # Dependency detectors ✅
+│   │   └── agent_manager.py # Agent coordination ✅
+│   ├── templates/         # Jinja2 templates ✅
+│   └── utils/             # Utilities ✅
+│       ├── console.py     # Rich output ✅
+│       ├── dates.py       # Date utilities ✅
+│       ├── paths.py       # Path helpers ✅
+│       ├── tables.py      # Table rendering ✅
+│       ├── errors.py      # Error handling ✅
+│       └── progress.py    # Progress indicators ✅
+├── tests/                 # 372 tests ✅
+│   ├── unit/             # ~200 unit tests ✅
+│   └── integration/      # ~172 integration tests ✅
+├── docs/                 # Comprehensive docs ✅
+└── pyproject.toml        # Package config ✅
 ```
 
-### 2. Click-Based CLI Framework ✅
+### Data Models (Pydantic)
 
-**Main CLI** (`src/air/cli.py`):
-- Entry point: `air` command
-- Version option
-- Help system
-- Command routing
+All core models implemented and tested:
 
-**Commands Implemented** (skeleton):
-- `air init` - Create assessment project
-- `air link` - Link repositories
-- `air validate` - Validate structure
-- `air status` - Show project status
-- `air classify` - Classify resources
-- `air pr` - Create pull requests
-- `air task new/list/complete` - Task management
-- `air track init/status` - Initialize tracking
-- `air summary` - Generate summaries
-
-### 3. Core Data Models ✅
-
-**Pydantic Models** (`src/air/core/models.py`):
-- `AssessmentConfig` - Project configuration
-- `Resource` - Linked repository
-- `Contribution` - Proposed improvements
-- `TaskFile` - Task file metadata
+- `AirConfig` - Project configuration (formerly AssessmentConfig)
+- `Resource` - Linked repository metadata
+- `Contribution` - Proposed code changes
+- `TaskFile` - Parsed task file metadata
 - `ProjectStructure` - Expected directory structure
+- `ClassificationResult` - Resource classification data
+- `AnalysisResult` - Code analysis findings
+- `DependencyResult` - Dependency detection data
 
-**Enums:**
-- `ProjectMode` - review/collaborate/mixed
-- `ResourceType` - implementation/documentation/etc
-- `ResourceRelationship` - review-only/contributor
-- `ContributionStatus` - proposed/draft/submitted/merged
-- `TaskOutcome` - in-progress/success/partial/blocked
+### Strategy Pattern Architecture
 
-### 4. Utilities ✅
+**Analyzers** (pluggable):
+- Security, Performance, Quality, Architecture, Structure
 
-**Console** (`src/air/utils/console.py`):
-- Rich console instance
-- Helper functions: `info()`, `success()`, `warn()`, `error()`
+**Dependency Detectors** (pluggable):
+- Package detectors (requirements.txt, package.json, go.mod, pyproject.toml)
+- Import detectors (Python, JavaScript, Go)
+- Easy to extend for new languages
 
-**Dates** (`src/air/utils/dates.py`):
-- `format_timestamp()` - YYYYMMDD-HHMM format
-- `parse_task_timestamp()` - Parse from filename
-- `format_duration()` - Human-readable duration
+## Testing Status
 
-**Paths** (`src/air/utils/paths.py`):
-- `expand_path()` - Expand ~ and make absolute
-- `ensure_dir()` - Create directory if needed
-- `is_git_repo()` - Check if git repository
-- `safe_filename()` - Generate safe filenames
+**372 Tests Total** - All passing ✅
 
-### 5. Comprehensive Documentation ✅
+**Unit Tests (~200):**
+- Core models and enums
+- All utilities (console, dates, paths, tables, errors, progress)
+- All services (filesystem, templates, validator, git, classifier, pr_generator, etc.)
+- All analyzers and detectors
+- Task parsing and archiving
 
-**SPECIFICATION.md** (15KB):
-- Complete feature specification
-- All commands detailed
-- Workflows documented
-- Configuration formats
-- Success metrics
+**Integration Tests (~172):**
+- All command workflows
+- End-to-end scenarios
+- Interactive modes
+- Error handling
+- Agent coordination
 
-**ARCHITECTURE.md** (14KB):
-- System architecture
-- Component design
-- Data models
-- Design decisions
-- Testing strategy
-- Security considerations
+**Coverage:**
+- Core functionality: >90%
+- Commands: >85%
+- Services: >85%
+- Overall: >80%
 
-**DEVELOPMENT.md** (11KB):
-- Development setup
-- Coding standards
-- Testing guidelines
-- Release process
-- Troubleshooting
+## Documentation
 
-**COMMANDS.md** (16KB):
-- Complete command reference
-- Usage examples
-- All options documented
-- Exit codes
-- Output formats
+**Comprehensive Documentation (100+ KB):**
 
-**AI-INTEGRATION.md** (12KB):
-- AI-first design philosophy
-- How AI agents use AIR
-- Integration patterns
-- Workflows for AI
-- Best practices
+- `README.md` - Quick start and feature overview
+- `QUICKSTART.md` - Fast getting started guide
+- `CHANGELOG.md` - Complete version history
+- `CLAUDE.md` - AI assistant integration guide
+- `PROJECT-STATUS.md` - This file
+- `docs/SPECIFICATION.md` - Complete feature spec
+- `docs/ARCHITECTURE.md` - System design
+- `docs/DEVELOPMENT.md` - Contributing guide
+- `docs/COMMANDS.md` - Command reference
+- `docs/AI-INTEGRATION.md` - AI integration patterns
+- `docs/CODE-REVIEW.md` - Code review design
+- `docs/MCP-SERVER.md` - MCP integration roadmap
+- `docs/AGENT-COORDINATION.md` - Agent coordination guide
+- `docs/tutorials/` - Hands-on tutorials
+- `docs/examples/` - Example workflows
 
-**Total Documentation:** 68 KB across 5 comprehensive documents
+## Dependencies
 
-### 6. Tests ✅
+**Core (Production):**
+- click >= 8.1.0 (CLI framework)
+- rich >= 13.0.0 (terminal UI)
+- pydantic >= 2.0.0 (data validation)
+- pyyaml >= 6.0 (YAML support)
+- gitpython >= 3.1.0 (git operations)
+- jinja2 >= 3.1.0 (templates)
+- psutil >= 5.9.0 (process management)
 
-**Unit Tests:**
-- `test_models.py` - Core model tests
-- `test_utils.py` - Utility function tests
+**Dev Dependencies:**
+- pytest >= 7.0.0
+- pytest-cov >= 4.0.0
+- black >= 23.0.0
+- ruff >= 0.1.0
+- mypy >= 1.0.0
 
-**Test Framework:**
-- pytest configured
-- Test structure created
-- Example tests provided
+All dependencies stable and well-maintained.
 
-## What's Ready to Use
+## Installation
 
-### Installation
+### From PyPI (Recommended)
 
 ```bash
-cd /Users/gpeddle/repos/github/LiveData-Inc/air-toolkit
-pip install -e .
+pip install air-toolkit
+# or
+pipx install air-toolkit
 ```
 
-### Verify
+### From Source (Development)
 
 ```bash
-air --version
+cd air-toolkit
+pip install -e ".[dev]"
+```
+
+### Verify Installation
+
+```bash
+air --version  # Should show: air version 0.6.0
 air --help
 ```
 
-### Expected Output
+## What's Next
 
-```
-air version 0.1.0
-```
+### Planned Enhancements (v0.7.0+)
 
-## What Needs Implementation
+**Analysis Improvements:**
+- Additional language support (Java, Ruby, PHP, Rust, C#)
+- Custom analyzer plugins
+- Analysis caching for faster re-runs
+- Incremental analysis (only changed files)
 
-### Phase 1: Core Functionality (High Priority)
+**Agent Coordination:**
+- Shared findings database (SQLite)
+- Automated spawning with `air spawn` command
+- Parallel execution pipeline with dependencies
+- Resource management (token budgets, rate limits)
 
-**Commands to Implement:**
-1. `air init` - Full implementation
-   - Create directory structure
-   - Generate template files
-   - Initialize git
-   - Create config
+**Integration:**
+- MCP (Model Context Protocol) server implementation
+- GitHub Actions integration
+- VS Code extension
+- Web UI for analysis results
 
-2. `air link` - Full implementation
-   - Create symlinks
-   - Clone repositories
-   - Update config
-   - Validate paths
+**Quality of Life:**
+- Shell completion (bash, zsh, fish)
+- Configuration profiles
+- Custom templates
+- Plugin system
 
-3. `air validate` - Full implementation
-   - Check directory structure
-   - Validate symlinks
-   - Parse and validate config
-   - Report issues
+## Success Metrics
 
-4. `air status` - Full implementation
-   - Read config
-   - Count resources
-   - List analysis documents
-   - Show task summary
-
-**Services to Implement:**
-- `services/filesystem.py` - File operations, symlinks
-- `services/templates.py` - Jinja2 template rendering
-- `services/validator.py` - Validation logic
-- `services/git.py` - Git operations (clone, branch, commit)
-
-**Templates to Create:**
-- `templates/assessment/README.md.j2`
-- `templates/assessment/CLAUDE.md.j2`
-- `templates/assessment/.gitignore.j2`
-- `templates/ai/README.md.j2`
-- `templates/ai/task.md.j2`
-- `templates/ai/context/architecture.md.j2`
-
-### Phase 2: Task Tracking (Medium Priority)
-
-**Commands to Implement:**
-- `air task new` - Create task files
-- `air task list` - List and parse tasks
-- `air task complete` - Update task status
-- `air track init` - Initialize .air/ tracking
-- `air summary` - Generate summaries
-
-**Requirements:**
-- Markdown parsing for task files
-- Task file rendering
-- Summary generation
-
-### Phase 3: Advanced Features (Lower Priority)
-
-**Commands to Implement:**
-- `air classify` - Auto-classify resources
-- `air pr` - Create pull requests (requires `gh` CLI)
-
-**Additional Services:**
-- GitHub API integration
-- Resource classification logic
-
-## Next Steps
-
-### Immediate (Today)
-
-1. **Implement `air init`:**
-   ```bash
-   # Should create working assessment project
-   air init test-project
-   ```
-
-2. **Create templates:**
-   - Start with minimal versions
-   - Add content iteratively
-
-3. **Test installation:**
-   ```bash
-   pip install -e .
-   air init test-project
-   cd test-project
-   ls -la  # Should show complete structure
-   ```
-
-### Short Term (This Week)
-
-1. Implement `air link` and `air validate`
-2. Add filesystem and template services
-3. Expand test coverage
-4. Create example project
-
-### Medium Term (Next Sprint)
-
-1. Implement task tracking commands
-2. Add git service for PR creation
-3. Complete test suite
-4. Write user guide
-
-### Long Term
-
-1. Package for PyPI
-2. Create binary releases
-3. Add CI/CD pipeline
-4. Gather user feedback
-
-## Installation Test Plan
-
-Once core functionality is implemented:
-
-```bash
-# 1. Install
-pip install -e .
-
-# 2. Create project
-air init my-review --mode=review
-
-# 3. Link repos
-cd my-review
-air link --review service-a:~/repos/service-a
-
-# 4. Validate
-air validate
-
-# 5. Check status
-air status
-
-# 6. Expected: All commands work, project structure correct
-```
-
-## Success Criteria
-
-### Minimum Viable Product (MVP)
-
+### v0.1.0 Goals (October 2025) ✅
 - ✅ Package structure complete
 - ✅ CLI framework implemented
+- ✅ Core commands working
+- ✅ Basic templates
+- ✅ Tests passing
 - ✅ Documentation complete
-- ⏳ `air init` creates valid projects
-- ⏳ `air link` links repositories
-- ⏳ `air validate` checks structure
-- ⏳ `air status` shows project info
-- ⏳ Basic templates work
-- ⏳ Tests pass
 
-### Full v0.1.0 Release
+### v0.2.0 Goals (October 2025) ✅
+- ✅ Task tracking complete
+- ✅ Summary generation
+- ✅ Repository linking
+- ✅ Test coverage >80%
 
-- All assessment commands working
-- Task tracking implemented
-- Template system complete
-- Test coverage > 80%
-- Documentation verified
-- Example projects created
-- User tested
+### v0.3.0 Goals (October 2025) ✅
+- ✅ Resource classification
+- ✅ PR workflow
+- ✅ PyPI distribution
 
-## Dependencies Status
+### v0.4.0 Goals (October 2025) ✅
+- ✅ Interactive commands
+- ✅ Symlink validation
+- ✅ Enhanced UX
 
-**Installed:**
-- ✅ click >= 8.1.0
-- ✅ rich >= 13.0.0
-- ✅ pydantic >= 2.0.0
-- ✅ pyyaml >= 6.0
-- ✅ gitpython >= 3.1.0
+### v0.5.0 Goals (October 2025) ✅
+- ✅ Code review integration
+- ✅ Claude Code slash commands
+- ✅ AI-first workflows
 
-**Dev Dependencies:**
-- ✅ pytest >= 7.0.0
-- ✅ pytest-cov >= 4.0.0
-- ✅ black >= 23.0.0
-- ✅ ruff >= 0.1.0
-- ✅ mypy >= 1.0.0
+### v0.6.0 Goals (October 2025) ✅
+- ✅ Deep code analysis (5 analyzers)
+- ✅ Dependency-aware multi-repo analysis
+- ✅ Parallel agent coordination
+- ✅ Strategy pattern architecture
+- ✅ 372 tests passing
 
-## Architecture Decisions
+## Community & Support
 
-Key decisions made:
+**Repository:** https://github.com/LiveData-Inc/air-toolkit
+**PyPI:** https://pypi.org/project/air-toolkit/
+**License:** MIT
 
-1. **Python over Bash** - Cross-platform, rich ecosystem
-2. **Click for CLI** - Standard, well-documented
-3. **Rich for UI** - Beautiful terminal output
-4. **Pydantic for Models** - Type safety, validation
-5. **Jinja2 for Templates** - Flexible, standard
-6. **pytest for Testing** - Industry standard
+## Timeline
 
-## Notes
-
-- Project follows modern Python best practices
-- Type hints throughout
-- Comprehensive documentation
-- AI-first design philosophy
-- Modular, extensible architecture
-
-## Timeline Estimate
-
-- ✅ Setup: Complete (3 hours)
-- ⏳ Core Implementation: 2-3 days
-- ⏳ Task Tracking: 1-2 days
-- ⏳ Testing & Polish: 1-2 days
-- ⏳ Documentation Review: 1 day
-
-**Total to MVP:** ~1 week
-**Total to v0.1.0:** ~2 weeks
+- **Oct 3, 2025:** v0.1.0 - Initial release
+- **Oct 3, 2025:** v0.2.0 - Task tracking complete
+- **Oct 4, 2025:** v0.3.0 - Resource classification
+- **Oct 4, 2025:** v0.4.0 - Interactive commands
+- **Oct 4, 2025:** v0.5.0 - Code review integration
+- **Oct 4, 2025:** v0.6.0 - Deep analysis & agent coordination
+- **Future:** v0.7.0+ - Advanced features and integrations
 
 ---
 
-**Project is ready for core implementation to begin!**
+**Project Status: Production-Ready with Active Development** 🚀
+
+The AIR Toolkit is a mature, well-tested CLI tool ready for production use. The core workflow is complete, advanced features are implemented, and the architecture supports easy extension. The project continues to evolve with new capabilities while maintaining stability and backward compatibility.

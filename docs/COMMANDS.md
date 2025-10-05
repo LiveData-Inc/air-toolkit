@@ -63,7 +63,7 @@ air init [NAME] [OPTIONS]
 
 - `--mode=MODE` - Project mode (default: `mixed`)
   - `review` - Review-only mode
-  - `collaborate` - Collaborative mode
+  - `develop` - Development mode with tracking
   - `mixed` - Both review and developer
 - `--track / --no-track` - Initialize .air/ tracking (default: enabled)
 
@@ -77,7 +77,7 @@ air init my-review
 air init service-review --mode=review
 
 # Create developer project without tracking
-air init docs --mode=collaborate --no-track
+air init docs --mode=develop --no-track
 
 # Initialize in current directory
 air init
@@ -96,19 +96,19 @@ project-name/
 ├── .gitignore
 ├── repos/
 ├── analysis/
-│   └── assessments/
+│   └── reviews/
 ├── .air/
 └── scripts/
 ```
 
-**Collaborative Mode:**
+**Develop Mode:**
 ```
 project-name/
 ├── README.md
 ├── CLAUDE.md
 ├── air-config.json
 ├── .gitignore
-├── collaborate/
+├── repos/
 ├── analysis/
 │   └── improvements/
 ├── contributions/
@@ -124,10 +124,9 @@ project-name/
 ├── air-config.json
 ├── .gitignore
 ├── repos/
-├── collaborate/
 ├── analysis/
 │   ├── SUMMARY.md
-│   ├── assessments/
+│   ├── reviews/
 │   └── improvements/
 ├── contributions/
 ├── .air/
@@ -394,7 +393,7 @@ air validate --fix
 **Structure Check:**
 - Required directories exist
 - `air-config.json` present
-- Mode-appropriate structure (repos/, collaborate/, etc.)
+- Mode-appropriate structure (repos/, analysis/, contributions/, etc.)
 
 **Links Check:**
 - Symlinks point to valid locations
@@ -416,7 +415,7 @@ Structure:
   ✓ README.md
   ✓ air-config.json
   ✓ repos/
-  ✓ analysis/assessments/
+  ✓ analysis/reviews/
 
 Links:
   ✓ repos/service-a -> /Users/user/repos/service-a
@@ -451,7 +450,7 @@ air status [OPTIONS]
 
 - `--type=TYPE` - Filter by type (default: `all`)
   - `review` - Show only review resources
-  - `collaborate` - Show only developer resources
+  - `develop` - Show only developer resources
   - `all` - Show all resources
 - `--contributions` - Show contribution tracking details
 
@@ -560,13 +559,13 @@ Resource Classification:
 Review-Only (2):
   ✓ service-a (library)
     Reason: Contains Python implementation code
-    Analysis: analysis/assessments/service-a.md
+    Analysis: analysis/reviews/service-a.md
 
   ✓ service-b (library)
     Reason: Service implementation
-    Analysis: analysis/assessments/service-b.md
+    Analysis: analysis/reviews/service-b.md
 
-Collaborative (1):
+Developer (1):
   ✓ architecture (documentation)
     Reason: Architecture documentation repository
     Analysis: analysis/improvements/gaps.md
@@ -590,7 +589,7 @@ Indicators:
   - Also contains extensive documentation
   - Has write access
 
-Classify as (repos/collaborate)? collaborate
+Classify as (review/develop)? develop
 ```
 
 ---

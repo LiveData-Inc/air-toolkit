@@ -28,7 +28,7 @@ pip install -e .
 
 ## Quick Start
 
-### Complete Workflow (v0.4.3)
+### Complete Workflow (v0.6.0)
 
 ```bash
 # 1. Initialize project
@@ -76,7 +76,7 @@ air summary
 
 ## Features
 
-### Core Workflow (v0.4.0) ✅
+### Core Workflow (v0.6.0) ✅
 - **Project Initialization** (`air init`)
   - Create new projects or initialize in existing directories
   - Support for review, develop, or mixed modes
@@ -129,6 +129,38 @@ air summary
 - Confidence scoring and verbose output
 - Updates air-config.json automatically
 
+### Deep Code Analysis (v0.6.0) ✅
+
+- **Comprehensive Code Analysis** (`air analyze`) - AI-powered deep code analysis
+- **5 Specialized Analyzers:**
+  - SecurityAnalyzer - 14 security pattern types (secrets, SQL injection, weak crypto, etc.)
+  - PerformanceAnalyzer - 7 performance anti-patterns (N+1 queries, nested loops, etc.)
+  - CodeStructureAnalyzer - Repository structure analysis
+  - ArchitectureAnalyzer - Dependency and pattern detection
+  - QualityAnalyzer - Code quality metrics
+- Focused analysis: `--focus=security|performance|architecture|quality`
+- Severity levels: critical, high, medium, low, info
+- Structured JSON output for AI consumption
+
+### Dependency-Aware Multi-Repo Analysis (v0.6.0) ✅
+
+- **Intelligent Multi-Repo Analysis** (`air analyze --all`)
+- Analyzes repositories in dependency order (libraries before services)
+- Dependency graph generation and topological sorting
+- Gap analysis: `air analyze --gap LIBRARY`
+- Version mismatch detection across repositories
+- Pluggable dependency detectors (Python, JavaScript, Go)
+- Support for package manifests and code imports
+
+### Agent Coordination (v0.6.0) ✅
+
+- **Parallel Analysis** (`air analyze --background`)
+- Spawn multiple background agents for concurrent analysis
+- Wait for completion: `air wait --all`
+- Aggregate findings: `air findings --all`
+- Cross-platform process management
+- Rich status display with progress tracking
+
 ### Pull Request Workflow (v0.3.1) ✅
 
 - **Create Pull Requests** (`air pr`) - Automated PR creation for collaborative resources
@@ -171,13 +203,13 @@ air-toolkit/
 
 ## Command Overview
 
-### Core Commands (v0.3.1)
+### Core Commands (v0.6.0)
 
 ```bash
 # Project Management
 air init [NAME]                      # Create or initialize project
 air init --mode=MODE                 # Initialize with specific mode
-air init --create-dir NAME           # Explicit directory creation
+air init --interactive               # Guided project setup
 
 # Repository Linking
 air link add PATH [OPTIONS]          # Link repository
@@ -185,8 +217,35 @@ air link add PATH [OPTIONS]          # Link repository
   --review                           # Link as review-only (default)
   --develop                          # Link as collaborative/developer
   --type TYPE                        # Resource type (library/documentation/service)
+  -i, --interactive                  # Interactive mode with prompts
 air link list [--format=json]        # List linked resources
 air link remove NAME [--keep-link]   # Remove resource
+air link remove -i                   # Interactive removal with numbered list
+
+# Code Analysis (v0.6.0)
+air analyze REPO [OPTIONS]           # Analyze repository
+  --focus AREA                       # Focus: security|performance|architecture|quality
+  --background                       # Run in background
+  --id NAME                          # Agent ID for background mode
+air analyze --all [OPTIONS]          # Analyze all repos
+  --no-order                         # Disable dependency ordering
+  --deps-only                        # Only repos with dependencies
+air analyze --gap LIBRARY            # Gap analysis for library and dependents
+
+# Agent Coordination (v0.6.0)
+air wait --all                       # Wait for all agents to complete
+air wait --agents ID1,ID2            # Wait for specific agents
+  --timeout SECONDS                  # Timeout in seconds
+air findings --all                   # Aggregate all findings
+  --severity LEVEL                   # Filter: critical|high|medium|low
+  --format json                      # JSON output
+air status --agents                  # Show background agent status
+
+# Code Review (v0.5.0)
+air review [FILES]                   # Generate review context
+  --pr                               # Review PR branch
+  --format json                      # JSON output
+air claude context                   # Get project context for AI
 
 # Task Tracking
 air task new DESCRIPTION             # Create task file
@@ -201,12 +260,7 @@ air task list [OPTIONS]              # List tasks
   --status STATUS                    # Filter by status
   --sort FIELD                       # Sort by date/title/status
   --search TERM                      # Search by keyword
-  --format json                      # JSON output
 air task archive ID [OPTIONS]        # Archive tasks
-  --all                              # Archive all
-  --before DATE                      # Archive before date
-  --strategy STRATEGY                # Organization strategy
-air task restore ID                  # Restore archived task
 
 # Summary & Reporting
 air summary [OPTIONS]                # Generate summary
@@ -218,18 +272,19 @@ air summary [OPTIONS]                # Generate summary
 air classify [OPTIONS]               # Classify resources
   --verbose                          # Show detection details
   --update                           # Update air-config.json
-  --format json                      # JSON output
 air classify RESOURCE                # Classify specific resource
+
+# Pull Requests (v0.3.1)
+air pr RESOURCE [OPTIONS]            # Create pull request
+  --title TEXT                       # PR title
+  --body TEXT                        # PR description
+  --draft                            # Create as draft
+  --dry-run                          # Preview without creating
 
 # Validation & Status
 air validate [--format=json]         # Validate project
+air validate --fix                   # Auto-fix broken symlinks
 air status [--format=json]           # Show project status
-```
-
-### Coming Soon
-
-```bash
-air pr [resource]                    # Create pull request
 ```
 
 ## License

@@ -160,7 +160,7 @@ from typing import Literal
 class ProjectMode(StrEnum):
     """Assessment project mode."""
     REVIEW = "review"
-    COLLABORATE = "collaborate"
+    DEVELOP = "develop"
     MIXED = "mixed"
 
 
@@ -211,7 +211,7 @@ class AirConfig(BaseModel):
     mode: ProjectMode
     created: datetime
     resources: dict[str, list[Resource]] = Field(
-        default_factory=lambda: {"review": [], "collaborate": []}
+        default_factory=lambda: {"review": [], "develop": []}
     )
     goals: list[str] = Field(default_factory=list)
 
@@ -244,11 +244,11 @@ class TaskFile(BaseModel):
   "$schema": "https://air-toolkit.dev/schemas/assess-config.schema.json",
   "version": "2.0.0",
   "name": "project-name",
-  "mode": "review|collaborate|mixed",
+  "mode": "review|develop|mixed",
   "created": "2025-10-03T10:42:00Z",
   "resources": {
     "review": [...],
-    "collaborate": [...]
+    "develop": [...]
   },
   "goals": [...]
 }
