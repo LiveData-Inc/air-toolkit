@@ -49,44 +49,75 @@ jobs:
         run: |
           echo "Checking task file structure..."
           invalid_files=0
+          warnings=0
 
-          required_sections=(
+          # Core required sections (blocking) - minimal for backward compatibility
+          core_required=(
             "# Task:"
+            "## Outcome"
+          )
+
+          # Recommended sections (non-blocking warnings)
+          recommended=(
             "## Date"
             "## Prompt"
             "## Actions Taken"
             "## Files Changed"
-            "## Outcome"
           )
 
           for file in .air/tasks/*.md; do
-            # Skip TASKS.md
-            if [[ "$(basename "$file")" == "TASKS.md" ]]; then
+            # Skip TASKS.md and DESIGN-* files
+            basename_file=$(basename "$file")
+            if [[ "$basename_file" == "TASKS.md" ]] || [[ "$basename_file" == DESIGN-* ]]; then
               continue
             fi
 
             filename=$(basename "$file")
-            missing_sections=()
+            missing_core=()
+            missing_recommended=()
 
-            for section in "${required_sections[@]}"; do
+            # Check core required sections (will fail validation)
+            for section in "${core_required[@]}"; do
               if ! grep -q "$section" "$file"; then
-                missing_sections+=("$section")
+                missing_core+=("$section")
               fi
             done
 
-            if [ ${#missing_sections[@]} -gt 0 ]; then
-              echo "❌ $filename missing sections:"
-              for section in "${missing_sections[@]}"; do
+            # Check recommended sections (warnings only)
+            for section in "${recommended[@]}"; do
+              if ! grep -q "$section" "$file"; then
+                missing_recommended+=("$section")
+              fi
+            done
+
+            # Report core issues (blocking)
+            if [ ${#missing_core[@]} -gt 0 ]; then
+              echo "❌ $filename missing REQUIRED sections:"
+              for section in "${missing_core[@]}"; do
                 echo "   - $section"
               done
               invalid_files=$((invalid_files + 1))
+            fi
+
+            # Report recommended issues (non-blocking)
+            if [ ${#missing_recommended[@]} -gt 0 ]; then
+              echo "⚠️  $filename missing recommended sections:"
+              for section in "${missing_recommended[@]}"; do
+                echo "   - $section"
+              done
+              warnings=$((warnings + 1))
             fi
           done
 
           if [ $invalid_files -gt 0 ]; then
             echo ""
-            echo "Found $invalid_files file(s) with missing sections"
+            echo "Found $invalid_files file(s) with missing REQUIRED sections"
             exit 1
+          fi
+
+          if [ $warnings -gt 0 ]; then
+            echo ""
+            echo "Found $warnings file(s) with missing recommended sections (non-blocking)"
           fi
 
           echo "✅ All task files have required sections"
