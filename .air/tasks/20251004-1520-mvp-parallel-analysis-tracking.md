@@ -357,19 +357,19 @@ class TestAgentCoordination:
 
 **Decision**: Use Python `subprocess.Popen()` for MVP
 **Rationale**: Simple, works across platforms, no daemon complexity
-**Future**: Consider background daemon in v0.6.1
+**Future**: Consider background daemon in v0.6.0
 
 ### 2. Storage: JSON Files (MVP)
 
 **Decision**: Store metadata and findings in JSON files
 **Rationale**: Human-readable, easy to debug, no database dependency
-**Future**: Migrate to SQLite in v0.6.2 for better querying
+**Future**: Migrate to SQLite in v0.6.0 for better querying
 
 ### 3. Agent Communication: None (MVP)
 
 **Decision**: Agents don't communicate in v0.6.0
 **Rationale**: Reduces complexity, gets MVP shipped faster
-**Future**: Add shared findings DB in v0.6.2
+**Future**: Add shared findings DB in v0.6.0
 
 ## Risks & Mitigations
 
@@ -407,7 +407,7 @@ After v0.6.0 ships:
 
 1. **Gather feedback**: Dogfood with air-toolkit analysis
 2. **Identify pain points**: What's missing? What's confusing?
-3. **Plan v0.6.1**: Automated spawning with `air spawn`
+3. **Plan v0.6.0**: Automated spawning with `air spawn`
 4. **Iterate**: Ship fast, learn fast
 
 ## Outcome

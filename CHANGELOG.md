@@ -7,67 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.1] - 2025-10-04
-
-### Added - Enhanced Analysis Depth (Continued)
-
-**Additional Analyzers and Security Patterns**
-
-#### New Analyzer
-
-- **PerformanceAnalyzer** - Detects performance anti-patterns
-  - N+1 query detection (Django ORM)
-  - Nested loops (O(n²) complexity)
-  - Inefficient string concatenation in loops
-  - List comprehension opportunities
-  - Missing pagination on queries
-  - React component memoization issues
-  - forEach+push → map opportunities
-
-#### Enhanced SecurityAnalyzer
-
-Added 5 new security pattern categories (total: 14 types):
-- Path traversal vulnerabilities
-- Command injection (os.popen, commands.getoutput)
-- XML External Entity (XXE) attacks
-- CSRF protection missing on POST endpoints
-- LDAP injection
-- Regular Expression DoS (ReDoS)
-- Cryptographically weak random (random vs secrets module)
-- Additional hardcoded secret patterns (Bearer tokens, SSH keys)
-
-#### Analysis Command Enhancement
-
-- `--focus=performance` - Performance-only analysis
-- Enhanced severity reporting
-- All 5 analyzers now integrated
-
-### Testing
-
-- **372 tests total** (was 370) - All passing ✅
-- Added 2 new PerformanceAnalyzer tests
-- Integration test updated for all 5 analyzers
-
-### Impact
-
-**Security coverage expanded:**
-- Was: 9 security pattern types
-- Now: 14 security pattern types  (+55%)
-
-**Performance analysis added:**
-- Detects 7 types of performance issues
-- Python and JavaScript/TypeScript/React coverage
-
 ## [0.6.0] - 2025-10-04
 
-### Added - Enhanced Analysis Depth
+### Added - Enhanced Analysis Depth & Dependency-Aware Multi-Repo Analysis
 
-**Deep Code Analysis** - Four specialized analyzers provide actionable insights
+**Deep Code Analysis** - Five specialized analyzers with Strategy pattern architecture
 
 #### New Analyzers
 
-- **SecurityAnalyzer** - Detects security vulnerabilities
-  - Hardcoded secrets and API keys
+- **SecurityAnalyzer** - Detects security vulnerabilities (14 pattern types)
+  - Hardcoded secrets and API keys (Bearer tokens, SSH keys, passwords)
   - SQL injection risks
   - Weak cryptography (MD5, SHA1, DES)
   - Use of eval/exec
@@ -76,6 +25,22 @@ Added 5 new security pattern categories (total: 14 types):
   - Shell injection risks
   - Missing security headers
   - Config files not in .gitignore
+  - **NEW:** Path traversal vulnerabilities
+  - **NEW:** Command injection (os.popen, commands.getoutput)
+  - **NEW:** XML External Entity (XXE) attacks
+  - **NEW:** CSRF protection missing on POST endpoints
+  - **NEW:** LDAP injection
+  - **NEW:** Regular Expression DoS (ReDoS)
+  - **NEW:** Cryptographically weak random (random vs secrets module)
+
+- **PerformanceAnalyzer** - Detects performance anti-patterns (7 pattern types)
+  - N+1 query detection (Django ORM)
+  - Nested loops (O(n²) complexity)
+  - Inefficient string concatenation in loops
+  - List comprehension opportunities
+  - Missing pagination on queries
+  - React component memoization issues
+  - forEach+push → map opportunities
 
 - **CodeStructureAnalyzer** - Analyzes repository structure
   - File and line counts
@@ -96,40 +61,121 @@ Added 5 new security pattern categories (total: 14 types):
   - Missing README
   - Low test coverage
 
+#### Dependency Detection - Strategy Pattern Architecture
+
+**Pluggable dependency detectors** for extensible multi-language support:
+
+- **Package Detectors** (manifest files)
+  - `PythonRequirementsDetector` - requirements.txt
+  - `PythonPyprojectDetector` - pyproject.toml
+  - `JavaScriptPackageJsonDetector` - package.json
+  - `GoModDetector` - go.mod
+
+- **Import Detectors** (code-level)
+  - `PythonImportDetector` - `import` and `from` statements
+  - `JavaScriptImportDetector` - `import` and `require()`
+  - `GoImportDetector` - Go `import` blocks
+
+- **API Detectors** (service-to-service) - Stub for future implementation
+
+**3 Dependency Types:**
+- `PACKAGE` - Declared in manifest files
+- `IMPORT` - Actual code imports
+- `API` - HTTP/REST calls (future)
+
+#### Multi-Repo Dependency-Aware Analysis
+
+- **`air analyze --all`** - Analyze all linked repos
+  - **Default:** Analyzes in dependency order (libraries before services)
+  - Builds dependency graph from project files
+  - Topological sort for correct analysis order
+  - Saves dependency graph to `analysis/dependency-graph.json`
+  - Parallel analysis where possible (repos at same dependency level)
+
+- **`air analyze --all --no-order`** - Disable dependency ordering (parallel)
+
+- **`air analyze --all --deps-only`** - Only analyze repos with dependencies
+
+- **`air analyze --gap <library>`** - Gap analysis
+  - Analyzes library and all dependent services
+  - Detects version mismatches
+  - Identifies missing features and deprecated API usage
+
+- **`air analyze <repo>`** - Single repo analysis
+  - **Default:** Checks dependencies in project context
+  - Detects dependency gaps and version issues
+
+- **`air analyze <repo> --no-deps`** - Skip dependency checking
+
 #### Enhanced Analysis Command
 
-- `air analyze` now runs comprehensive deep analysis
+- `air analyze` now runs comprehensive deep analysis with **intelligent defaults**
 - Focus flag controls which analyzers run:
   - `--focus=security` - Security issues only
+  - `--focus=performance` - Performance issues only
   - `--focus=architecture` - Architecture analysis only
   - `--focus=quality` - Quality issues only
   - No flag - All analyzers (comprehensive)
 - Findings include severity levels (critical/high/medium/low/info)
 - Results saved as structured JSON with metadata
+- Resource name resolution: `air analyze myapp` (consistent with `air pr`)
 
 ### Testing
 
-- **370 tests total** (was 356) - All passing ✅
-- Added 14 new analyzer tests:
-  - SecurityAnalyzer: hardcoded secrets, SQL injection, weak crypto
-  - CodeStructureAnalyzer: file counts, large files, structure
-  - QualityAnalyzer: long functions, many parameters, documentation
-  - ArchitectureAnalyzer: dependencies, patterns
-  - Integration test for all analyzers
+- **372 tests total** (was 356) - All passing ✅
+- Added 16 new tests:
+  - 14 analyzer tests (security, performance, quality, architecture, structure)
+  - 2 dependency detection tests
+  - Multi-repo analysis integration tests
 
 ### Impact
 
-**Before:**
-- Analysis: Basic classification only (tech stack, languages)
-- Findings per repo: ~1 (classification summary)
-- Depth: Superficial
+**Security coverage:**
+- Was: 9 security pattern types
+- Now: 14 security pattern types (+55%)
 
-**After:**
-- Analysis: Multi-dimensional (security + quality + architecture + structure)
-- Findings per repo: 10-50+ actionable items
-- Depth: Identifies real issues with severity levels and suggestions
+**Performance analysis:**
+- NEW: 7 types of performance issues detected
+- Covers Python and JavaScript/TypeScript/React
 
-## [0.6.0] - 2025-10-04
+**Analysis depth:**
+- Before: Basic classification only (tech stack, languages)
+- After: Multi-dimensional (security + performance + quality + architecture + structure + dependencies)
+- Findings per repo: 10-70+ actionable items (was ~1)
+
+**Multi-repo capabilities:**
+- Dependency graph building across linked repos
+- Topological sort for proper analysis order
+- Gap detection between library versions
+- Intelligent defaults (dependency order by default)
+
+### Architecture
+
+**Strategy Pattern Benefits:**
+- Easy to add new languages (Java, Ruby, PHP, Rust, C#)
+- Each detector is independent and testable
+- Type-safe filtering by dependency type
+- Users can register custom detectors
+
+**Example - Adding Rust support:**
+```python
+from air.services.detectors import DependencyDetectorStrategy, DependencyResult
+from air.services.dependency_detector import register_detector
+
+class RustCargoDetector(DependencyDetectorStrategy):
+    @property
+    def name(self) -> str:
+        return "Rust Cargo.toml"
+
+    def can_detect(self, repo_path: Path) -> bool:
+        return (repo_path / "Cargo.toml").exists()
+
+    def detect(self, repo_path: Path) -> DependencyResult:
+        # Parse Cargo.toml
+        ...
+
+register_detector(RustCargoDetector())
+```
 
 ### Added - Agent Coordination System (MVP)
 

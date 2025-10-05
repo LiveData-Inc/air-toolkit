@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 
+from air.core.models import AirConfig
 from air.services.agent_manager import generate_agent_id, spawn_background_agent, update_agent_status
 from air.services.analyzers import (
     ArchitectureAnalyzer,
@@ -16,25 +17,55 @@ from air.services.analyzers import (
     SecurityAnalyzer,
 )
 from air.services.classifier import classify_resource
-from air.services.filesystem import get_project_root
-from air.utils.console import error, info, success
+from air.services.dependency_graph import (
+    build_dependency_graph,
+    detect_dependency_gaps,
+    filter_repos_with_dependencies,
+    topological_sort,
+)
+from air.services.filesystem import get_project_root, load_config
+from air.utils.console import error, info, success, warn
 
 
 @click.command()
-@click.argument("resource_path", type=click.Path(exists=True))
+@click.argument("resource", required=False)
+@click.option("--all", "analyze_all", is_flag=True, help="Analyze all linked repos")
+@click.option("--no-order", is_flag=True, help="Disable dependency-ordered analysis (parallel)")
+@click.option("--deps-only", is_flag=True, help="Only analyze repos with dependencies")
+@click.option("--gap", help="Gap analysis for this library vs dependents")
+@click.option("--no-deps", is_flag=True, help="Skip dependency checking")
 @click.option("--background", is_flag=True, help="Run in background")
 @click.option("--id", "agent_id", help="Agent identifier (for background mode)")
 @click.option("--focus", help="Analysis focus area (security, architecture, performance)")
 def analyze(
-    resource_path: str, background: bool, agent_id: str | None, focus: str | None
+    resource: str | None,
+    analyze_all: bool,
+    no_order: bool,
+    deps_only: bool,
+    gap: str | None,
+    no_deps: bool,
+    background: bool,
+    agent_id: str | None,
+    focus: str | None,
 ) -> None:
-    """Analyze a repository.
+    """Analyze repositories with intelligent defaults.
 
     \b
-    Examples:
-      air analyze repos/service-a
-      air analyze repos/service-a --focus=security
-      air analyze repos/service-a --background --id=security-analysis
+    Single Repo (checks dependencies by default):
+      air analyze myapp                       # Checks dependencies
+      air analyze myapp --no-deps             # Skip dependency checking
+      air analyze myapp --focus=security
+
+    \b
+    Multi-Repo (dependency order by default):
+      air analyze --all                       # Analyzes in dependency order
+      air analyze --all --no-order            # Parallel analysis
+      air analyze --all --deps-only           # Skip isolated repos
+      air analyze --gap shared-utils          # Gap analysis
+
+    \b
+    Background:
+      air analyze myapp --background --id=security-analysis
     """
     # Verify we're in an AIR project
     project_root = get_project_root()
@@ -45,8 +76,93 @@ def analyze(
             exit_code=1,
         )
 
-    resource = Path(resource_path).resolve()
+    # Load config
+    config = load_config(project_root)
 
+    # Multi-repo analysis modes
+    if analyze_all:
+        # Default: respect dependencies (unless --no-order specified)
+        respect_deps = not no_order
+        _analyze_multi_repo(
+            config=config,
+            respect_deps=respect_deps,
+            deps_only=deps_only,
+            focus=focus,
+            background=background,
+        )
+        return
+
+    if gap:
+        _analyze_gap(config=config, library_name=gap, focus=focus)
+        return
+
+    # Single repo analysis - resolve resource name or path
+    if not resource:
+        error("Resource name or path required", exit_code=1)
+
+    resource_path = _resolve_resource(config, resource)
+
+    # Default: check dependencies (unless --no-deps specified)
+    check_deps = not no_deps
+
+    # Run single repo analysis
+    _analyze_single_repo(
+        resource_path=resource_path,
+        focus=focus,
+        background=background,
+        agent_id=agent_id,
+        project_root=project_root,
+        check_deps=check_deps,
+        config=config if check_deps else None,
+    )
+
+
+def _resolve_resource(config: AirConfig, resource: str) -> Path:
+    """Resolve resource name or path to absolute path.
+
+    Args:
+        config: AIR project configuration
+        resource: Resource name or path
+
+    Returns:
+        Resolved absolute path
+
+    Raises:
+        SystemExit: If resource not found
+    """
+    # Try as resource name first
+    for r in config.get_all_resources():
+        if r.name == resource:
+            return Path(r.path).expanduser().resolve()
+
+    # Try as path
+    path = Path(resource).expanduser()
+    if path.exists():
+        return path.resolve()
+
+    error(f"Resource not found: {resource}", exit_code=1)
+
+
+def _analyze_single_repo(
+    resource_path: Path,
+    focus: str | None,
+    background: bool,
+    agent_id: str | None,
+    project_root: Path,
+    check_deps: bool = False,
+    config: AirConfig | None = None,
+) -> None:
+    """Analyze a single repository.
+
+    Args:
+        resource_path: Path to repository
+        focus: Analysis focus area
+        background: Run in background
+        agent_id: Agent identifier
+        project_root: AIR project root
+        check_deps: Check for dependency issues
+        config: AIR config (if checking deps)
+    """
     if background:
         # Spawn background agent
         if not agent_id:
@@ -56,19 +172,19 @@ def analyze(
             agent_id=agent_id,
             command="analyze",
             args={"focus": focus} if focus else {},
-            resource_path=str(resource),
+            resource_path=str(resource_path),
         )
         return
 
     # Run analysis
     try:
-        info(f"Analyzing: {resource}")
+        info(f"Analyzing: {resource_path}")
 
         if focus:
             info(f"Focus area: {focus}")
 
         # Always start with classification
-        result = classify_resource(resource)
+        result = classify_resource(resource_path)
 
         info(f"Type: {result.resource_type.value}")
         if result.technology_stack:
@@ -97,19 +213,19 @@ def analyze(
         analyzers = []
 
         if focus == "security" or not focus:
-            analyzers.append(SecurityAnalyzer(resource))
+            analyzers.append(SecurityAnalyzer(resource_path))
 
         if focus == "performance" or not focus:
-            analyzers.append(PerformanceAnalyzer(resource))
+            analyzers.append(PerformanceAnalyzer(resource_path))
 
         if focus == "architecture" or not focus:
-            analyzers.append(ArchitectureAnalyzer(resource))
+            analyzers.append(ArchitectureAnalyzer(resource_path))
 
         if focus == "quality" or not focus:
-            analyzers.append(QualityAnalyzer(resource))
+            analyzers.append(QualityAnalyzer(resource_path))
 
         if not focus:  # Always run structure analysis when no focus
-            analyzers.append(CodeStructureAnalyzer(resource))
+            analyzers.append(CodeStructureAnalyzer(resource_path))
 
         # Run analyzers and collect findings
         for analyzer in analyzers:
@@ -148,11 +264,20 @@ def analyze(
             f"medium: {severity_counts.get('medium', 0)})"
         )
 
+        # Check for dependency issues if requested
+        if check_deps and config:
+            info("Checking dependencies...")
+            graph = build_dependency_graph(config)
+            gaps = detect_dependency_gaps(config, graph)
+            if gaps:
+                warn(f"Found {len(gaps)} dependency issues")
+                all_findings.extend(gaps)
+
         # Save findings to analysis directory
         analysis_dir = project_root / "analysis" / "reviews"
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
-        findings_file = analysis_dir / f"{resource.name}-findings.json"
+        findings_file = analysis_dir / f"{resource_path.name}-findings.json"
         findings_file.write_text(json.dumps(all_findings, indent=2))
 
         success(f"Analysis complete: {findings_file}")
@@ -170,3 +295,196 @@ def analyze(
             update_agent_status(agent_id, "failed", error=str(e), traceback=traceback.format_exc())
 
         sys.exit(1)
+
+
+def _analyze_multi_repo(
+    config: AirConfig,
+    respect_deps: bool,
+    deps_only: bool,
+    focus: str | None,
+    background: bool,
+) -> None:
+    """Analyze multiple repos with dependency awareness.
+
+    Args:
+        config: AIR project configuration
+        respect_deps: Analyze in dependency order
+        deps_only: Only analyze repos with dependencies
+        focus: Analysis focus area
+        background: Run analyses in background
+    """
+    # Build dependency graph
+    info("Building dependency graph...")
+    graph = build_dependency_graph(config)
+
+    # Save graph as JSON
+    project_root = get_project_root()
+    graph_file = project_root / "analysis" / "dependency-graph.json"
+    graph_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Convert graph to serializable format
+    graph_json = {repo: list(deps) for repo, deps in graph.items()}
+    graph_file.write_text(json.dumps(graph_json, indent=2))
+    info(f"Dependency graph saved: {graph_file}")
+
+    # Filter if deps_only
+    if deps_only:
+        original_count = len(graph)
+        graph = filter_repos_with_dependencies(graph)
+        skipped = original_count - len(graph)
+        if skipped:
+            info(f"Skipping {skipped} isolated repos (--deps-only)")
+
+    if not graph:
+        info("No repos to analyze")
+        return
+
+    # Determine analysis order
+    if respect_deps:
+        try:
+            levels = topological_sort(graph)
+            info(f"Analysis order: {len(levels)} levels")
+            for i, level in enumerate(levels, 1):
+                info(f"  Level {i}: {', '.join(level)}")
+        except ValueError as e:
+            error(str(e), exit_code=1)
+    else:
+        # All in one level (parallel)
+        levels = [list(graph.keys())]
+        info(f"Analyzing {len(levels[0])} repos in parallel")
+
+    # Analyze by level
+    for level_num, repos_in_level in enumerate(levels, 1):
+        if respect_deps and len(levels) > 1:
+            info(f"\nLevel {level_num}/{len(levels)}: {', '.join(repos_in_level)}")
+
+        # Spawn agents for this level
+        agent_ids = []
+        for repo_name in repos_in_level:
+            agent_id = f"level-{level_num}-{repo_name}"
+
+            # Find resource
+            resource = next((r for r in config.get_all_resources() if r.name == repo_name), None)
+            if not resource:
+                warn(f"Resource not found: {repo_name}")
+                continue
+
+            resource_path = Path(resource.path).expanduser().resolve()
+
+            if background:
+                spawn_background_agent(
+                    agent_id=agent_id,
+                    command="analyze",
+                    args={"focus": focus} if focus else {},
+                    resource_path=str(resource_path),
+                )
+                agent_ids.append(agent_id)
+            else:
+                # Run synchronously
+                _analyze_single_repo(
+                    resource_path=resource_path,
+                    focus=focus,
+                    background=False,
+                    agent_id=None,
+                    project_root=project_root,
+                    check_deps=True,
+                    config=config,
+                )
+
+        # If background, wait for this level to complete before next
+        if background and respect_deps and agent_ids:
+            info(f"Waiting for level {level_num} to complete...")
+            # TODO: Implement wait for agents
+            # For now, just inform user
+            info(f"Use 'air status --agents' to monitor progress")
+            info(f"Agents: {', '.join(agent_ids)}")
+
+    # Detect cross-repo dependency gaps
+    info("\nChecking for dependency gaps...")
+    gaps = detect_dependency_gaps(config, graph)
+    if gaps:
+        warn(f"Found {len(gaps)} dependency issues:")
+        for gap in gaps:
+            warn(f"  {gap['message']}")
+    else:
+        success("No dependency issues found")
+
+
+def _analyze_gap(
+    config: AirConfig,
+    library_name: str,
+    focus: str | None,
+) -> None:
+    """Perform gap analysis for a library vs its dependents.
+
+    Args:
+        config: AIR project configuration
+        library_name: Name of library to analyze
+        focus: Analysis focus area
+    """
+    info(f"Gap analysis: {library_name}")
+
+    # Find library resource
+    library_resource = next((r for r in config.get_all_resources() if r.name == library_name), None)
+    if not library_resource:
+        error(f"Library not found: {library_name}", exit_code=1)
+
+    # Build dependency graph
+    graph = build_dependency_graph(config)
+
+    # Find dependents
+    dependents = [repo for repo, deps in graph.items() if library_name in deps]
+    if not dependents:
+        info(f"No repos depend on {library_name}")
+        return
+
+    info(f"Dependents: {', '.join(dependents)}")
+
+    # Analyze library
+    project_root = get_project_root()
+    library_path = Path(library_resource.path).expanduser().resolve()
+
+    info(f"\nAnalyzing library: {library_name}")
+    _analyze_single_repo(
+        resource_path=library_path,
+        focus=focus,
+        background=False,
+        agent_id=None,
+        project_root=project_root,
+        check_deps=False,
+        config=None,
+    )
+
+    # Analyze dependents
+    for dependent_name in dependents:
+        dependent_resource = next((r for r in config.get_all_resources() if r.name == dependent_name), None)
+        if not dependent_resource:
+            continue
+
+        dependent_path = Path(dependent_resource.path).expanduser().resolve()
+
+        info(f"\nAnalyzing dependent: {dependent_name}")
+        _analyze_single_repo(
+            resource_path=dependent_path,
+            focus=focus,
+            background=False,
+            agent_id=None,
+            project_root=project_root,
+            check_deps=True,
+            config=config,
+        )
+
+    # Show gaps
+    info("\n" + "="*60)
+    info("Gap Analysis Summary")
+    info("="*60)
+
+    gaps = detect_dependency_gaps(config, graph)
+    library_gaps = [g for g in gaps if library_name in (g.get('dependency'), g.get('repo'))]
+
+    if library_gaps:
+        warn(f"\nFound {len(library_gaps)} issues:")
+        for gap in library_gaps:
+            warn(f"  {gap['message']}")
+    else:
+        success("\nNo dependency issues found")
