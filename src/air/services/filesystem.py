@@ -1,5 +1,6 @@
 """Filesystem operations for AIR toolkit."""
 
+import json
 import os
 import shutil
 from pathlib import Path
@@ -174,6 +175,33 @@ def get_project_root() -> Path | None:
             return directory
 
     return None
+
+
+def load_config(project_root: Path) -> "AirConfig":
+    """Load AIR configuration from air-config.json.
+
+    Args:
+        project_root: Path to project root
+
+    Returns:
+        AirConfig instance
+
+    Raises:
+        SystemExit: If config file doesn't exist or is invalid
+    """
+    from air.core.models import AirConfig
+
+    config_file = project_root / "air-config.json"
+    if not config_file.exists():
+        error(f"Config file not found: {config_file}", exit_code=1)
+
+    try:
+        config_data = json.loads(config_file.read_text())
+        return AirConfig(**config_data)
+    except json.JSONDecodeError as e:
+        error(f"Invalid JSON in config file: {e}", exit_code=1)
+    except Exception as e:
+        error(f"Failed to load config: {e}", exit_code=1)
 
 
 def validate_project_structure(project_root: Path, mode: str) -> list[str]:

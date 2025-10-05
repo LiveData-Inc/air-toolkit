@@ -1113,6 +1113,111 @@ class TestLinkCommand:
         assert config["resources"]["review"][0]["name"] == "lib"
         assert config["resources"]["review"][0]["relationship"] == "review-only"
 
+    def test_link_add_auto_classify(self, runner, isolated_project):
+        """Test non-interactive mode with auto-classification (no --type)."""
+        runner.invoke(main, ["init", "auto-project", "--mode=mixed"])
+        project_dir = isolated_project / "auto-project"
+
+        # Create Python source directory
+        source_dir = isolated_project / "python-lib"
+        source_dir.mkdir()
+        (source_dir / "setup.py").write_text("# Setup file")
+        (source_dir / "main.py").write_text("print('hello')")
+
+        import os
+        os.chdir(project_dir)
+
+        # Add without --type, should auto-classify
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir), "--name", "python-lib", "--review"]
+        )
+
+        assert result.exit_code == 0
+        assert "Auto-detecting resource type" in result.output
+        assert "Linked review resource: python-lib" in result.output
+
+        # Verify config has detected type
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["name"] == "python-lib"
+        assert config["resources"]["review"][0]["type"] == "library"
+
+    def test_link_add_folder_name_default(self, runner, isolated_project):
+        """Test non-interactive mode with folder name as default (no --name)."""
+        runner.invoke(main, ["init", "name-default-project", "--mode=mixed"])
+        project_dir = isolated_project / "name-default-project"
+
+        # Create source directory with specific name
+        source_dir = isolated_project / "my-awesome-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Awesome")
+
+        import os
+        os.chdir(project_dir)
+
+        # Add without --name, should use folder name
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir), "--review", "--type=documentation"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked review resource: my-awesome-repo" in result.output
+
+        # Verify symlink created with folder name
+        link_path = project_dir / "repos/my-awesome-repo"
+        assert link_path.exists()
+        assert link_path.is_symlink()
+        assert link_path.resolve() == source_dir
+
+        # Verify config uses folder name
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert config["resources"]["review"][0]["name"] == "my-awesome-repo"
+
+    def test_link_add_fully_automatic(self, runner, isolated_project):
+        """Test non-interactive mode with all defaults (no --name, no --type)."""
+        runner.invoke(main, ["init", "auto-full-project", "--mode=mixed"])
+        project_dir = isolated_project / "auto-full-project"
+
+        # Create Markdown documentation repo
+        source_dir = isolated_project / "docs-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Documentation")
+        (source_dir / "guide.md").write_text("# Guide")
+
+        import os
+        os.chdir(project_dir)
+
+        # Add with only path, should use folder name and auto-classify
+        result = runner.invoke(main, ["link", "add", str(source_dir)])
+
+        assert result.exit_code == 0
+        assert "Auto-detecting resource type" in result.output
+        assert "Linked review resource: docs-repo" in result.output
+
+        # Verify everything worked
+        link_path = project_dir / "repos/docs-repo"
+        assert link_path.exists()
+        assert link_path.is_symlink()
+
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        # Should use folder name
+        assert config["resources"]["review"][0]["name"] == "docs-repo"
+        # Should auto-detect as documentation
+        assert config["resources"]["review"][0]["type"] == "documentation"
+        # Should default to review
+        assert config["resources"]["review"][0]["relationship"] == "review-only"
+
     def test_link_list_empty(self, runner, isolated_project):
         """Test listing when no resources linked."""
         runner.invoke(main, ["init", "empty-project"])
@@ -1405,6 +1510,20 @@ class TestPRCommand:
         assert result.exit_code == 1
         assert "Resource not found" in result.output
 
+    def test_link_remove_no_name_without_interactive(self, runner, isolated_project):
+        """Test usage displayed when name not provided without -i flag."""
+        runner.invoke(main, ["init", "noname-project"])
+        project_dir = isolated_project / "noname-project"
+
+        import os
+        os.chdir(project_dir)
+
+        result = runner.invoke(main, ["link", "remove"])
+
+        assert result.exit_code == 1
+        assert "Missing argument 'NAME'" in result.output
+        assert "Usage:" in result.output  # Should show usage/help
+
     def test_link_not_in_air_project(self, runner, isolated_project):
         """Test error when running link command outside AIR project."""
         result = runner.invoke(main, ["link", "list"])
@@ -1487,11 +1606,13 @@ class TestTaskNewCommand:
         assert len(task_files) == 1
 
         filename = task_files[0].name
-        # Should start with timestamp: YYYYMMDD-HHMM
-        assert len(filename) >= 18  # YYYYMMDD-HHMM-x.md = 18 chars minimum
+        # New format: YYYYMMDD-NNN-HHMM-description.md
+        assert len(filename) >= 23  # YYYYMMDD-NNN-HHMM-x.md = 23 chars minimum
         assert filename[:8].isdigit()  # YYYYMMDD
         assert filename[8] == "-"
-        assert filename[9:13].isdigit()  # HHMM
+        assert filename[9:12].isdigit()  # NNN (ordinal)
+        assert filename[12] == "-"
+        assert filename[13:17].isdigit()  # HHMM
         assert filename.endswith("-test-task.md")
 
     def test_task_new_not_in_air_project(self, runner, isolated_project):

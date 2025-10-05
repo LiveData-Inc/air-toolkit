@@ -292,22 +292,30 @@ def link() -> None:
     type=click.Choice(["library", "documentation", "service"]),
     help="Resource type",
 )
+@click.option(
+    "-i",
+    "--interactive",
+    is_flag=True,
+    help="Interactive mode - prompt for all options",
+)
 def link_add(
     path: str,
     name: str | None,
     is_review: bool,
     is_develop: bool,
     resource_type: str | None,
+    interactive: bool,
 ) -> None:
     """Add a linked resource.
 
-    PATH is required and supports shell tab completion. Other options prompt interactively.
+    By default, links immediately without prompting. Use -i for interactive mode.
 
     \b
     Examples:
-      air link add ~/repos/service-a                                          # Prompts for name/type
-      air link add ~/repos/service-a --name service-a                         # Prompts for type
-      air link add ~/repos/service-a --name service-a --review --type library # Fully non-interactive
+      air link add ~/repos/service-a                    # Fast: uses folder name, auto-detects type
+      air link add ~/repos/service-a -i                 # Interactive: prompts for all options
+      air link add ~/repos/service-a --name my-service  # Custom name, auto-detects type
+      air link add ~/repos/service-a --name service --review --type library  # Explicit values
     """
     # Validate project
     project_root = get_project_root()
@@ -325,30 +333,33 @@ def link_add(
     if not is_review and not is_develop:
         is_review = True
 
-    # Detect if we need interactive mode (only if missing name)
-    # PATH is always required, so we only prompt for name/type/relationship
-    needs_interactive = not name
-
-    if needs_interactive:
-        # Enter interactive mode
+    # Determine if we should use interactive mode
+    # Interactive if: -i flag OR no name provided AND no other args
+    if interactive:
+        # User explicitly requested interactive mode
         return _interactive_link_add(
             project_root, config, path, name, is_review, is_develop, resource_type
         )
 
-    # Non-interactive mode: validate inputs
+    # Non-interactive mode: validate path and use defaults/provided values
     source_path = Path(path).expanduser().resolve()
+
     if not source_path.exists():
         error(
             f"Path does not exist: {path}",
             hint="Provide a valid directory path",
             exit_code=1,
         )
+
     if not source_path.is_dir():
         error(
             f"Path is not a directory: {path}",
             hint="Resource must be a directory",
             exit_code=1,
         )
+
+    # If no name provided, use folder name as default
+    resource_name = name or source_path.name
 
     # Determine mode
     if is_review and is_develop:
@@ -358,7 +369,6 @@ def link_add(
             exit_code=1,
         )
 
-    # Note: is_review is already set to True as default above if neither flag was specified
     category = "review" if is_review else "develop"
     relationship = (
         ResourceRelationship.REVIEW_ONLY
@@ -366,27 +376,18 @@ def link_add(
         else ResourceRelationship.DEVELOPER
     )
 
-    # Use provided values
-    path_str = path
-    resource_name = name
-    res_type = resource_type or "library"  # Changed default from "implementation"
+    # Auto-classify if no type provided
+    tech_stack = None
+    if not resource_type:
+        from air.services.classifier import classify_resource
 
-    # Expand and validate path
-    source_path = Path(path_str).expanduser().resolve()
+        info("Auto-detecting resource type...")
+        result = classify_resource(source_path)
+        resource_type = result.resource_type.value
+        tech_stack = result.technology_stack
+        info(f"Detected: {resource_type} ({tech_stack})")
 
-    if not source_path.exists():
-        error(
-            f"Path does not exist: {source_path}",
-            hint="Check the path is correct and accessible",
-            exit_code=1,
-        )
-
-    if not source_path.is_dir():
-        error(
-            f"Path is not a directory: {source_path}",
-            hint="Resources must be directories",
-            exit_code=1,
-        )
+    res_type = resource_type
 
     # Check if resource already exists
     existing = config.find_resource(resource_name)
@@ -413,12 +414,12 @@ def link_add(
     info(f"Creating symlink: repos/{resource_name} -> {source_path}")
     create_symlink(source_path, link_path)
 
-    # Create resource entry (non-interactive: no auto-classification)
+    # Create resource entry
     resource = Resource(
         name=resource_name,
         path=str(source_path),
         type=ResourceType(res_type),
-        technology_stack=None,  # Non-interactive mode doesn't auto-classify
+        technology_stack=tech_stack,  # From auto-classification
         relationship=relationship,
         clone=False,
     )
@@ -513,36 +514,25 @@ def link_list(output_format: str) -> None:
     console.print(f"\n[dim]Total: {total} resources[/dim]")
 
 
-@link.command("remove")
-@click.argument("name")
-@click.option(
-    "--keep-link",
-    is_flag=True,
-    help="Keep symlink, only remove from config",
-)
-def link_remove(name: str, keep_link: bool) -> None:
-    """Remove a linked resource.
+def _remove_resource(
+    project_root: Path,
+    config: AirConfig,
+    resource_name: str,
+    keep_link: bool,
+) -> None:
+    """Remove a resource from the project.
 
-    \b
-    Examples:
-      air link remove service-a
-      air link remove docs --keep-link
+    Args:
+        project_root: Project root directory
+        config: Project configuration
+        resource_name: Name of resource to remove
+        keep_link: Whether to keep the symlink
     """
-    project_root = get_project_root()
-    if not project_root:
-        error(
-            "Not in an AIR project",
-            hint="Run 'air init' to create a project or 'cd' to project directory",
-            exit_code=1,
-        )
-
-    config = load_config(project_root)
-
     # Find resource
-    resource = config.find_resource(name)
+    resource = config.find_resource(resource_name)
     if not resource:
         error(
-            f"Resource not found: {name}",
+            f"Resource not found: {resource_name}",
             hint="Use 'air link list' to see available resources",
             exit_code=1,
         )
@@ -556,24 +546,141 @@ def link_remove(name: str, keep_link: bool) -> None:
 
     if not category:
         error(
-            f"Resource '{name}' not in configuration",
+            f"Resource '{resource_name}' not in configuration",
             hint="Configuration may be corrupted",
             exit_code=2,
         )
 
     # Remove symlink from repos/ directory
-    link_path = project_root / "repos" / name
+    link_path = project_root / "repos" / resource_name
     if link_path.exists() or link_path.is_symlink():
         if not keep_link:
-            info(f"Removing symlink: repos/{name}")
+            info(f"Removing symlink: repos/{resource_name}")
             link_path.unlink()
         else:
-            warn(f"Keeping symlink: repos/{name}")
+            warn(f"Keeping symlink: repos/{resource_name}")
 
     # Remove from configuration
     config.resources[category] = [
-        r for r in config.resources[category] if r.name != name
+        r for r in config.resources[category] if r.name != resource_name
     ]
     save_config(project_root, config)
 
-    success(f"Removed resource: {name}")
+    success(f"Removed resource: {resource_name}")
+
+
+@link.command("remove")
+@click.argument("name", required=False)
+@click.option(
+    "--keep-link",
+    is_flag=True,
+    help="Keep symlink, only remove from config",
+)
+@click.option(
+    "-i",
+    "--interactive",
+    is_flag=True,
+    help="Interactive mode - select from numbered list",
+)
+@click.pass_context
+def link_remove(ctx: click.Context, name: str | None, keep_link: bool, interactive: bool) -> None:
+    """Remove a linked resource.
+
+    \b
+    Examples:
+      air link remove service-a              # Remove by name
+      air link remove docs --keep-link       # Remove but keep symlink
+      air link remove -i                     # Interactive selection
+    """
+    project_root = get_project_root()
+    if not project_root:
+        error(
+            "Not in an AIR project",
+            hint="Run 'air init' to create a project or 'cd' to project directory",
+            exit_code=1,
+        )
+
+    config = load_config(project_root)
+
+    # Interactive mode
+    if interactive:
+        from rich.prompt import Prompt, Confirm
+        from rich.table import Table
+
+        # Get all resources
+        all_resources = []
+        for category in ["review", "develop"]:
+            for resource in config.resources.get(category, []):
+                all_resources.append((category, resource))
+
+        if not all_resources:
+            info("No resources linked")
+            console.print("\n[dim]Use 'air link add' to link resources[/dim]")
+            return
+
+        # Display numbered list
+        console.print("\n[bold]Linked Resources:[/bold]\n")
+
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("#", style="dim", width=4)
+        table.add_column("Name", style="cyan")
+        table.add_column("Type", style="yellow")
+        table.add_column("Relationship", style="green")
+        table.add_column("Path", style="dim")
+
+        for i, (category, resource) in enumerate(all_resources, 1):
+            relationship = "review" if category == "review" else "develop"
+            table.add_row(
+                str(i),
+                resource.name,
+                resource.type.value,
+                relationship,
+                resource.path,
+            )
+
+        console.print(table)
+        console.print()
+
+        # Get selection
+        try:
+            selection = Prompt.ask(
+                "[cyan]Select resource to remove (number or 'q' to quit)[/cyan]",
+                default="q"
+            )
+
+            if selection.lower() == "q":
+                console.print("[yellow]✗[/yellow] Cancelled")
+                return
+
+            idx = int(selection) - 1
+            if idx < 0 or idx >= len(all_resources):
+                error("Invalid selection", exit_code=1)
+
+            category, resource = all_resources[idx]
+
+            # Confirm removal
+            console.print(f"\n[yellow]⚠[/yellow]  Remove resource: [bold]{resource.name}[/bold]")
+            console.print(f"   Type: {resource.type.value}")
+            console.print(f"   Path: {resource.path}\n")
+
+            if not Confirm.ask("Confirm removal?", default=False):
+                console.print("[yellow]✗[/yellow] Cancelled")
+                return
+
+            # Remove the resource
+            _remove_resource(project_root, config, resource.name, keep_link)
+
+        except ValueError:
+            error("Invalid input - must be a number", exit_code=1)
+        except KeyboardInterrupt:
+            console.print("\n[yellow]✗[/yellow] Cancelled")
+            return
+
+    else:
+        # Non-interactive mode - name required
+        if not name:
+            console.print("[red]Error:[/red] Missing argument 'NAME'.\n")
+            console.print(ctx.get_help())
+            ctx.exit(1)
+
+        _remove_resource(project_root, config, name, keep_link)

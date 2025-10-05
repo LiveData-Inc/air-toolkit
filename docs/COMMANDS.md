@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.5.0
+**Version:** 0.6.0
 **Last Updated:** 2025-10-04
 
 Complete reference for all AIR commands.
@@ -18,6 +18,11 @@ Complete reference for all AIR commands.
 - [Code Review Commands](#code-review-commands)
   - [air review](#air-review)
   - [air claude](#air-claude)
+- [Agent Coordination Commands](#agent-coordination-commands)
+  - [air analyze](#air-analyze)
+  - [air status --agents](#air-status---agents)
+  - [air findings](#air-findings)
+  - [air wait](#air-wait)
 - [Task Tracking Commands](#task-tracking-commands)
   - [air task](#air-task)
   - [air track](#air-track)
@@ -142,7 +147,7 @@ After running `air init`:
 
 ### air link
 
-Link repositories to the assessment project. Interactive by default for easy setup.
+Link repositories to the assessment project. Non-interactive by default for fast workflow.
 
 #### Commands
 
@@ -153,70 +158,87 @@ Add a resource to the project.
 **Usage:**
 
 ```bash
-air link add [OPTIONS]
+air link add PATH [OPTIONS]
 ```
 
-**Interactive Mode (default):**
+**Non-Interactive Mode (default):**
 
-When run without all required options, enters interactive mode with guided prompts:
+Fast mode with smart defaults - no prompts:
 
 ```bash
-# Interactive setup
-air link add
+# Fastest: use folder name, auto-detect type, review mode ⭐ RECOMMENDED
+air link add ~/repos/my-service
 
-# Partial arguments - will prompt for missing values
-air link add --path ~/repos/service-a
-air link add --name my-service --review
+# With custom name
+air link add ~/repos/service-a --name my-service
+
+# With explicit type
+air link add ~/repos/service-a --type library
+
+# Developer mode
+air link add ~/repos/service-a --develop
+
+# Fully explicit
+air link add ~/repos/service-a --name my-service --review --type library
 ```
 
-**Non-Interactive Mode:**
+**Interactive Mode:**
 
-Provide all required options for scripting:
+Use `-i` flag for guided prompts and customization:
 
 ```bash
-air link add --path PATH --name NAME --review|--develop [--type TYPE]
+# Interactive setup with prompts
+air link add ~/repos/service-a -i
+
+# Interactive mode features:
+# - Path validation and verification
+# - Name suggestion with uniqueness check
+# - Relationship choice (review/develop)
+# - Auto-classification with opt-out
+# - Confirmation summary
 ```
 
 **Options:**
 
-- `--path PATH` - Path to repository (required)
-- `--name NAME` - Resource name/alias (required)
+- `PATH` - Path to repository (required)
+- `--name NAME` - Resource name/alias (default: folder name)
 - `--review` - Link as review-only resource (read-only) **[default]**
 - `--develop` - Link as developer resource (can contribute)
-- `--type TYPE` - Resource type: `library`, `documentation`, `service` (default: `library`)
+- `--type TYPE` - Resource type: `library`, `documentation`, `service` (default: auto-detect)
+- `-i, --interactive` - Interactive mode with prompts
+
+**Smart Defaults:**
+
+1. **Name** - Uses folder name if not provided
+2. **Type** - Auto-classifies by analyzing repository structure
+3. **Relationship** - Defaults to `review` (read-only)
 
 **Examples:**
 
 ```bash
-# Fully interactive mode
-air link add
+# Quick link (folder name + auto-detect) ⭐ RECOMMENDED
+air link add /path/to/my-repo
 
-# Path with shell tab-complete (prompts for name, type, etc) ⭐ RECOMMENDED
-air link add ~/repos/mylib
+# Custom name
+air link add /path/to/my-repo --name custom-name
 
-# Minimal - uses defaults (review mode, library type)
-air link add ~/repos/service-a --name service-a
+# Developer mode with auto-detect
+air link add /path/to/my-repo --develop
 
-# Explicit review resource with type
-air link add ~/repos/service-a --name service-a --review --type library
+# Explicit type (skip auto-detection)
+air link add /path/to/my-repo --type documentation
 
-# Develop resource
-air link add ~/repos/architecture --name arch --develop --type documentation
+# Interactive mode for full customization
+air link add /path/to/my-repo -i
 ```
 
-**Usage:**
+**Auto-Classification:**
 
-```bash
-air link add [PATH] [OPTIONS]
-```
-
-**Interactive Features:**
-
-1. **Path Validation** - Checks path exists and is a directory
-2. **Name Suggestions** - Defaults to folder name, validates uniqueness
-3. **Relationship Choice** - Review (read-only) or Develop (contribute)
-4. **Auto-Classification** - Optional auto-detect of resource type
-5. **Confirmation** - Review summary before creating link
+When `--type` is not provided, AIR analyzes the repository:
+- Detects languages (Python, JavaScript, Go, etc.)
+- Identifies frameworks (Django, React, FastAPI, etc.)
+- Classifies as: `library`, `documentation`, or `service`
+- Generates technology stack (e.g., "Python/FastAPI")
 
 ##### air link list
 
@@ -249,14 +271,12 @@ Remove a linked resource.
 **Usage:**
 
 ```bash
-air link remove NAME [--keep-link]
+air link remove [NAME] [OPTIONS]
 ```
 
-**Options:**
+**Non-Interactive Mode:**
 
-- `--keep-link` - Keep symlink, only remove from config
-
-**Examples:**
+Provide resource name directly:
 
 ```bash
 # Remove resource and symlink
@@ -264,6 +284,50 @@ air link remove service-a
 
 # Remove from config but keep symlink
 air link remove service-a --keep-link
+```
+
+**Interactive Mode:**
+
+Use `-i` for numbered list selection:
+
+```bash
+# Select from numbered list
+air link remove -i
+
+# Shows:
+# Linked Resources:
+#
+# #  Name         Type           Relationship  Path
+# 1  service-a    library        review        /path/to/service-a
+# 2  docs         documentation  review        /path/to/docs
+# 3  my-api       service        develop       /path/to/my-api
+#
+# Select resource to remove (number or 'q' to quit) [q]: 2
+# Remove resource: docs
+# Confirm removal? [y/N]: y
+# ✓ Removed resource: docs
+```
+
+**Options:**
+
+- `NAME` - Resource name (required if not using `-i`)
+- `-i, --interactive` - Interactive mode with numbered selection
+- `--keep-link` - Keep symlink, only remove from config
+
+**Examples:**
+
+```bash
+# Direct removal by name
+air link remove service-a
+
+# Remove but keep symlink
+air link remove service-a --keep-link
+
+# Interactive selection ⭐ RECOMMENDED
+air link remove -i
+
+# Interactive + keep symlink
+air link remove -i --keep-link
 ```
 
 #### Behavior
@@ -735,6 +799,235 @@ air claude context
 # Get context in markdown
 air claude context --format=markdown
 ```
+
+---
+
+## Agent Coordination Commands
+
+Commands for running parallel analyses and coordinating multiple AI agents (v0.6.0+).
+
+---
+
+### air analyze
+
+Analyze a repository using AI-powered classification and insights.
+
+**Usage:**
+
+```bash
+air analyze RESOURCE_PATH [OPTIONS]
+```
+
+**Options:**
+
+- `--background` - Run analysis in background as an agent
+- `--id TEXT` - Agent identifier (for background mode)
+- `--focus TEXT` - Analysis focus area (security, architecture, performance)
+
+**Examples:**
+
+```bash
+# Inline analysis (runs immediately)
+air analyze repos/service-a
+
+# Focused analysis
+air analyze repos/service-a --focus=security
+
+# Background analysis (spawn agent)
+air analyze repos/service-a --background --id=security-analysis
+
+# Multiple parallel analyses
+air analyze repos/service-a --background --id=analysis-1
+air analyze repos/service-b --background --id=analysis-2
+air analyze repos/service-c --background --id=analysis-3
+```
+
+**Output:**
+
+- **Inline mode**: Displays classification results to terminal
+- **Background mode**: Spawns detached agent, writes to `.air/agents/<id>/`
+
+**Files Created:**
+
+- `analysis/reviews/<resource>-findings.json` - Analysis findings
+- `.air/agents/<id>/metadata.json` - Agent metadata (background only)
+- `.air/agents/<id>/stdout.log` - Agent output (background only)
+
+---
+
+### air status --agents
+
+Show status of all background agents.
+
+**Usage:**
+
+```bash
+air status --agents [--format=FORMAT]
+```
+
+**Options:**
+
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# Human-readable table
+air status --agents
+
+# JSON format for scripts
+air status --agents --format=json
+```
+
+**Output Example:**
+
+```
+Active Agents
+
+Agent       Status     Started    Progress
+analysis-1  ⏳ Running 5m ago     Analyzing database queries...
+analysis-2  ✓ Complete 10m ago
+analysis-3  ⏳ Running 2m ago     Reviewing security patterns...
+
+Total: 3 agents (2 running, 1 complete, 0 failed)
+```
+
+---
+
+### air findings
+
+View and aggregate analysis findings from all agents.
+
+**Usage:**
+
+```bash
+air findings [OPTIONS]
+```
+
+**Options:**
+
+- `--all` - Show findings from all analyses (recommended)
+- `--severity TEXT` - Filter by severity: high, medium, low
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# View all findings
+air findings --all
+
+# High-severity findings only
+air findings --all --severity=high
+
+# JSON format for processing
+air findings --all --format=json
+```
+
+**Output Example:**
+
+```
+Analysis Findings
+
+Source       Severity  Category        Description
+service-a    ⚠️  High   Security        No password hashing
+service-a    ⚡ Medium Performance     Missing database index
+service-b    ⚠️  High   Security        SQL injection risk
+service-c    ℹ️  Low    Style           Long function detected
+
+Total: 4 findings (2 high, 1 medium, 1 low)
+```
+
+---
+
+### air wait
+
+Wait for background agents to complete (v0.6.0+).
+
+**Usage:**
+
+```bash
+air wait [OPTIONS]
+```
+
+**Options:**
+
+- `--all` - Wait for all running agents
+- `--agents TEXT` - Comma-separated agent IDs to wait for
+- `--timeout INTEGER` - Timeout in seconds (optional)
+- `--interval INTEGER` - Check interval in seconds (default: 5)
+- `--format` - Output format: human (default) or json
+
+**Examples:**
+
+```bash
+# Wait for all agents
+air wait --all
+
+# Wait for specific agents
+air wait --agents analysis-1,analysis-2
+
+# With timeout (exit after 300 seconds)
+air wait --all --timeout=300
+
+# JSON format for scripts
+air wait --all --format=json
+
+# Custom check interval (poll every 2 seconds)
+air wait --all --interval=2
+```
+
+**Output:**
+
+```
+Waiting for agents to complete...
+Timeout: None
+All agents complete (elapsed: 45s)
+
+✓ 3 agent(s) completed successfully
+```
+
+**JSON Output:**
+
+```json
+{
+  "success": true,
+  "message": "All agents complete",
+  "elapsed": 45,
+  "agents": [
+    {
+      "id": "analysis-1",
+      "status": "complete",
+      "started": "2025-10-04T16:00:00"
+    }
+  ]
+}
+```
+
+**Behavior:**
+
+- Blocks until all specified agents complete or timeout expires
+- Auto-detects terminated processes
+- Exits with code 0 on success, 1 on failure or timeout
+- Shows failed agents if any fail during execution
+
+**Use Case: Coordination Workflows**
+
+The `air wait` command is designed for Claude to coordinate multi-agent workflows:
+
+```bash
+# Claude spawns workers
+air analyze repos/service-a --background --id=worker-1
+air analyze repos/service-b --background --id=worker-2
+air analyze repos/service-c --background --id=worker-3
+
+# Claude waits for all to complete
+air wait --all
+
+# Claude aggregates results
+air findings --all
+```
+
+See [AGENT-COORDINATION.md](AGENT-COORDINATION.md) for workflow patterns.
 
 ---
 

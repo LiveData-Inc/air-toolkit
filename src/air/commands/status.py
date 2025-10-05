@@ -2,15 +2,19 @@
 
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import click
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from air.core.models import AirConfig
+from air.services.agent_manager import list_agents, get_agent_progress
 from air.services.filesystem import get_project_root
-from air.utils.console import error
+from air.utils.console import error, info
+from air.utils.dates import format_relative_time
 from air.utils.tables import render_resource_table
 
 console = Console()
@@ -30,13 +34,20 @@ console = Console()
     help="Show contribution status for collaborative resources",
 )
 @click.option(
+    "--agents",
+    is_flag=True,
+    help="Show agent status (v0.6.0+)",
+)
+@click.option(
     "--format",
     "output_format",
     type=click.Choice(["human", "json"]),
     default="human",
     help="Output format",
 )
-def status(resource_type: str, contributions: bool, output_format: str) -> None:
+def status(
+    resource_type: str, contributions: bool, agents: bool, output_format: str
+) -> None:
     """Show AIR project status.
 
     Displays:
@@ -63,6 +74,11 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
                 hint="Run 'air init' to create a new AIR project",
                 exit_code=1,
             )
+
+    # Handle --agents flag
+    if agents:
+        show_agent_status(output_format)
+        return
 
     # Load config
     config_path = project_root / "air-config.json"
@@ -182,3 +198,88 @@ def status(resource_type: str, contributions: bool, output_format: str) -> None:
         if len(review_resources) + len(collaborate_resources) == 0:
             console.print("[dim]No resources linked yet. Use 'air link' to add resources.[/dim]")
             console.print()
+
+
+def show_agent_status(output_format: str) -> None:
+    """Show agent status.
+
+    Args:
+        output_format: Output format (human or json)
+    """
+    agent_list = list_agents()
+
+    if output_format == "json":
+        result = {
+            "success": True,
+            "agents": agent_list,
+            "count": len(agent_list),
+        }
+        print(json.dumps(result, indent=2))
+        return
+
+    # Human-readable output
+    if not agent_list:
+        info("No agents found")
+        console.print("\n[dim]Use 'air analyze --background' to spawn agents[/dim]\n")
+        return
+
+    # Create table
+    table = Table(title="[bold]Active Agents[/bold]", show_header=True)
+    table.add_column("Agent", style="cyan", no_wrap=True)
+    table.add_column("Status", style="yellow")
+    table.add_column("Started", style="dim")
+    table.add_column("Progress", style="green")
+
+    for agent in agent_list:
+        # Status emoji
+        status = agent.get("status", "unknown")
+        if status == "running":
+            status_display = "⏳ Running"
+            status_style = "yellow"
+        elif status == "complete":
+            status_display = "✓ Complete"
+            status_style = "green"
+        elif status == "failed":
+            status_display = "✗ Failed"
+            status_style = "red"
+        else:
+            status_display = f"? {status}"
+            status_style = "dim"
+
+        # Format time
+        started = agent.get("started", "")
+        if started:
+            try:
+                started_dt = datetime.fromisoformat(started)
+                time_display = format_relative_time(started_dt)
+            except Exception:
+                time_display = started[:10]  # Just date
+        else:
+            time_display = ""
+
+        # Get progress
+        progress = get_agent_progress(agent["id"])
+
+        table.add_row(
+            agent["id"],
+            f"[{status_style}]{status_display}[/{status_style}]",
+            time_display,
+            progress,
+        )
+
+    console.print()
+    console.print(table)
+
+    # Summary
+    running = sum(1 for a in agent_list if a.get("status") == "running")
+    complete = sum(1 for a in agent_list if a.get("status") == "complete")
+    failed = sum(1 for a in agent_list if a.get("status") == "failed")
+
+    console.print()
+    console.print(
+        f"[bold]Total:[/bold] {len(agent_list)} agents "
+        f"([yellow]{running} running[/yellow], "
+        f"[green]{complete} complete[/green], "
+        f"[red]{failed} failed[/red])"
+    )
+    console.print()

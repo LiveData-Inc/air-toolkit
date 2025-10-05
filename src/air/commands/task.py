@@ -67,8 +67,11 @@ def task_new(description: str, prompt: str | None) -> None:
             exit_code=1,
         )
 
-    # Generate filename
-    timestamp = format_timestamp()
+    # Generate filename with ordinal (new format)
+    from air.utils.dates import get_next_ordinal
+
+    ordinal = get_next_ordinal(tasks_dir)
+    timestamp = format_timestamp(ordinal=ordinal)
     safe_desc = safe_filename(description)
     filename = f"{timestamp}-{safe_desc}.md"
     task_path = tasks_dir / filename

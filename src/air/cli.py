@@ -16,6 +16,10 @@ from air.commands import (
     task,
     track,
     summary,
+    analyze,
+    findings,
+    wait,
+    upgrade,
 )
 
 console = Console()
@@ -53,6 +57,10 @@ main.add_command(status.status)
 main.add_command(classify.classify)
 main.add_command(pr.pr)
 main.add_command(review.review)
+main.add_command(analyze.analyze)
+main.add_command(findings.findings)
+main.add_command(wait.wait)
+main.add_command(upgrade.upgrade)
 
 # AI assistant commands
 main.add_command(claude.claude)

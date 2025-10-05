@@ -54,6 +54,12 @@ contributions/*
 !contributions/.gitkeep
 
 {% endif -%}
+# Agent system (v0.6.0+)
+# Agent logs are transient, findings are tracked
+.air/agents/*/stdout.log
+.air/agents/*/stderr.log
+.air/agents/*/status.json
+
 # Temporary files
 *.tmp
 *.log

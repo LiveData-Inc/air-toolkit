@@ -5,6 +5,409 @@ All notable changes to AIR Toolkit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.6.0] - 2025-10-04
+
+### Added - Enhanced Analysis Depth & Dependency-Aware Multi-Repo Analysis
+
+**Deep Code Analysis** - Five specialized analyzers with Strategy pattern architecture
+
+#### New Analyzers
+
+- **SecurityAnalyzer** - Detects security vulnerabilities (14 pattern types)
+  - Hardcoded secrets and API keys (Bearer tokens, SSH keys, passwords)
+  - SQL injection risks
+  - Weak cryptography (MD5, SHA1, DES)
+  - Use of eval/exec
+  - Debug mode enabled
+  - Insecure deserialization
+  - Shell injection risks
+  - Missing security headers
+  - Config files not in .gitignore
+  - **NEW:** Path traversal vulnerabilities
+  - **NEW:** Command injection (os.popen, commands.getoutput)
+  - **NEW:** XML External Entity (XXE) attacks
+  - **NEW:** CSRF protection missing on POST endpoints
+  - **NEW:** LDAP injection
+  - **NEW:** Regular Expression DoS (ReDoS)
+  - **NEW:** Cryptographically weak random (random vs secrets module)
+
+- **PerformanceAnalyzer** - Detects performance anti-patterns (7 pattern types)
+  - N+1 query detection (Django ORM)
+  - Nested loops (O(n²) complexity)
+  - Inefficient string concatenation in loops
+  - List comprehension opportunities
+  - Missing pagination on queries
+  - React component memoization issues
+  - forEach+push → map opportunities
+
+- **CodeStructureAnalyzer** - Analyzes repository structure
+  - File and line counts
+  - Language detection and distribution
+  - Large file detection (>500 lines)
+  - Missing test/docs directories
+
+- **ArchitectureAnalyzer** - Analyzes architecture and dependencies
+  - Dependency analysis (pinned vs unpinned)
+  - Circular import detection
+  - Architectural pattern detection (API, models, services)
+
+- **QualityAnalyzer** - Detects code quality issues
+  - Long functions (>100 lines)
+  - Too many parameters (>5)
+  - Excessive comments
+  - Missing docstrings
+  - Missing README
+  - Low test coverage
+
+#### Dependency Detection - Strategy Pattern Architecture
+
+**Pluggable dependency detectors** for extensible multi-language support:
+
+- **Package Detectors** (manifest files)
+  - `PythonRequirementsDetector` - requirements.txt
+  - `PythonPyprojectDetector` - pyproject.toml
+  - `JavaScriptPackageJsonDetector` - package.json
+  - `GoModDetector` - go.mod
+
+- **Import Detectors** (code-level)
+  - `PythonImportDetector` - `import` and `from` statements
+  - `JavaScriptImportDetector` - `import` and `require()`
+  - `GoImportDetector` - Go `import` blocks
+
+- **API Detectors** (service-to-service) - Stub for future implementation
+
+**3 Dependency Types:**
+- `PACKAGE` - Declared in manifest files
+- `IMPORT` - Actual code imports
+- `API` - HTTP/REST calls (future)
+
+#### Multi-Repo Dependency-Aware Analysis
+
+- **`air analyze --all`** - Analyze all linked repos
+  - **Default:** Analyzes in dependency order (libraries before services)
+  - Builds dependency graph from project files
+  - Topological sort for correct analysis order
+  - Saves dependency graph to `analysis/dependency-graph.json`
+  - Parallel analysis where possible (repos at same dependency level)
+
+- **`air analyze --all --no-order`** - Disable dependency ordering (parallel)
+
+- **`air analyze --all --deps-only`** - Only analyze repos with dependencies
+
+- **`air analyze --gap <library>`** - Gap analysis
+  - Analyzes library and all dependent services
+  - Detects version mismatches
+  - Identifies missing features and deprecated API usage
+
+- **`air analyze <repo>`** - Single repo analysis
+  - **Default:** Checks dependencies in project context
+  - Detects dependency gaps and version issues
+
+- **`air analyze <repo> --no-deps`** - Skip dependency checking
+
+#### Enhanced Analysis Command
+
+- `air analyze` now runs comprehensive deep analysis with **intelligent defaults**
+- Focus flag controls which analyzers run:
+  - `--focus=security` - Security issues only
+  - `--focus=performance` - Performance issues only
+  - `--focus=architecture` - Architecture analysis only
+  - `--focus=quality` - Quality issues only
+  - No flag - All analyzers (comprehensive)
+- Findings include severity levels (critical/high/medium/low/info)
+- Results saved as structured JSON with metadata
+- Resource name resolution: `air analyze myapp` (consistent with `air pr`)
+
+### Testing
+
+- **372 tests total** (was 356) - All passing ✅
+- Added 16 new tests:
+  - 14 analyzer tests (security, performance, quality, architecture, structure)
+  - 2 dependency detection tests
+  - Multi-repo analysis integration tests
+
+### Impact
+
+**Security coverage:**
+- Was: 9 security pattern types
+- Now: 14 security pattern types (+55%)
+
+**Performance analysis:**
+- NEW: 7 types of performance issues detected
+- Covers Python and JavaScript/TypeScript/React
+
+**Analysis depth:**
+- Before: Basic classification only (tech stack, languages)
+- After: Multi-dimensional (security + performance + quality + architecture + structure + dependencies)
+- Findings per repo: 10-70+ actionable items (was ~1)
+
+**Multi-repo capabilities:**
+- Dependency graph building across linked repos
+- Topological sort for proper analysis order
+- Gap detection between library versions
+- Intelligent defaults (dependency order by default)
+
+### Architecture
+
+**Strategy Pattern Benefits:**
+- Easy to add new languages (Java, Ruby, PHP, Rust, C#)
+- Each detector is independent and testable
+- Type-safe filtering by dependency type
+- Users can register custom detectors
+
+**Example - Adding Rust support:**
+```python
+from air.services.detectors import DependencyDetectorStrategy, DependencyResult
+from air.services.dependency_detector import register_detector
+
+class RustCargoDetector(DependencyDetectorStrategy):
+    @property
+    def name(self) -> str:
+        return "Rust Cargo.toml"
+
+    def can_detect(self, repo_path: Path) -> bool:
+        return (repo_path / "Cargo.toml").exists()
+
+    def detect(self, repo_path: Path) -> DependencyResult:
+        # Parse Cargo.toml
+        ...
+
+register_detector(RustCargoDetector())
+```
+
+### Added - Agent Coordination System (MVP)
+
+**Parallel Analysis Tracking** - Run multiple analyses concurrently and aggregate results
+
+#### New Commands
+
+- **`air analyze`** - Analyze repositories with AI-powered insights
+  - Inline mode: `air analyze repos/service-a`
+  - Background mode: `air analyze repos/service-a --background --id=analysis-1`
+  - Focus areas: `--focus=security|architecture|performance`
+  - Generates findings in `analysis/reviews/<resource>-findings.json`
+  - Agents auto-update status on completion
+
+- **`air status --agents`** - View all background agent status
+  - Shows agent ID, status, start time, and progress
+  - Human-readable table and JSON formats
+  - Auto-detects terminated processes and updates status
+  - Example: `air status --agents`
+
+- **`air findings --all`** - Aggregate findings from all analyses
+  - Filter by severity: `--severity=high|medium|low`
+  - JSON and table output formats
+  - Example: `air findings --all --severity=high`
+
+- **`air wait`** - Wait for background agents to complete
+  - Blocks until agents finish (no polling needed)
+  - `--all` flag to wait for all agents
+  - `--agents` flag for specific agent IDs
+  - `--timeout` to prevent indefinite waiting
+  - Example: `air wait --all`
+
+#### New Infrastructure
+
+- **`.air/agents/` directory** - One subdirectory per background agent
+  - `metadata.json` - Agent configuration and status
+  - `stdout.log` - Agent output stream
+  - `stderr.log` - Agent error stream
+
+- **`.air/shared/` directory** - Shared state between agents (reserved for future use)
+
+#### New Services
+
+- **`agent_manager.py`** - Agent lifecycle management
+  - Spawn background agents as detached subprocesses
+  - Track agent status (running, complete, failed)
+  - Load agent metadata and progress
+  - List all agents with sorting
+  - **Cross-platform process checking** using psutil
+  - Auto-detect terminated processes and update status
+  - Determine success/failure from stderr content
+
+#### Utilities
+
+- **`format_relative_time()`** - Display timestamps as "5m ago", "2h ago", etc.
+
+### Testing
+
+- **356 tests total** (was 337) - All passing ✅
+- Added 7 agent coordination integration tests:
+  - `test_analyze_command_inline` - Inline analysis
+  - `test_analyze_command_background` - Background agent spawning
+  - `test_status_agents_command` - Agent status display
+  - `test_status_agents_json_format` - JSON output
+  - `test_findings_command` - Findings aggregation
+  - `test_findings_json_format` - JSON findings
+  - `test_multiple_parallel_analyses` - Parallel execution
+- Added 12 `air wait` command tests:
+  - Basic wait functionality (--all, --agents flags)
+  - JSON output format
+  - Timeout handling
+  - Integration with background agents
+  - Failed agent detection
+  - Sequential wait workflows
+
+### Documentation
+
+- **New:** `docs/AGENT-COORDINATION.md` - Complete guide to agent coordination patterns
+- **New:** `docs/examples/CLAUDE-WORKFLOW-GAP-ANALYSIS.md` - Step-by-step gap analysis workflow
+- **New:** `docs/examples/claude-gap-analysis-pattern.md` - Claude-native coordination
+- **New:** `docs/examples/director-gap-analysis.md` - Conceptual director pattern
+- **New:** `docs/tutorials/parallel-analysis-quickstart.md` - Hands-on tutorial
+- Updated `docs/COMMANDS.md` with Agent Coordination Commands section
+- Added documentation for `air analyze`, `air status --agents`, `air findings`, `air wait`
+- Updated version to 0.6.0
+
+### Use Cases
+
+**Parallel Repository Analysis:**
+```bash
+# Spawn 3 background agents
+air analyze repos/service-a --background --id=analysis-1
+air analyze repos/service-b --background --id=analysis-2
+air analyze repos/service-c --background --id=analysis-3
+
+# Wait for all to complete
+air wait --all
+
+# View combined findings
+air findings --all
+```
+
+**Focused Security Review:**
+```bash
+# Run security-focused analysis
+air analyze repos/api-service --background --id=security-review --focus=security
+
+# Wait for completion
+air wait --agents security-review
+
+# Check findings
+air findings --all --severity=high
+```
+
+**Library-Service Gap Analysis:**
+```bash
+# Spawn workers to analyze library and service
+air analyze repos/library --background --id=lib-current --focus=capabilities
+air analyze repos/library-roadmap --background --id=lib-future --focus=roadmap
+air analyze repos/service --background --id=service-needs --focus=requirements
+
+# Wait for analysis to complete
+air wait --all
+
+# Claude aggregates findings and creates gap analysis
+air findings --all --format=json
+# Creates: analysis/gap-analysis.md, analysis/integration-plan.md
+```
+
+### Technical Details
+
+- Background agents run as detached subprocesses (start_new_session=True)
+- Agent metadata stored in JSON for easy querying
+- Findings aggregated from multiple JSON files
+- Cross-platform process management via psutil
+- Agent status auto-updates when processes terminate
+- `air wait` provides blocking coordination primitive
+
+### Bug Fixes
+
+- **Agent status bug**: Fixed agents showing as "running" after process termination
+  - `air status --agents` now uses psutil to check if PIDs are alive
+  - Auto-updates status to "complete" or "failed" based on stderr
+  - Works cross-platform (macOS, Linux, Windows)
+- **Agent completion**: Background agents now update their own status on exit
+  - Success: status="complete"
+  - Failure: status="failed" with error details
+
+### Dependencies
+
+- Added `psutil>=5.9.0` for cross-platform process management
+- Process management via Python subprocess module (simple, cross-platform)
+
+### Future Enhancements (v0.6.x)
+
+See `.air/tasks/20251004-1520-mvp-parallel-analysis-tracking.md` for roadmap:
+- M1: Automated spawning with `air spawn` command
+- M2: Shared findings database (SQLite)
+- M3: Parallel execution pipeline with dependencies
+- M4: Resource management (token budgets, rate limits)
+- M5: Advanced features (retry, GitHub integration, templates)
+
+---
+
+## [0.5.11] - 2025-10-04
+
+### Changed
+
+- **`air link add` now non-interactive by default** - Fast workflow with smart defaults
+  - Uses folder name as default resource name (no `--name` required)
+  - Auto-classifies repository type (no `--type` required)
+  - Defaults to review mode (read-only)
+  - Creates link immediately without prompting
+  - Example: `air link add ~/repos/my-service` (instant, no prompts)
+
+### Added
+
+- **`-i, --interactive` flag for `air link add`** - Opt-in interactive mode
+  - Guided prompts for all options
+  - Path validation and verification
+  - Name suggestion with uniqueness check
+  - Relationship choice (review/develop)
+  - Auto-classification with opt-out
+  - Confirmation summary before creating link
+  - Example: `air link add ~/repos/my-service -i`
+
+- **`-i, --interactive` flag for `air link remove`** - Numbered list selection
+  - Displays all linked resources in numbered table
+  - Select resource by number (1, 2, 3, etc.)
+  - Shows name, type, relationship, and path for each resource
+  - Confirmation prompt before removal
+  - Graceful cancellation with 'q' or Ctrl+C
+  - Example: `air link remove -i`
+  - Direct removal still works: `air link remove NAME`
+
+### Testing
+
+- **337 tests total** (was 333) - All passing ✅
+- Added 4 new integration tests:
+  - `test_link_add_auto_classify` - Auto-classification without --type
+  - `test_link_add_folder_name_default` - Folder name as default name
+  - `test_link_add_fully_automatic` - Both defaults (no --name, no --type)
+  - `test_link_remove_no_name_without_interactive` - Usage display when no args
+- All existing tests remain compatible (use explicit args)
+
+### Documentation
+
+- Updated `docs/COMMANDS.md` with new behavior for both commands
+- Added `-i` flag documentation and examples for `link add` and `link remove`
+- Documented smart defaults (name, type, relationship) for `link add`
+- Documented interactive numbered selection for `link remove`
+- Added auto-classification documentation
+
+### Migration Guide
+
+**Before (v0.5.1 and earlier):**
+```bash
+# Would prompt interactively
+air link add ~/repos/my-service
+```
+
+**After (v0.5.11):**
+```bash
+# Instant, no prompts (uses folder name, auto-detects type)
+air link add ~/repos/my-service
+
+# For interactive mode, use -i flag
+air link add ~/repos/my-service -i
+```
+
+This change makes the common case (quick linking with sensible defaults) much faster, while preserving full customization via the `-i` flag.
+
 ## [0.5.1] - 2025-10-04
 
 ### Fixed
