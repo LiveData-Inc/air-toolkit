@@ -29,10 +29,11 @@ jobs:
 
             filename=$(basename "$file")
 
-            # Check format: YYYYMMDD-HHMM-description.md (allows dots for version strings like v0.6.0)
-            if ! echo "$filename" | grep -qE '^[0-9]{8}-[0-9]{4}-[a-z0-9.-]+\.md$'; then
+            # Check format: YYYYMMDD-NNN-HHMM-description.md (new) or YYYYMMDD-HHMM-description.md (legacy)
+            # Allows dots for version strings like v0.6.0
+            if ! echo "$filename" | grep -qE '^[0-9]{8}-([0-9]{3}-)?[0-9]{4}-[a-z0-9.-]+\.md$'; then
               echo "❌ Invalid filename format: $filename"
-              echo "   Expected format: YYYYMMDD-HHMM-description.md (dots allowed for versions)"
+              echo "   Expected: YYYYMMDD-NNN-HHMM-description.md (or legacy YYYYMMDD-HHMM-description.md)"
               invalid_files=$((invalid_files + 1))
             fi
           done

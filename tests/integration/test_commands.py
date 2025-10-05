@@ -1606,11 +1606,13 @@ class TestTaskNewCommand:
         assert len(task_files) == 1
 
         filename = task_files[0].name
-        # Should start with timestamp: YYYYMMDD-HHMM
-        assert len(filename) >= 18  # YYYYMMDD-HHMM-x.md = 18 chars minimum
+        # New format: YYYYMMDD-NNN-HHMM-description.md
+        assert len(filename) >= 23  # YYYYMMDD-NNN-HHMM-x.md = 23 chars minimum
         assert filename[:8].isdigit()  # YYYYMMDD
         assert filename[8] == "-"
-        assert filename[9:13].isdigit()  # HHMM
+        assert filename[9:12].isdigit()  # NNN (ordinal)
+        assert filename[12] == "-"
+        assert filename[13:17].isdigit()  # HHMM
         assert filename.endswith("-test-task.md")
 
     def test_task_new_not_in_air_project(self, runner, isolated_project):

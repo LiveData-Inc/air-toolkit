@@ -71,12 +71,30 @@ from datetime import datetime
 from pathlib import Path
 
 # IMPORTANT: Use LOCAL time, not UTC, for proper chronological sorting
-timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+# New format: YYYYMMDD-NNN-HHMM-description.md
+
+# Get next ordinal for today
+tasks_dir = Path(".air/tasks")
+date_prefix = datetime.now().strftime("%Y%m%d")
+existing = list(tasks_dir.glob(f"{date_prefix}-*.md"))
+ordinal = len(existing) + 1
+
+# Format with ordinal
+date_str = datetime.now().strftime("%Y%m%d")
+time_str = datetime.now().strftime("%H%M")
+timestamp = f"{date_str}-{ordinal:03d}-{time_str}"
+
 description = "user-task-description"  # kebab-case from user prompt
 filename = f".air/tasks/{timestamp}-{description}.md"
 
 # Create from template and populate
 ...
+```
+
+**Legacy format (still valid):**
+```python
+# YYYYMMDD-HHMM-description.md
+timestamp = datetime.now().strftime("%Y%m%d-%H%M")
 ```
 
 Or use the helper script:
