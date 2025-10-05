@@ -226,7 +226,7 @@ air analyze myapp --include-external
 - (Design only - no code changes yet)
 
 ## Outcome
-✅ Success - Design complete
+✅ Success - Design complete (for v0.6.2.post1)
 
 ## Next Steps
 1. Implement path_filter.py

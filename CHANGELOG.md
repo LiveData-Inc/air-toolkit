@@ -7,12 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2.post1] - 2025-10-05
+
 ### Improved - Analysis Progress Indicator
 
 - **Multi-Repo Analysis Progress** - Show "[X/Y] Analyzing: NAME" progress indicator
 - Display current repo index and total count during multi-repo analysis
 - Works with `air analyze --all`, `air analyze --gap`, and dependency-ordered analysis
 - Improves UX by showing users exactly where they are in long analysis operations
+
+### Planned Features (Design Phase)
+
+**HTML Findings Report** - Comprehensive HTML report generation (Task 006)
+- Rich HTML report with table of contents and detailed findings
+- Summary table at top with clickable links to each finding
+- Grouped by repository with detailed sections for each finding
+- Severity color coding, location info, code context, and suggestions
+- Command: `air findings --all --html [--output custom.html]`
+- Single HTML file with embedded CSS for portability
+- Responsive and print-friendly design
+
+**External Library Exclusion** - Exclude vendor code from analysis (Task 007)
+- Exclude external/vendor libraries by default for cleaner results
+- 15x faster analysis, 98% less noise from vendor code
+- Excludes: .venv, node_modules, vendor/, build/, dist/, etc.
+- Command: `air analyze myapp --include-external` to opt-in to vendor analysis
+- Automatic detection of common vendor directories across languages
+- Performance: Analyze 250 files in 3s vs 15,000 files in 45s
 
 ## [0.6.2] - 2025-10-05
 
