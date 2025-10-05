@@ -21,6 +21,7 @@ from air.commands import (
     findings,
     wait,
     upgrade,
+    completion,
 )
 
 console = Console()
@@ -71,6 +72,9 @@ main.add_command(claude.claude)
 main.add_command(task.task)
 main.add_command(track.track)
 main.add_command(summary.summary)
+
+# Shell completion
+main.add_command(completion.completion)
 
 
 if __name__ == "__main__":

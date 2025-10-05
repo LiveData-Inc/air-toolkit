@@ -25,19 +25,20 @@ from air.services.dependency_graph import (
     topological_sort,
 )
 from air.services.filesystem import get_project_root, load_config
+from air.utils.completion import complete_analyzer_focus, complete_resource_names
 from air.utils.console import error, info, success, warn
 
 
 @click.command()
-@click.argument("resource", required=False)
+@click.argument("resource", required=False, shell_complete=complete_resource_names)
 @click.option("--all", "analyze_all", is_flag=True, help="Analyze all linked repos")
 @click.option("--no-order", is_flag=True, help="Disable dependency-ordered analysis (parallel)")
 @click.option("--deps-only", is_flag=True, help="Only analyze repos with dependencies")
-@click.option("--gap", help="Gap analysis for this library vs dependents")
+@click.option("--gap", help="Gap analysis for this library vs dependents", shell_complete=complete_resource_names)
 @click.option("--no-deps", is_flag=True, help="Skip dependency checking")
 @click.option("--background", is_flag=True, help="Run in background")
 @click.option("--id", "agent_id", help="Agent identifier (for background mode)")
-@click.option("--focus", help="Analysis focus area (security, architecture, performance)")
+@click.option("--focus", help="Analysis focus area (security, architecture, performance)", shell_complete=complete_analyzer_focus)
 @click.option("--no-cache", is_flag=True, help="Force fresh analysis (skip cache)")
 @click.option("--clear-cache", is_flag=True, help="Clear cache before analysis")
 def analyze(

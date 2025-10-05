@@ -18,6 +18,7 @@ from . import (
     findings,
     wait,
     upgrade,
+    completion,
 )
 
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "findings",
     "wait",
     "upgrade",
+    "completion",
 ]

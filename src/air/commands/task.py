@@ -16,6 +16,7 @@ from air.services.task_archive import (
     list_tasks,
     restore_task,
 )
+from air.utils.completion import complete_task_ids
 from air.utils.console import error, success
 
 console = Console()
@@ -281,7 +282,7 @@ def task_list(
 
 
 @task.command("complete")
-@click.argument("task_id")
+@click.argument("task_id", shell_complete=complete_task_ids)
 @click.option(
     "--notes",
     help="Optional completion notes to add",
@@ -384,7 +385,7 @@ def task_complete(task_id: str, notes: str | None) -> None:
 
 
 @task.command("status")
-@click.argument("task_id")
+@click.argument("task_id", shell_complete=complete_task_ids)
 @click.option(
     "--format",
     "output_format",
@@ -526,7 +527,7 @@ def task_status(task_id: str, output_format: str) -> None:
 
 
 @task.command("archive")
-@click.argument("task_ids", nargs=-1)
+@click.argument("task_ids", nargs=-1, shell_complete=complete_task_ids)
 @click.option(
     "--all",
     "archive_all",
@@ -636,7 +637,7 @@ def task_archive(
 
 
 @task.command("restore")
-@click.argument("task_ids", nargs=-1, required=True)
+@click.argument("task_ids", nargs=-1, required=True, shell_complete=complete_task_ids)
 def task_restore(task_ids: tuple[str, ...]) -> None:
     """Restore archived tasks back to active.
 
