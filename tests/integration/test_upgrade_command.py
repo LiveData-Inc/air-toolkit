@@ -246,17 +246,30 @@ class TestUpgradeEdgeCases:
         return CliRunner()
 
     def test_upgrade_missing_config_file(self, runner, tmp_path):
-        """Test upgrade fails gracefully with missing config."""
+        """Test upgrade creates config when missing."""
         project_dir = tmp_path / "broken-project"
         project_dir.mkdir()
         (project_dir / ".air").mkdir()
 
+        # Create a repo symlink (orphaned since no config)
+        fake_repo = tmp_path / "some-repo"
+        fake_repo.mkdir()
+        (fake_repo / "README.md").write_text("# Some Repo")
+
+        repos_dir = project_dir / "repos"
+        repos_dir.mkdir()
+        (repos_dir / "some-repo").symlink_to(fake_repo)
+
         os.chdir(project_dir)
         result = runner.invoke(main, ["upgrade"])
 
-        assert result.exit_code == 1
-        # get_project_root() finds .air but upgrade finds no config
-        assert "air-config.json not found" in result.output or "Not in an AIR project" in result.output
+        # Should succeed and create config
+        assert result.exit_code == 0
+        assert (project_dir / "air-config.json").exists()
+
+        # Should show recovery needed for the orphaned repo
+        output = result.output.lower()
+        assert "recover" in output or "orphaned" in output
 
     def test_upgrade_invalid_json_config(self, runner, tmp_path):
         """Test upgrade handles invalid JSON in config."""
@@ -300,3 +313,122 @@ class TestUpgradeEdgeCases:
 
         # Should mention scripts (missing)
         assert "scripts" in output_lower or "daily-analysis" in output_lower
+
+    def test_upgrade_detects_orphaned_repos(self, runner, tmp_path):
+        """Test that upgrade detects symlinks in repos/ not in config."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        # Create minimal project structure
+        (project_dir / ".air").mkdir()
+        (project_dir / "repos").mkdir()
+
+        # Create a symlink to a "repo" (use tmp dir as fake repo)
+        fake_repo = tmp_path / "orphaned-repo"
+        fake_repo.mkdir()
+        (fake_repo / "README.md").write_text("# Orphaned Repo")
+
+        orphaned_symlink = project_dir / "repos" / "orphaned-repo"
+        orphaned_symlink.symlink_to(fake_repo)
+
+        # Create config WITHOUT this repo
+        config = {
+            "name": "test-project",
+            "mode": "review",
+            "version": "2.0.0",
+            "resources": {"review": [], "develop": []},
+        }
+        (project_dir / "air-config.json").write_text(json.dumps(config))
+
+        os.chdir(project_dir)
+        result = runner.invoke(main, ["upgrade"])
+
+        assert result.exit_code == 0
+        output = result.output
+
+        # Should detect orphaned repo
+        assert "orphaned" in output.lower() or "recover" in output.lower()
+        assert "1" in output  # 1 orphaned repo
+
+    def test_upgrade_recovers_orphaned_repos(self, runner, tmp_path):
+        """Test that upgrade --force recovers orphaned repos into config."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        # Create minimal project structure
+        (project_dir / ".air").mkdir()
+        (project_dir / "repos").mkdir()
+
+        # Create a symlink to a "repo" (use tmp dir as fake repo)
+        fake_repo = tmp_path / "my-library"
+        fake_repo.mkdir()
+        (fake_repo / "README.md").write_text("# My Library")
+        (fake_repo / "setup.py").write_text("# Python library")
+
+        orphaned_symlink = project_dir / "repos" / "my-library"
+        orphaned_symlink.symlink_to(fake_repo)
+
+        # Create config WITHOUT this repo
+        config = {
+            "name": "test-project",
+            "mode": "review",
+            "version": "2.0.0",
+            "resources": {"review": [], "develop": []},
+        }
+        config_file = project_dir / "air-config.json"
+        config_file.write_text(json.dumps(config))
+
+        os.chdir(project_dir)
+        result = runner.invoke(main, ["upgrade", "--force"])
+
+        assert result.exit_code == 0
+
+        # Check that config was updated with recovered repo
+        updated_config = json.loads(config_file.read_text())
+
+        # Should have added the repo to review resources
+        assert "review" in updated_config["resources"]
+        review_resources = updated_config["resources"]["review"]
+
+        # Should have at least one resource now
+        assert len(review_resources) >= 1
+
+        # Find the recovered repo
+        recovered_repo = None
+        for resource in review_resources:
+            if resource["name"] == "my-library":
+                recovered_repo = resource
+                break
+
+        assert recovered_repo is not None, "my-library should be in config"
+        assert recovered_repo["path"] == str(fake_repo)
+        assert recovered_repo["relationship"] == "review-only"
+        assert "type" in recovered_repo
+
+    def test_upgrade_skips_broken_symlinks(self, runner, tmp_path):
+        """Test that upgrade ignores broken symlinks gracefully."""
+        project_dir = tmp_path / "test-project"
+        project_dir.mkdir()
+
+        # Create minimal project structure
+        (project_dir / ".air").mkdir()
+        (project_dir / "repos").mkdir()
+
+        # Create a broken symlink
+        broken_symlink = project_dir / "repos" / "broken-link"
+        broken_symlink.symlink_to("/nonexistent/path")
+
+        # Create config
+        config = {
+            "name": "test-project",
+            "mode": "review",
+            "version": "2.0.0",
+            "resources": {"review": [], "develop": []},
+        }
+        (project_dir / "air-config.json").write_text(json.dumps(config))
+
+        os.chdir(project_dir)
+        result = runner.invoke(main, ["upgrade"])
+
+        # Should not crash, should ignore broken symlink
+        assert result.exit_code == 0

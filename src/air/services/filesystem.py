@@ -169,9 +169,9 @@ def get_project_root() -> Path | None:
         if config_file.exists():
             return directory
 
-        # Also check for .ai directory as indicator
-        ai_dir = directory / ".ai"
-        if ai_dir.exists() and ai_dir.is_dir():
+        # Also check for .air directory as indicator
+        air_dir = directory / ".air"
+        if air_dir.exists() and air_dir.is_dir():
             return directory
 
     return None

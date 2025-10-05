@@ -822,6 +822,8 @@ air analyze RESOURCE_PATH [OPTIONS]
 - `--background` - Run analysis in background as an agent
 - `--id TEXT` - Agent identifier (for background mode)
 - `--focus TEXT` - Analysis focus area (security, architecture, performance)
+- `--no-cache` - Force fresh analysis (skip cache lookup)
+- `--clear-cache` - Clear cache before running analysis
 
 **Examples:**
 
@@ -839,6 +841,12 @@ air analyze repos/service-a --background --id=security-analysis
 air analyze repos/service-a --background --id=analysis-1
 air analyze repos/service-b --background --id=analysis-2
 air analyze repos/service-c --background --id=analysis-3
+
+# Force fresh analysis (skip cache)
+air analyze repos/service-a --no-cache
+
+# Clear cache before analyzing
+air analyze repos/service-a --clear-cache
 ```
 
 **Output:**
@@ -851,6 +859,140 @@ air analyze repos/service-c --background --id=analysis-3
 - `analysis/reviews/<resource>-findings.json` - Analysis findings
 - `.air/agents/<id>/metadata.json` - Agent metadata (background only)
 - `.air/agents/<id>/stdout.log` - Agent output (background only)
+
+---
+
+### air cache
+
+Manage analysis cache for improved performance.
+
+**Subcommands:**
+
+#### air cache status
+
+Display cache statistics including size, hit rate, and entry count.
+
+**Usage:**
+
+```bash
+air cache status [--format=FORMAT]
+```
+
+**Options:**
+
+- `--format=FORMAT` - Output format (text or json, default: text)
+
+**Examples:**
+
+```bash
+# Show cache statistics
+air cache status
+
+# JSON output
+air cache status --format=json
+```
+
+**Output:**
+
+Text format displays a formatted table with:
+- Total Entries - Number of cached analysis results
+- Cache Size - Total size in MB
+- Cache Hits - Number of successful cache retrievals
+- Cache Misses - Number of cache misses (analysis ran)
+- Hit Rate - Percentage of cache hits (higher is better)
+- Last Cleared - When cache was last cleared
+
+```
+Cache Statistics
+───────────────────────────────────
+Metric          Value
+───────────────────────────────────
+Total Entries   15
+Cache Size      2.34 MB
+Cache Hits      45
+Cache Misses    10
+Hit Rate        81.8%
+Last Cleared    2025-10-05 10:30:15
+```
+
+JSON format provides machine-readable output:
+
+```json
+{
+  "total_entries": 15,
+  "cache_size_mb": 2.34,
+  "hit_count": 45,
+  "miss_count": 10,
+  "hit_rate": 81.8,
+  "last_cleared": "2025-10-05T10:30:15"
+}
+```
+
+**Performance Interpretation:**
+
+- **80%+ hit rate**: Excellent - Cache is working optimally
+- **50-80% hit rate**: Good - Cache is warming up
+- **<50% hit rate**: Low - Many fresh analyses or frequent file changes
+
+#### air cache clear
+
+Clear all cached analysis results. Requires confirmation.
+
+**Usage:**
+
+```bash
+air cache clear
+```
+
+**Examples:**
+
+```bash
+# Clear all cache (will prompt for confirmation)
+air cache clear
+```
+
+**Confirmation Prompt:**
+
+```
+Are you sure you want to clear the cache? This cannot be undone. [y/N]:
+```
+
+**Output:**
+
+```
+[i] Clearing cache...
+[✓] Cache cleared: 15 entries (2.34 MB) removed
+```
+
+**When to Clear Cache:**
+
+- After AIR version upgrade (automatic, but can force)
+- When analyzer logic changes significantly
+- When troubleshooting unexpected analysis results
+- When cache size grows too large
+- When switching analysis focus areas
+
+**Cache Behavior:**
+
+- Cache stored in `.air/cache/` directory
+- Organized by repository hash
+- Separate cache files per analyzer (security, performance, etc.)
+- Metadata tracks file hashes for invalidation
+- Automatically invalidates when files change
+- Automatically invalidates when AIR version changes
+
+**Cache Flags on `air analyze`:**
+
+```bash
+# Force fresh analysis (skip cache)
+air analyze repos/myapp --no-cache
+
+# Clear cache before analyzing
+air analyze repos/myapp --clear-cache
+
+# Normal analysis (uses cache)
+air analyze repos/myapp
+```
 
 ---
 

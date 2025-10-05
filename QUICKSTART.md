@@ -95,6 +95,15 @@ air findings --all                      # Aggregate findings
 air status --agents                     # View agent status
 ```
 
+### Analysis Caching (v0.6.1)
+```bash
+air cache status                        # Show cache statistics
+air cache status --format=json          # JSON output
+air cache clear                         # Clear all cached data
+air analyze repos/myapp --no-cache      # Force fresh analysis
+air analyze repos/myapp --clear-cache   # Clear cache, then analyze
+```
+
 ### Task Management
 ```bash
 air task new "DESCRIPTION"              # Create task
@@ -330,6 +339,9 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | `air analyze REPO` | Comprehensive code analysis |
 | `air analyze --all` | Analyze all repos (dependency order) |
 | `air analyze --gap LIB` | Gap analysis |
+| `air analyze --no-cache` | Force fresh analysis (skip cache) |
+| `air cache status` | Show cache statistics |
+| `air cache clear` | Clear all cached data |
 | `air wait --all` | Wait for background agents |
 | `air findings --all` | Aggregate analysis findings |
 | `air status --agents` | View background agent status |

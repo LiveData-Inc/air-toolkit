@@ -28,6 +28,14 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     - New directories (.air/agents/, .air/shared/)
     - Updated templates
     - New configuration fields
+    - Recovery of orphaned repos (symlinks not in config)
+
+    \b
+    Recovery Features:
+    - Detects symlinks in repos/ not listed in air-config.json
+    - Automatically classifies and adds them back to config
+    - Creates air-config.json if missing (recovery mode)
+    - Handles corrupted or manually edited configs
 
     \b
     Examples:
@@ -48,12 +56,26 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     console.print("[bold cyan]AIR Project Upgrade[/bold cyan]")
     console.print()
 
-    # Load current project config
+    # Load or create project config
     config_file = project_root / "air-config.json"
     if not config_file.exists():
-        error("air-config.json not found", exit_code=1)
+        warn("air-config.json not found - will attempt to recover from directory structure")
+        # Create a minimal config that we'll populate from discovered repos
+        config_data = {
+            "name": project_root.name,
+            "mode": "mixed",  # Default to mixed mode
+            "version": "2.0.0",
+            "resources": {"review": [], "develop": []},
+        }
+        # Write it so we can use it
+        config_file.write_text(json.dumps(config_data, indent=2) + "\n")
+        info("✓ Created air-config.json")
+    else:
+        try:
+            config_data = json.loads(config_file.read_text())
+        except json.JSONDecodeError as e:
+            error(f"Invalid JSON in air-config.json: {e}", exit_code=1)
 
-    config_data = json.loads(config_file.read_text())
     project_version = config_data.get("version", "1.0.0")  # Legacy projects have no version
     current_air_version = __version__
 
@@ -79,7 +101,12 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     for template_path, description in outdated_templates:
         actions.append(("update_file", template_path, description))
 
-    # 4. Check config schema
+    # 4. Check for orphaned repos (symlinks not in config)
+    orphaned_repos = _check_orphaned_repos(project_root, config_data)
+    if orphaned_repos:
+        actions.append(("recover_repos", config_file, f"Recover {len(orphaned_repos)} orphaned repo(s)"))
+
+    # 5. Check config schema
     config_updates = _check_config_schema(config_data)
     if config_updates:
         actions.append(("update_config", config_file, f"Add {len(config_updates)} new fields"))
@@ -100,6 +127,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
             "create_file": "📄 Create",
             "update_file": "🔄 Update",
             "update_config": "⚙️  Update",
+            "recover_repos": "🔗 Recover",
         }.get(action_type, action_type)
 
         rel_path = str(Path(path).relative_to(project_root)) if project_root in Path(path).parents else str(path)
@@ -137,6 +165,10 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
             elif action_type == "update_config":
                 _update_config(path, config_updates)
                 success(f"✓ Updated air-config.json")
+
+            elif action_type == "recover_repos":
+                _recover_orphaned_repos(path, orphaned_repos)
+                success(f"✓ Recovered {len(orphaned_repos)} orphaned repo(s)")
 
         except Exception as e:
             error(f"Failed to {action_type} {path}: {e}")
@@ -324,3 +356,108 @@ def _update_config(config_path: Path, updates: dict) -> None:
 
     # Write back
     config_path.write_text(json.dumps(config_data, indent=2))
+
+
+def _check_orphaned_repos(project_root: Path, config_data: dict) -> list[tuple[str, Path]]:
+    """Check for linked repos not in config.
+
+    Scans the repos/ directory for symlinks that are not referenced in air-config.json.
+    This can happen if the config was manually edited or corrupted.
+
+    Args:
+        project_root: Path to AIR project root
+        config_data: Loaded air-config.json data
+
+    Returns:
+        List of (repo_name, repo_path) tuples for orphaned repos
+    """
+    repos_dir = project_root / "repos"
+    if not repos_dir.exists():
+        return []
+
+    # Get all symlinks in repos/
+    existing_symlinks = {}
+    for item in repos_dir.iterdir():
+        if item.is_symlink():
+            # Resolve symlink to get actual path
+            try:
+                resolved = item.resolve(strict=False)
+                existing_symlinks[item.name] = resolved
+            except Exception:
+                # Broken symlink, skip it
+                pass
+
+    # Get all repos in config
+    config_repos = set()
+    for resource_list in config_data.get("resources", {}).values():
+        for resource in resource_list:
+            config_repos.add(resource["name"])
+
+    # Find orphans (symlinks that exist but aren't in config)
+    orphans = []
+    for name, path in existing_symlinks.items():
+        if name not in config_repos:
+            orphans.append((name, path))
+
+    return orphans
+
+
+def _recover_orphaned_repos(config_path: Path, orphans: list[tuple[str, Path]]) -> None:
+    """Recover orphaned repos by adding them back to config.
+
+    Args:
+        config_path: Path to air-config.json
+        orphans: List of (repo_name, repo_path) tuples to recover
+    """
+    from air.services.classifier import classify_resource
+
+    config_data = json.loads(config_path.read_text())
+
+    # Ensure resources dict exists
+    if "resources" not in config_data:
+        config_data["resources"] = {}
+
+    # Try to classify each orphaned repo and add it to config
+    for repo_name, repo_path in orphans:
+        # Use classifier to determine repo type
+        try:
+            result = classify_resource(repo_path)
+            resource_type = result.resource_type.value
+            tech_stack = result.technology_stack
+        except Exception:
+            # Fallback if classification fails
+            resource_type = "library"
+            tech_stack = None
+
+        # Determine relationship - default to review-only for safety
+        # (user can change to develop later via air link if needed)
+        relationship = "review-only"
+
+        # Create resource entry
+        resource_entry = {
+            "name": repo_name,
+            "path": str(repo_path),
+            "type": resource_type,
+            "relationship": relationship,
+            "writable": False,  # Default to read-only for AI safety
+            "branch": "main",  # Default branch
+            "clone": False,
+            "outputs": [],
+            "contributions": []
+        }
+
+        if tech_stack:
+            resource_entry["technology_stack"] = tech_stack
+
+        # Add to appropriate section (review-only resources go in "review" list)
+        if relationship == "review-only":
+            if "review" not in config_data["resources"]:
+                config_data["resources"]["review"] = []
+            config_data["resources"]["review"].append(resource_entry)
+        else:
+            if "develop" not in config_data["resources"]:
+                config_data["resources"]["develop"] = []
+            config_data["resources"]["develop"].append(resource_entry)
+
+    # Write back
+    config_path.write_text(json.dumps(config_data, indent=2) + "\n")

@@ -66,6 +66,8 @@ class Resource(BaseModel):
     type: ResourceType
     technology_stack: str | None = None  # e.g., "Python/FastAPI", "TypeScript/React"
     relationship: ResourceRelationship
+    writable: bool = False  # Default to read-only for safety (AI cannot make changes)
+    branch: str = "main"  # Default branch for AI to work on
     clone: bool = False
     outputs: list[str] = Field(default_factory=list)
     contributions: list[Contribution] = Field(default_factory=list)

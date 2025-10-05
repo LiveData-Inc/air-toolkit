@@ -147,12 +147,12 @@ def test_get_project_root_with_config(tmp_path, monkeypatch):
 
 
 def test_get_project_root_with_ai_dir(tmp_path, monkeypatch):
-    """Test get_project_root finds .ai directory."""
+    """Test get_project_root finds .air directory."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
-    ai_dir = project_dir / ".ai"
-    ai_dir.mkdir()
+    air_dir = project_dir / ".air"
+    air_dir.mkdir()
 
     subdir = project_dir / "subdir"
     subdir.mkdir()

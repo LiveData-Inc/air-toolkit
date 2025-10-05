@@ -17,6 +17,7 @@ from air.commands import (
     track,
     summary,
     analyze,
+    cache,
     findings,
     wait,
     upgrade,
@@ -58,6 +59,7 @@ main.add_command(classify.classify)
 main.add_command(pr.pr)
 main.add_command(review.review)
 main.add_command(analyze.analyze)
+main.add_command(cache.cache)
 main.add_command(findings.findings)
 main.add_command(wait.wait)
 main.add_command(upgrade.upgrade)

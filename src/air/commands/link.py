@@ -79,6 +79,8 @@ def _interactive_link_add(
     name: str | None,
     is_review: bool,
     is_develop: bool,
+    writable: bool,
+    branch: str,
     resource_type: str | None,
 ) -> None:
     """Interactive mode for adding a linked resource."""
@@ -213,15 +215,36 @@ def _interactive_link_add(
                 default="library"  # Changed default from "implementation"
             )
 
-    # Step 4: Confirmation
+    # Step 4: AI write permissions
+    console.print()
+    if not writable:
+        # Only ask if not already specified via flag
+        console.print("[dim]By default, repos are read-only for AI safety.[/dim]")
+        writable = Confirm.ask(
+            "Allow AI to make changes to this repository?",
+            default=False
+        )
+
+    # Step 5: Branch specification
+    console.print()
+    console.print("[dim]Specify which branch AI should work on.[/dim]")
+    branch = Prompt.ask(
+        "[cyan]Branch name[/cyan]",
+        default=branch  # Use the default passed in (usually "main")
+    )
+
+    # Step 6: Confirmation
     console.print()
     tech_display = f" ({tech_stack})" if tech_stack else ""
+    writable_display = "[green]writable[/green]" if writable else "[dim]read-only[/dim]"
     console.print(Panel.fit(
         f"[bold]📋 Review Configuration:[/bold]\n\n"
         f"  Name:         [cyan]{resource_name}[/cyan]\n"
         f"  Path:         {source_path}\n"
         f"  Relationship: [cyan]{category}[/cyan] ({'read-only' if is_review else 'contribute'})\n"
-        f"  Type:         [cyan]{resource_type}{tech_display}[/cyan]",
+        f"  Type:         [cyan]{resource_type}{tech_display}[/cyan]\n"
+        f"  AI Writes:    {writable_display}\n"
+        f"  Branch:       [cyan]{branch}[/cyan]",
         border_style="green",
         title="Confirmation"
     ))
@@ -252,6 +275,8 @@ def _interactive_link_add(
         type=ResourceType(resource_type),
         technology_stack=tech_stack,
         relationship=relationship,
+        writable=writable,  # From --writable flag or interactive prompt
+        branch=branch,  # From --branch flag or interactive prompt
         clone=False,
     )
 
@@ -287,6 +312,16 @@ def link() -> None:
     help="Link as developer resource",
 )
 @click.option(
+    "--writable",
+    is_flag=True,
+    help="Allow AI to make changes to this repository (default: read-only)",
+)
+@click.option(
+    "--branch",
+    default="main",
+    help="Branch for AI to work on (default: main)",
+)
+@click.option(
     "--type",
     "resource_type",
     type=click.Choice(["library", "documentation", "service"]),
@@ -303,6 +338,8 @@ def link_add(
     name: str | None,
     is_review: bool,
     is_develop: bool,
+    writable: bool,
+    branch: str,
     resource_type: str | None,
     interactive: bool,
 ) -> None:
@@ -338,7 +375,7 @@ def link_add(
     if interactive:
         # User explicitly requested interactive mode
         return _interactive_link_add(
-            project_root, config, path, name, is_review, is_develop, resource_type
+            project_root, config, path, name, is_review, is_develop, writable, branch, resource_type
         )
 
     # Non-interactive mode: validate path and use defaults/provided values
@@ -421,6 +458,8 @@ def link_add(
         type=ResourceType(res_type),
         technology_stack=tech_stack,  # From auto-classification
         relationship=relationship,
+        writable=writable,  # Default False unless --writable flag used
+        branch=branch,  # Default "main" unless --branch flag used
         clone=False,
     )
 

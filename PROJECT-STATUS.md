@@ -1,6 +1,6 @@
 # AIR Toolkit - Project Status
 
-**Current Version:** 0.6.0
+**Current Version:** 0.6.1.post1
 **Last Updated:** 2025-10-05
 **Status:** Production-Ready with Advanced Features ✅
 
@@ -9,8 +9,8 @@
 AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, and parallel agent coordination.
 
 **Key Metrics:**
-- **372 tests** - All passing ✅
-- **Version:** 0.6.0 (production-ready)
+- **410 tests** - All passing ✅
+- **Version:** 0.6.1.post1 (production-ready)
 - **Distribution:** Available on PyPI (`pip install air-toolkit`)
 - **Commands:** 11 command groups, 30+ subcommands
 - **Analysis:** 5 specialized analyzers with pluggable architecture
@@ -120,7 +120,24 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 - Available on PyPI: `pip install air-toolkit`
 - Cross-platform wheel distribution
 - Proper template packaging
-- Version 0.6.0 published
+- Version 0.6.1.post1 published
+
+### ✅ Project Recovery (v0.6.1.post1)
+
+**Orphaned Repository Recovery:**
+- `air upgrade` detects symlinks in `repos/` not listed in config
+- Automatically creates air-config.json if missing
+- Classifies and recovers orphaned repos with `--force`
+- Handles corrupted or manually edited configs
+- Defaults recovered repos to review-only (safe)
+- Gracefully skips broken symlinks
+- Fixed `.air` directory detection bug
+
+**Recovery Use Cases:**
+- Corrupted config file recovery
+- Missing config file bootstrapping
+- Partial project migration support
+- Manual cleanup recovery
 
 ## Architecture
 
@@ -350,6 +367,20 @@ air --help
 - ✅ Strategy pattern architecture
 - ✅ 372 tests passing
 
+### v0.6.1 Goals (October 2025) ✅
+- ✅ Analysis caching system
+- ✅ Hash-based cache invalidation
+- ✅ Cache statistics tracking
+- ✅ 100x performance improvement on cache hits
+- ✅ 407 tests passing
+
+### v0.6.1.post1 Goals (October 2025) ✅
+- ✅ Orphaned repository recovery
+- ✅ Missing config file handling
+- ✅ Automatic repo classification and recovery
+- ✅ Fixed `.air` directory detection
+- ✅ 410 tests passing
+
 ## Community & Support
 
 **Repository:** https://github.com/LiveData-Inc/air-toolkit
@@ -364,6 +395,9 @@ air --help
 - **Oct 4, 2025:** v0.4.0 - Interactive commands
 - **Oct 4, 2025:** v0.5.0 - Code review integration
 - **Oct 4, 2025:** v0.6.0 - Deep analysis & agent coordination
+- **Oct 5, 2025:** v0.6.1 - Analysis caching (100x faster repeat runs)
+- **Oct 5, 2025:** v0.6.1.post1 - Orphaned repo recovery & config repair
+- **Future:** v0.6.2 - Shell completion (bash, zsh, fish)
 - **Future:** v0.7.0+ - Advanced features and integrations
 
 ---

@@ -437,3 +437,4 @@ error("Failed to validate", exit_code=1)
 
 **Remember**: The goal is ZERO FRICTION. Create task files automatically as part of your work, not as a separate step the user needs to think about.
 - 4 suggests a re-ordreing of the parseable string format that `air link` originally used (foo:/path/to/foo:branch-name) I think we can drop this clever format and force the use of args (i.e. if we are using a script to run air)
+- an important goal for air is to make the planning steps and implementation tasks explicit, and part of the github history, rather than hidden in teh claude-specific files under the user's $HOME folder.

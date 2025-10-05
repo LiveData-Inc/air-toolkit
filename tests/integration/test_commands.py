@@ -1231,6 +1231,123 @@ class TestLinkCommand:
         assert result.exit_code == 0
         assert "No resources linked" in result.output
 
+    def test_link_add_with_writable_flag(self, runner, isolated_project):
+        """Test linking with --writable flag."""
+        runner.invoke(main, ["init", "writable-test", "--mode=mixed"])
+        project_dir = isolated_project / "writable-test"
+
+        # Create source directory
+        source_dir = isolated_project / "source-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Test")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link with --writable flag
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir), "--writable", "--develop"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked develop resource: source-repo" in result.output
+
+        # Verify writable field is set to True
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["develop"]) == 1
+        assert config["resources"]["develop"][0]["writable"] is True
+
+    def test_link_add_default_readonly(self, runner, isolated_project):
+        """Test that default is read-only (writable=False)."""
+        runner.invoke(main, ["init", "readonly-test", "--mode=mixed"])
+        project_dir = isolated_project / "readonly-test"
+
+        # Create source directory
+        source_dir = isolated_project / "source-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Test")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link without --writable flag (default should be read-only)
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir)]
+        )
+
+        assert result.exit_code == 0
+
+        # Verify writable field defaults to False
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["writable"] is False
+
+    def test_link_add_with_branch_flag(self, runner, isolated_project):
+        """Test linking with --branch flag."""
+        runner.invoke(main, ["init", "branch-test", "--mode=mixed"])
+        project_dir = isolated_project / "branch-test"
+
+        # Create source directory
+        source_dir = isolated_project / "source-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Test")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link with --branch flag
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir), "--branch", "develop"]
+        )
+
+        assert result.exit_code == 0
+
+        # Verify branch field is set correctly
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["branch"] == "develop"
+
+    def test_link_add_default_main_branch(self, runner, isolated_project):
+        """Test that default branch is 'main'."""
+        runner.invoke(main, ["init", "main-branch-test", "--mode=mixed"])
+        project_dir = isolated_project / "main-branch-test"
+
+        # Create source directory
+        source_dir = isolated_project / "source-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Test")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link without --branch flag (default should be 'main')
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir)]
+        )
+
+        assert result.exit_code == 0
+
+        # Verify branch field defaults to 'main'
+        config_path = project_dir / "air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["review"]) == 1
+        assert config["resources"]["review"][0]["branch"] == "main"
+
 
 class TestPRCommand:
     """Tests for air pr command."""

@@ -16,6 +16,7 @@ from air.services.analyzers import (
     QualityAnalyzer,
     SecurityAnalyzer,
 )
+from air.services.cache_manager import CacheManager
 from air.services.classifier import classify_resource
 from air.services.dependency_graph import (
     build_dependency_graph,
@@ -37,6 +38,8 @@ from air.utils.console import error, info, success, warn
 @click.option("--background", is_flag=True, help="Run in background")
 @click.option("--id", "agent_id", help="Agent identifier (for background mode)")
 @click.option("--focus", help="Analysis focus area (security, architecture, performance)")
+@click.option("--no-cache", is_flag=True, help="Force fresh analysis (skip cache)")
+@click.option("--clear-cache", is_flag=True, help="Clear cache before analysis")
 def analyze(
     resource: str | None,
     analyze_all: bool,
@@ -47,6 +50,8 @@ def analyze(
     background: bool,
     agent_id: str | None,
     focus: str | None,
+    no_cache: bool,
+    clear_cache: bool,
 ) -> None:
     """Analyze repositories with intelligent defaults.
 
@@ -79,6 +84,15 @@ def analyze(
     # Load config
     config = load_config(project_root)
 
+    # Initialize cache manager
+    cache_manager = CacheManager(cache_dir=project_root / ".air" / "cache")
+
+    # Clear cache if requested
+    if clear_cache:
+        info("Clearing analysis cache...")
+        cache_manager.clear_all()
+        success("Cache cleared")
+
     # Multi-repo analysis modes
     if analyze_all:
         # Default: respect dependencies (unless --no-order specified)
@@ -89,6 +103,8 @@ def analyze(
             deps_only=deps_only,
             focus=focus,
             background=background,
+            cache_manager=cache_manager,
+            no_cache=no_cache,
         )
         return
 
@@ -114,6 +130,8 @@ def analyze(
         project_root=project_root,
         check_deps=check_deps,
         config=config if check_deps else None,
+        cache_manager=cache_manager,
+        no_cache=no_cache,
     )
 
 
@@ -151,6 +169,8 @@ def _analyze_single_repo(
     project_root: Path,
     check_deps: bool = False,
     config: AirConfig | None = None,
+    cache_manager: CacheManager | None = None,
+    no_cache: bool = False,
 ) -> None:
     """Analyze a single repository.
 
@@ -162,6 +182,8 @@ def _analyze_single_repo(
         project_root: AIR project root
         check_deps: Check for dependency issues
         config: AIR config (if checking deps)
+        cache_manager: Cache manager instance
+        no_cache: Skip cache lookup/storage
     """
     if background:
         # Spawn background agent
@@ -229,8 +251,30 @@ def _analyze_single_repo(
 
         # Run analyzers and collect findings
         for analyzer in analyzers:
-            info(f"Running {analyzer.name} analysis...")
-            analyzer_result = analyzer.analyze()
+            analyzer_result = None
+
+            # Check cache first (unless --no-cache or no cache_manager)
+            if not no_cache and cache_manager:
+                # Create a marker file representing the whole repo
+                # (We cache at repo level, not file level for now)
+                repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
+                cached_result = cache_manager.get_cached_analysis(
+                    resource_path, repo_marker, analyzer.name
+                )
+
+                if cached_result:
+                    info(f"{analyzer.name} analysis (cached)...")
+                    analyzer_result = cached_result
+
+            # Run analysis if not cached
+            if not analyzer_result:
+                info(f"Running {analyzer.name} analysis...")
+                analyzer_result = analyzer.analyze()
+
+                # Cache the result (unless --no-cache or no cache_manager)
+                if not no_cache and cache_manager:
+                    repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
+                    cache_manager.set_cached_analysis(resource_path, repo_marker, analyzer_result)
 
             # Add summary to findings
             all_findings.append(
@@ -303,6 +347,8 @@ def _analyze_multi_repo(
     deps_only: bool,
     focus: str | None,
     background: bool,
+    cache_manager: CacheManager | None = None,
+    no_cache: bool = False,
 ) -> None:
     """Analyze multiple repos with dependency awareness.
 
@@ -312,6 +358,8 @@ def _analyze_multi_repo(
         deps_only: Only analyze repos with dependencies
         focus: Analysis focus area
         background: Run analyses in background
+        cache_manager: Cache manager instance
+        no_cache: Skip cache lookup/storage
     """
     # Build dependency graph
     info("Building dependency graph...")
@@ -389,6 +437,8 @@ def _analyze_multi_repo(
                     project_root=project_root,
                     check_deps=True,
                     config=config,
+                    cache_manager=cache_manager,
+                    no_cache=no_cache,
                 )
 
         # If background, wait for this level to complete before next
