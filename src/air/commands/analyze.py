@@ -172,6 +172,8 @@ def _analyze_single_repo(
     config: AirConfig | None = None,
     cache_manager: CacheManager | None = None,
     no_cache: bool = False,
+    current_index: int | None = None,
+    total_count: int | None = None,
 ) -> None:
     """Analyze a single repository.
 
@@ -185,6 +187,8 @@ def _analyze_single_repo(
         config: AIR config (if checking deps)
         cache_manager: Cache manager instance
         no_cache: Skip cache lookup/storage
+        current_index: Current repo index (for progress display)
+        total_count: Total repos to analyze (for progress display)
     """
     if background:
         # Spawn background agent
@@ -201,7 +205,11 @@ def _analyze_single_repo(
 
     # Run analysis
     try:
-        info(f"Analyzing: {resource_path}")
+        # Show progress indicator if we have index/count
+        if current_index is not None and total_count is not None:
+            info(f"[{current_index}/{total_count}] Analyzing: {resource_path}")
+        else:
+            info(f"Analyzing: {resource_path}")
 
         if focus:
             info(f"Focus area: {focus}")
@@ -402,6 +410,10 @@ def _analyze_multi_repo(
         levels = [list(graph.keys())]
         info(f"Analyzing {len(levels[0])} repos in parallel")
 
+    # Count total repos for progress tracking
+    total_repos = sum(len(level) for level in levels)
+    current_repo = 0
+
     # Analyze by level
     for level_num, repos_in_level in enumerate(levels, 1):
         if respect_deps and len(levels) > 1:
@@ -410,6 +422,7 @@ def _analyze_multi_repo(
         # Spawn agents for this level
         agent_ids = []
         for repo_name in repos_in_level:
+            current_repo += 1
             agent_id = f"level-{level_num}-{repo_name}"
 
             # Find resource
@@ -440,6 +453,8 @@ def _analyze_multi_repo(
                     config=config,
                     cache_manager=cache_manager,
                     no_cache=no_cache,
+                    current_index=current_repo,
+                    total_count=total_repos,
                 )
 
         # If background, wait for this level to complete before next
@@ -491,10 +506,15 @@ def _analyze_gap(
 
     info(f"Dependents: {', '.join(dependents)}")
 
+    # Calculate total for progress tracking (library + dependents)
+    total_repos = 1 + len(dependents)
+    current_repo = 0
+
     # Analyze library
     project_root = get_project_root()
     library_path = Path(library_resource.path).expanduser().resolve()
 
+    current_repo += 1
     info(f"\nAnalyzing library: {library_name}")
     _analyze_single_repo(
         resource_path=library_path,
@@ -504,10 +524,13 @@ def _analyze_gap(
         project_root=project_root,
         check_deps=False,
         config=None,
+        current_index=current_repo,
+        total_count=total_repos,
     )
 
     # Analyze dependents
     for dependent_name in dependents:
+        current_repo += 1
         dependent_resource = next((r for r in config.get_all_resources() if r.name == dependent_name), None)
         if not dependent_resource:
             continue
@@ -523,6 +546,8 @@ def _analyze_gap(
             project_root=project_root,
             check_deps=True,
             config=config,
+            current_index=current_repo,
+            total_count=total_repos,
         )
 
     # Show gaps

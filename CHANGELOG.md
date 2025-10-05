@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Improved - Analysis Progress Indicator
+
+- **Multi-Repo Analysis Progress** - Show "[X/Y] Analyzing: NAME" progress indicator
+- Display current repo index and total count during multi-repo analysis
+- Works with `air analyze --all`, `air analyze --gap`, and dependency-ordered analysis
+- Improves UX by showing users exactly where they are in long analysis operations
+
 ## [0.6.2] - 2025-10-05
 
 ### Added - Shell Completion for Enhanced CLI Usability
