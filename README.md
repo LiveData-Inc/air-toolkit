@@ -173,6 +173,18 @@ air summary
 - **Hit Rate**: 80%+ in typical workflows
 - Version-aware cache invalidation
 
+### Shell Completion (v0.6.2) ✅
+
+- **Tab Completion** - Complete commands, options, and dynamic arguments
+- Multi-shell support: bash, zsh, and fish
+- **Dynamic Completion**:
+  - Resource names from air-config.json
+  - Task IDs from .air/tasks/ directory
+  - Analyzer focus types (security, performance, etc.)
+  - Developer resources for PR commands
+- Easy installation: `air completion install`
+- Auto-detects shell from environment
+
 ### Pull Request Workflow (v0.3.1) ✅
 
 - **Create Pull Requests** (`air pr`) - Automated PR creation for collaborative resources
@@ -250,6 +262,11 @@ air analyze --gap LIBRARY            # Gap analysis for library and dependents
 air cache status                     # Show cache statistics
   --format json                      # JSON output
 air cache clear                      # Clear all cached data
+
+# Shell Completion (v0.6.2)
+air completion install [SHELL]       # Install completion (auto-detects shell)
+air completion uninstall [SHELL]     # Uninstall completion
+air completion show SHELL            # Show completion script
 
 # Agent Coordination (v0.6.0)
 air wait --all                       # Wait for all agents to complete

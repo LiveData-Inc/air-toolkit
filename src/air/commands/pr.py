@@ -18,6 +18,7 @@ from air.services.pr_generator import (
     git_create_branch_and_commit,
     is_git_repository,
 )
+from air.utils.completion import complete_developer_resources
 from air.utils.errors import (
     GitHubCLIError,
     ProjectNotFoundError,
@@ -31,7 +32,7 @@ console = Console()
 
 
 @click.command()
-@click.argument("resource", required=False)
+@click.argument("resource", required=False, shell_complete=complete_developer_resources)
 @click.option(
     "--base",
     default="main",

@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-10-05
+
+### Added - Shell Completion for Enhanced CLI Usability
+
+**Tab Completion for All Shells** - Comprehensive shell completion for commands, options, and dynamic arguments
+
+#### Completion Features
+
+- **Dynamic Completion** - Tab complete resource names from air-config.json
+- **Task ID Completion** - Complete task IDs from .air/tasks/ directory
+- **Analyzer Focus** - Complete focus types: security, performance, quality, architecture, structure
+- **Developer Resources** - Complete only developer resources for PR commands
+- **Multi-Shell Support** - Works with bash, zsh, and fish shells
+
+#### Commands Integration
+
+Completion added to:
+- `air analyze <TAB>` - Complete resource names
+- `air analyze --focus=<TAB>` - Complete focus types (security, performance, etc.)
+- `air analyze --gap=<TAB>` - Complete resource names for gap analysis
+- `air task complete <TAB>` - Complete task IDs
+- `air task status <TAB>` - Complete task IDs
+- `air task archive <TAB>` - Complete task IDs (supports multiple)
+- `air task restore <TAB>` - Complete task IDs (supports multiple)
+- `air pr <TAB>` - Complete developer resource names only
+
+#### New Command Group: `air completion`
+
+- `air completion install [bash|zsh|fish]` - Install completion (auto-detects shell)
+- `air completion uninstall [bash|zsh|fish]` - Uninstall completion
+- `air completion show SHELL` - Display completion activation script
+
+#### Installation
+
+```bash
+# Auto-detect and install
+air completion install
+
+# Install for specific shell
+air completion install bash
+air completion install zsh
+air completion install fish
+
+# Show what would be installed
+air completion show bash
+```
+
+#### Technical Details
+
+- Created `src/air/utils/completion.py` with 6 completion helper functions
+- Uses Click 8.1+ native shell_complete parameter
+- Reads air-config.json for dynamic resource completion
+- Scans .air/tasks/ for task ID completion
+- Auto-detects shell from $SHELL environment variable
+- Adds completion to shell config files (~/.bashrc, ~/.zshrc, ~/.config/fish/completions/)
+
+#### User Experience
+
+```bash
+air <TAB>                   # Shows: init, link, analyze, task, status...
+air analyze <TAB>           # Shows: myapp, docs, shared-lib (from config)
+air analyze --focus=<TAB>   # Shows: security, performance, quality...
+air task status <TAB>       # Shows: 20251005-001, 20251005-002...
+air pr <TAB>                # Shows: myapp (only developer resources)
+```
+
 ## [0.6.1.post1] - 2025-10-05
 
 ### Fixed - Orphaned Repository Recovery
