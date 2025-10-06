@@ -46,18 +46,18 @@ This is a **mixed-mode** project supporting both review and development workflow
 ```bash
 {% if mode == "review" or mode == "mixed" -%}
 # Link review-only resources
-air link add --review service-a:~/repos/service-a
-air link add --review service-b:~/repos/service-b
+air link add ~/repos/service-a --name service-a
+air link add ~/repos/service-b --name service-b
 
 {% endif -%}
 {% if mode == "mixed" -%}
 # Link development resources (for contributing back)
-air link add --develop docs:~/repos/documentation
+air link add ~/repos/documentation --name docs --writable
 
 {% endif -%}
 {% if mode == "develop" -%}
 # In develop mode, link external repos you'll contribute to
-air link add --develop upstream-project:~/repos/upstream-project
+air link add ~/repos/upstream-project --name upstream-project --writable
 
 {% endif -%}
 ```
