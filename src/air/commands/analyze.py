@@ -256,6 +256,11 @@ def _analyze_single_repo(
 
         # Show progress indicator if we have index/count
         if current_index is not None and total_count is not None:
+            # Add separator between repos (except for first one)
+            if current_index > 1:
+                info("")
+                info("─" * 60)
+                info("")
             info(f"[{current_index}/{total_count}] Analyzing: {resource_path}")
         else:
             info(f"Analyzing: {resource_path}")
