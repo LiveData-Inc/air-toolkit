@@ -98,6 +98,25 @@ def analyze(
     # Load config
     config = load_config(project_root)
 
+    # Show startup banner for multi-repo analysis
+    if analyze_all:
+        from rich.console import Console
+        from rich.panel import Panel
+        console = Console()
+
+        repo_count = len(config.get_all_resources())
+        mode_text = "dependency-ordered" if not no_order else "parallel"
+
+        banner = f"[bold cyan]AIR Analysis[/bold cyan]\n"
+        banner += f"[dim]Analyzing {repo_count} repositories ({mode_text})"
+        if parallel:
+            banner += f" - parallel mode"
+        banner += "[/dim]"
+
+        console.print()
+        console.print(Panel(banner, border_style="cyan", padding=(0, 2)))
+        console.print()
+
     # Initialize cache manager
     cache_manager = CacheManager(cache_dir=project_root / ".air" / "cache")
 
@@ -495,11 +514,19 @@ def _analyze_multi_repo(
     # Start total timing
     multi_repo_start = time.time()
 
-    # Build dependency graph
+    # Build dependency graph with progress
     graph_start = time.time()
-    info("Building dependency graph...")
-    graph = build_dependency_graph(config)
+
+    from rich.console import Console
+    from rich.spinner import Spinner
+    from rich.live import Live
+
+    console = Console()
+    with console.status("[cyan]Building dependency graph from imports and package files...", spinner="dots"):
+        graph = build_dependency_graph(config)
+
     graph_time = time.time() - graph_start
+    info(f"Dependency graph built ({graph_time:.2f}s) - {len(graph)} repositories analyzed")
 
     # Save graph as JSON
     project_root = get_project_root()

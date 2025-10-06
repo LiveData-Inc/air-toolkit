@@ -341,7 +341,7 @@ class AnalysisOrchestrator:
                 # List to collect completion messages
                 completion_messages = []
 
-                with Live(Group(progress, *completion_messages), refresh_per_second=10) as live:
+                with Live(Group(progress, *completion_messages), refresh_per_second=10, transient=True) as live:
                     for future in as_completed(futures, timeout=self.timeout * task_count):
                         repo_path, analyzer_type = futures[future]
 

@@ -1,0 +1,9 @@
+{
+  "name": "air-toolkit",
+  "mode": "mixed",
+  "version": "2.0.0",
+  "resources": {
+    "review": [],
+    "develop": []
+  }
+}
