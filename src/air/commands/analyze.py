@@ -430,16 +430,17 @@ def _analyze_single_repo(
         # Calculate total time
         total_time = time.time() - analysis_start
 
-        # Display timing information
-        info("")
-        info("⏱️  Analysis Timing:")
-        info(f"  Classification: {classification_time:.2f}s")
-        for analyzer_name, analyzer_time in analyzer_times.items():
-            info(f"  {analyzer_name}: {analyzer_time:.2f}s")
-        if deps_time > 0:
-            info(f"  Dependencies: {deps_time:.2f}s")
-        info(f"  Total: {total_time:.2f}s")
-        info("")
+        # Display timing information (skip if parallel - already shown in progress)
+        if not parallel:
+            info("")
+            info("⏱️  Analysis Timing:")
+            info(f"  Classification: {classification_time:.2f}s")
+            for analyzer_name, analyzer_time in analyzer_times.items():
+                info(f"  {analyzer_name}: {analyzer_time:.2f}s")
+            if deps_time > 0:
+                info(f"  Dependencies: {deps_time:.2f}s")
+            info(f"  Total: {total_time:.2f}s")
+            info("")
 
         success(f"Analysis complete: {findings_file}")
 
