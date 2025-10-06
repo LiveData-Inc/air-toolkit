@@ -54,14 +54,17 @@ def render_resource_table(
     table.add_column("Status", width=10)
     table.add_column("Name", style=name_style)
     table.add_column("Type", style="magenta")
+    table.add_column("Writable", width=8)
     table.add_column("Path", style="dim")
 
     for resource in resources:
         status = get_resource_status(resource, project_root)
+        writable_display = "Y" if resource.writable else "N"
         table.add_row(
             status,
             resource.name,
             resource.type,
+            writable_display,
             resource.path,
         )
 

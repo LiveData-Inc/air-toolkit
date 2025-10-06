@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Improved - Show Writable Status in Resource Tables
+
+- **Writable Column** - Display AI write permissions in resource listings
+- Added "Writable" column to `air status` and `air link list` output
+- Shows "Y" for writable repos, "N" for read-only repos
+- JSON output includes `"writable": true/false` field
+- Column positioned between Type and Path for clarity
+
 ## [0.6.2.post1] - 2025-10-05
 
 ### Improved - Analysis Progress Indicator

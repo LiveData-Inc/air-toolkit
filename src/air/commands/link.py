@@ -504,6 +504,7 @@ def link_list(output_format: str) -> None:
                     "path": r.path,
                     "type": r.type,
                     "relationship": r.relationship,
+                    "writable": r.writable,
                 }
                 for r in config.resources.get("review", [])
             ],
@@ -513,6 +514,7 @@ def link_list(output_format: str) -> None:
                     "path": r.path,
                     "type": r.type,
                     "relationship": r.relationship,
+                    "writable": r.writable,
                 }
                 for r in config.resources.get("develop", [])
             ],
