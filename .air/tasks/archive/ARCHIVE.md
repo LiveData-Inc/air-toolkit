@@ -2,15 +2,35 @@
 
 Summary of all archived tasks organized by time period.
 
-**Total Archived Tasks:** 60
+**Total Archived Tasks:** 62
 
 ## Table of Contents
 
-- [2025-10](#2025-10) (60 tasks)
+- [Uncategorized](#uncategorized) (1 tasks)
+- [2025-10](#2025-10) (61 tasks)
+
+## Uncategorized
+
+**1 tasks**
+
+### ⏳ Unknown
+
+- **File:** `ARCHIVE.md`
+- **Date:** Unknown date
+- **Status:** in_progress
+
+---
 
 ## 2025-10
 
-**60 tasks**
+**61 tasks**
+
+### ✅ Fix missing Claude Code slash commands after air init
+
+- **File:** `2025-10/20251006-001-0936-fix-missing-claude-code-slash-commands.md`
+- **Date:** 2025-10-06 09:36
+- **Status:** success
+- **Prompt:** I created a new empty project and ran `air init`, then opened and initialized Claude Code using `/in...
 
 ### ✅ Add archive summary generation
 

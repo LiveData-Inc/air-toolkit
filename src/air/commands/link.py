@@ -169,6 +169,10 @@ def _interactive_link_add(
         else ResourceRelationship.DEVELOPER
     )
 
+    # --develop flag or interactive develop choice implies writable
+    if is_develop and not writable:
+        writable = True
+
     # Step 3: Auto-classify (opt-out, default: YES)
     tech_stack = None
     if not resource_type:
@@ -412,6 +416,10 @@ def link_add(
         if is_review
         else ResourceRelationship.DEVELOPER
     )
+
+    # --develop flag implies writable unless explicitly set otherwise
+    if is_develop and not writable:
+        writable = True
 
     # Auto-classify if no type provided
     tech_stack = None

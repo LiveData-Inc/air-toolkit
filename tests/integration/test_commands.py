@@ -1290,6 +1290,37 @@ class TestLinkCommand:
         assert len(config["resources"]["review"]) == 1
         assert config["resources"]["review"][0]["writable"] is False
 
+    def test_link_add_develop_auto_writable(self, runner, isolated_project):
+        """Test that --develop flag automatically sets writable=True."""
+        runner.invoke(main, ["init", "develop-test", "--mode=mixed"])
+        project_dir = isolated_project / "develop-test"
+
+        # Create source directory
+        source_dir = isolated_project / "dev-repo"
+        source_dir.mkdir()
+        (source_dir / "README.md").write_text("# Dev Repo")
+
+        import os
+        os.chdir(project_dir)
+
+        # Link with --develop flag (should automatically set writable=True)
+        result = runner.invoke(
+            main,
+            ["link", "add", str(source_dir), "--develop"]
+        )
+
+        assert result.exit_code == 0
+        assert "Linked develop resource: dev-repo" in result.output
+
+        # Verify writable field is automatically set to True
+        config_path = project_dir / ".air/air-config.json"
+        with open(config_path) as f:
+            config = json.load(f)
+
+        assert len(config["resources"]["develop"]) == 1
+        assert config["resources"]["develop"][0]["writable"] is True
+        assert config["resources"]["develop"][0]["relationship"] == "developer"
+
     def test_link_add_with_branch_flag(self, runner, isolated_project):
         """Test linking with --branch flag."""
         runner.invoke(main, ["init", "branch-test", "--mode=mixed"])

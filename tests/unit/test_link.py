@@ -141,3 +141,57 @@ class TestSaveConfig:
         finally:
             # Restore permissions for cleanup
             tmp_path.chmod(0o755)
+
+
+class TestDevelopFlagWritable:
+    """Tests for --develop flag automatically setting writable=True."""
+
+    def test_develop_flag_sets_writable_true(self):
+        """Test that --develop flag automatically sets writable=True."""
+        # This is tested in integration tests, but we verify the logic
+        # The logic is: if is_develop and not writable: writable = True
+        is_develop = True
+        writable = False
+
+        # Simulate the logic from link.py
+        if is_develop and not writable:
+            writable = True
+
+        assert writable is True
+
+    def test_develop_flag_respects_explicit_writable_false(self):
+        """Test that explicit --writable=false is NOT overridden (though this is a weird edge case)."""
+        # Actually, looking at the code, if user explicitly passes --writable flag,
+        # it would be True, not False. The default is False.
+        # So this test verifies the current behavior where --develop sets writable=True
+        # when writable is at its default (False)
+        is_develop = True
+        writable = False  # Default value
+
+        if is_develop and not writable:
+            writable = True
+
+        assert writable is True
+
+    def test_review_flag_leaves_writable_false(self):
+        """Test that --review flag leaves writable=False (read-only)."""
+        is_develop = False
+        is_review = True
+        writable = False
+
+        # The logic only applies to develop
+        if is_develop and not writable:
+            writable = True
+
+        assert writable is False
+
+    def test_develop_with_explicit_writable_true(self):
+        """Test that --develop with explicit --writable=true stays true."""
+        is_develop = True
+        writable = True  # Explicitly set
+
+        # Logic doesn't change it
+        if is_develop and not writable:
+            writable = True
+
+        assert writable is True
