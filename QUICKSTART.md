@@ -1,4 +1,4 @@
-# AIR Toolkit - Quick Start (v0.6.0)
+# AIR Toolkit - Quick Start (v0.6.2)
 
 Get started with AIR in 5 minutes - complete workflow with advanced code analysis!
 
@@ -102,6 +102,34 @@ air cache status --format=json          # JSON output
 air cache clear                         # Clear all cached data
 air analyze repos/myapp --no-cache      # Force fresh analysis
 air analyze repos/myapp --clear-cache   # Clear cache, then analyze
+```
+
+### External Library Exclusion (v0.6.2)
+```bash
+# By default, excludes .venv, node_modules, vendor/, build/, etc.
+air analyze repos/myapp                 # Analyzes only your code (fast!)
+air analyze repos/myapp --include-external  # Include vendor libraries
+
+# Clear cache to rerun with new exclusion defaults
+air cache clear
+air analyze repos/myapp                 # Much faster, 98% less noise
+```
+
+### HTML Findings Report (v0.6.2)
+```bash
+air findings --all --html               # Generate rich HTML report
+air findings --all --html --output custom-report.html
+air findings --all --severity=critical --html  # Filtered HTML report
+# Opens: analysis/findings-report.html (by default)
+```
+
+### Shell Completion (v0.6.2)
+```bash
+# Enable tab completion for your shell
+air completion install                  # Auto-detects bash/zsh/fish
+air completion install bash             # Specific shell
+air completion show zsh                 # View completion script
+air completion uninstall                # Remove completion
 ```
 
 ### Task Management
@@ -328,22 +356,25 @@ cat docs/COMMANDS.md
 https://github.com/LiveData-Inc/air-toolkit/issues
 ```
 
-## Quick Reference (v0.6.0)
+## Quick Reference (v0.6.2)
 
 | Command | Description |
 |---------|-------------|
 | `air init [NAME]` | Create or initialize project |
 | `air link add PATH` | Link repository (auto-detects name/type) |
 | `air link add PATH -i` | Interactive linking |
-| `air link list` | List linked resources with status |
-| `air analyze REPO` | Comprehensive code analysis |
-| `air analyze --all` | Analyze all repos (dependency order) |
+| `air link list` | List linked resources with status + writable column |
+| `air analyze REPO` | Comprehensive code analysis (excludes vendor code) |
+| `air analyze REPO --include-external` | Include .venv, node_modules, etc. |
+| `air analyze --all` | Analyze all repos (dependency order, shows progress) |
 | `air analyze --gap LIB` | Gap analysis |
 | `air analyze --no-cache` | Force fresh analysis (skip cache) |
 | `air cache status` | Show cache statistics |
 | `air cache clear` | Clear all cached data |
-| `air wait --all` | Wait for background agents |
+| `air completion install` | Enable shell tab completion |
 | `air findings --all` | Aggregate analysis findings |
+| `air findings --all --html` | Generate rich HTML report |
+| `air wait --all` | Wait for background agents |
 | `air status --agents` | View background agent status |
 | `air review` | Generate code review context |
 | `air pr RESOURCE` | Create pull request |
@@ -356,7 +387,7 @@ https://github.com/LiveData-Inc/air-toolkit/issues
 | `air summary` | Generate summary |
 | `air validate` | Validate project structure |
 | `air validate --fix` | Auto-fix broken symlinks |
-| `air status` | Show project status |
+| `air status` | Show project status (includes writable column) |
 | `air classify` | Auto-classify resources |
 | `air task archive --all` | Archive all tasks |
 

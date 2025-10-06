@@ -1,7 +1,7 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.6.0
-**Last Updated:** 2025-10-04
+**Version:** 0.6.2.post1
+**Last Updated:** 2025-10-05
 
 Complete reference for all AIR commands.
 
@@ -20,6 +20,7 @@ Complete reference for all AIR commands.
   - [air claude](#air-claude)
 - [Agent Coordination Commands](#agent-coordination-commands)
   - [air analyze](#air-analyze)
+  - [air cache](#air-cache)
   - [air status --agents](#air-status---agents)
   - [air findings](#air-findings)
   - [air wait](#air-wait)
@@ -28,6 +29,8 @@ Complete reference for all AIR commands.
   - [air track](#air-track)
   - [air summary](#air-summary)
 - [Utility Commands](#utility-commands)
+  - [air completion](#air-completion)
+  - [air upgrade](#air-upgrade)
   - [air version](#air-version)
 
 ## Global Options
@@ -1653,15 +1656,95 @@ editor: "vim"
 auto_open_tasks: true
 ```
 
-## Shell Completion (Future)
+## air completion
+
+**Added in v0.6.2** - Manage shell completion for air commands.
+
+Enable tab completion for commands, options, resource names, task IDs, and more.
+
+### Usage
 
 ```bash
-# Bash
-eval "$(_AIR_COMPLETE=bash_source air)"
+# Install completion (auto-detects shell)
+air completion install
 
-# Zsh
-eval "$(_AIR_COMPLETE=zsh_source air)"
+# Install for specific shell
+air completion install bash
+air completion install zsh
+air completion install fish
 
-# Fish
-eval (env _AIR_COMPLETE=fish_source air)
+# Show completion script
+air completion show bash
+
+# Uninstall completion
+air completion uninstall
 ```
+
+### Features
+
+- **Auto-detection**: Detects shell from $SHELL environment variable
+- **Dynamic completion**: Completes resource names, task IDs, analyzer focus types
+- **Multi-shell support**: Works with bash, zsh, and fish
+- **Easy installation**: Adds completion to shell config files automatically
+
+### Examples
+
+```bash
+air <TAB>                   # Shows: init, link, analyze, task, status...
+air analyze <TAB>           # Shows: myapp, docs, shared-lib (from config)
+air analyze --focus=<TAB>   # Shows: security, performance, quality...
+air task status <TAB>       # Shows: 20251005-001, 20251005-002...
+air pr <TAB>                # Shows: myapp (only developer resources)
+```
+
+## External Library Exclusion (v0.6.2)
+
+By default, `air analyze` excludes external/vendor libraries for faster, cleaner analysis.
+
+### Default Exclusions
+
+- Python: `.venv`, `venv`, `__pycache__`, `site-packages`
+- JavaScript: `node_modules`, `bower_components`
+- Go: `vendor`, `pkg/mod`
+- Ruby: `vendor/bundle`, `.bundle`
+- General: `.git`, `build`, `dist`, `target`
+
+### Usage
+
+```bash
+# Default: Excludes vendor code (15x faster!)
+air analyze myapp
+
+# Include vendor libraries
+air analyze myapp --include-external
+
+# Clear cache to rerun with new defaults
+air cache clear
+air analyze myapp
+```
+
+## HTML Findings Report (v0.6.2)
+
+Generate rich HTML reports from analysis findings.
+
+### Usage
+
+```bash
+# Generate HTML report
+air findings --all --html
+
+# Custom output path
+air findings --all --html --output custom-report.html
+
+# Filtered report
+air findings --all --severity=critical --html
+```
+
+### Features
+
+- Executive summary with severity/category breakdowns
+- Clickable table of contents
+- Findings grouped by repository
+- Severity color coding
+- Responsive and print-friendly
+- Single HTML file with embedded CSS
