@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.3] - TBD
+## [0.6.3.post1] - 2025-10-06
 
 ### Changed (BREAKING)
 - **Config file location moved**: `air-config.json` now lives in `.air/air-config.json` instead of project root

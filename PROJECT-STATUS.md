@@ -1,6 +1,6 @@
 # AIR Toolkit - Project Status
 
-**Current Version:** 0.6.3 (in development)
+**Current Version:** 0.6.3.post1
 **Last Updated:** 2025-10-06
 **Status:** Production-Ready with Advanced Features ✅
 
@@ -10,7 +10,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 
 **Key Metrics:**
 - **410 tests** - All passing ✅
-- **Version:** 0.6.3 (in development - task archiving & config reorganization)
+- **Version:** 0.6.3.post1 (task archiving & config reorganization)
 - **Distribution:** Available on PyPI (`pip install air-toolkit`)
 - **Commands:** 11 command groups, 35+ subcommands
 - **Analysis:** 5 specialized analyzers with pluggable architecture
@@ -408,7 +408,7 @@ air --help
 - **Oct 5, 2025:** v0.6.1 - Analysis caching (100x faster repeat runs)
 - **Oct 5, 2025:** v0.6.1.post1 - Orphaned repo recovery & config repair
 - **Oct 5, 2025:** v0.6.2 - Shell completion (bash, zsh, fish), HTML findings, external library exclusion
-- **Oct 6, 2025:** v0.6.3 - Task archiving with auto-summary, config moved to .air/ folder (BREAKING)
+- **Oct 6, 2025:** v0.6.3.post1 - Task archiving with auto-summary, config moved to .air/ folder (BREAKING)
 - **Future:** v0.7.0+ - Advanced features and integrations
 
 ---
