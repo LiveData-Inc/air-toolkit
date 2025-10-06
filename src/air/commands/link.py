@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 
 from air.core.models import AirConfig, Resource, ResourceRelationship, ResourceType
-from air.services.filesystem import create_symlink, get_project_root
+from air.services.filesystem import create_symlink, get_config_path, get_project_root
 from air.utils.console import error, info, success, warn
 from air.utils.tables import render_resource_table
 
@@ -26,7 +26,7 @@ def load_config(project_root: Path) -> AirConfig:
     Raises:
         SystemExit: If config cannot be loaded
     """
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
 
     if not config_path.exists():
         error(
@@ -57,7 +57,7 @@ def save_config(project_root: Path, config: AirConfig) -> None:
     Raises:
         SystemExit: If config cannot be saved
     """
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
 
     try:
         with open(config_path, "w") as f:

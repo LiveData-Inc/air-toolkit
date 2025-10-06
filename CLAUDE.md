@@ -4,6 +4,30 @@
 
 This file provides guidance to Claude Code (claude.air/code) when working with code in this repository.
 
+## AIR Toolkit Availability
+
+**IMPORTANT**: The `air` command-line tool is OPTIONAL for working with this project.
+
+**Before using any `air` commands, check availability:**
+```bash
+which air  # Returns path if installed, empty if not
+```
+
+**If `air` is NOT installed:**
+- ✅ Task tracking still works (use Python to create `.air/tasks/*.md` files)
+- ✅ All development can proceed normally
+- ✅ Don't show errors or warnings to the user
+- ✅ Optionally mention once: "💡 Tip: Install `air-toolkit` for enhanced workflow: `pip install air-toolkit`"
+- ❌ Don't block on missing `air` command
+
+**If `air` IS installed:**
+- Use `air status`, `air validate`, `air task`, etc. for streamlined workflow
+- Prefer `--format=json` for machine-readable output
+
+See "Using AIR Commands (When Available)" section below for details.
+
+---
+
 ## AI Task Tracking Protocol
 
 **CRITICAL**: This project uses AI-assisted development tracking.
@@ -62,6 +86,7 @@ YYYY-MM-DD HH:MM
 - **Every code change needs a task** - No exceptions, even for "small" changes
 - **Be automatic, not disruptive** - Create and update tasks silently, don't make it the focus
 - **Include in commits** - Task files should be committed with the code changes
+- **Archive old tasks** - Use `air task archive` to move completed tasks to `.air/tasks/archive/YYYY-MM/` to reduce AI context window usage (v0.6.3)
 
 ### How to Create Task Files
 
@@ -108,42 +133,44 @@ See `.air/README.md` for complete documentation.
 
 ## Using AIR Commands (When Available)
 
-**If `air` is installed**, use these commands to streamline your workflow:
+### Common Use Cases
 
-### When to Use AIR
-
-**ALWAYS check if air is available first:**
+**1. Before starting work:**
 ```bash
-which air  # Check if installed
+# If air is installed:
+air status          # Check project state
+air validate        # Verify structure
+
+# If air is NOT installed:
+# Just start coding - task tracking works via Python (see above)
 ```
 
-**If air is installed, use it for:**
+**2. When user asks for project status:**
+```bash
+# If air is installed:
+air status --format=json  # Get machine-readable output
 
-1. **Before starting work in an AIR project:**
-   ```bash
-   air status          # Check project state
-   air validate        # Verify structure
-   ```
+# If air is NOT installed:
+# Read .air/air-config.json directly and list .air/tasks/ files
+```
 
-2. **When creating a new assessment project:**
-   ```bash
-   air init my-review --mode=review
-   ```
+**3. When creating a new assessment project:**
+```bash
+# If air is installed:
+air init my-review --mode=review
 
-3. **When user asks for project status:**
-   ```bash
-   air status --format=json  # Get machine-readable output
-   ```
+# If air is NOT installed:
+# User must install air-toolkit first, OR manually create structure
+```
 
-4. **When validating project structure:**
-   ```bash
-   air validate --format=json  # Check for issues
-   ```
+**4. When validating project structure:**
+```bash
+# If air is installed:
+air validate --format=json  # Check for issues
 
-**If air is NOT installed:**
-- Continue with manual Python task file creation (as shown above)
-- Mention to user: "💡 Tip: Install air-toolkit for streamlined workflow: `pip install air-toolkit`"
-- Don't let missing tool block progress
+# If air is NOT installed:
+# Manual validation not needed - just ensure .air/tasks/ exists
+```
 
 ### AIR Command Output Formats
 
@@ -272,7 +299,7 @@ src/air/
 
 ### Data Models (Pydantic)
 Key models in `src/air/core/models.py`:
-- `AirConfig`: Project configuration (air-config.json) - formerly AssessmentConfig
+- `AirConfig`: Project configuration (.air/air-config.json) - formerly AssessmentConfig
 - `Resource`: Linked repository metadata with technology stack
 - `Contribution`: Proposed code changes
 - `TaskFile`: Parsed task file metadata
@@ -295,12 +322,15 @@ Enums (all use StrEnum in `src/air/core/enums.py`):
 Created by `air init`:
 ```
 project-name/
-├── air-config.json        # AirConfig (JSON)
+├── .air/air-config.json        # AirConfig (JSON)
 ├── README.md              # Project overview
 ├── CLAUDE.md              # AI guidance
 ├── .gitignore
 ├── .air/                   # Task tracking & agent coordination
-│   ├── tasks/            # YYYYMMDD-NNN-HHMM-description.md (ordinal-based)
+│   ├── tasks/            # Active tasks (YYYYMMDD-NNN-HHMM-description.md)
+│   │   └── archive/      # Archived tasks organized by year-month (v0.6.3)
+│   │       ├── ARCHIVE.md   # Auto-generated summary of all archived tasks
+│   │       └── YYYY-MM/  # e.g., 2025-10/
 │   ├── agents/           # Background agent metadata (v0.6.0)
 │   │   └── {agent-id}/   # Per-agent directory with metadata.json, logs
 │   ├── context/          # Architecture, conventions
@@ -427,7 +457,7 @@ error("Failed to validate", exit_code=1)
 
 1. **StrEnum**: Use `from enum import StrEnum`, not deprecated `(str, Enum)` pattern
 2. **Path expansion**: All paths support `~` (expanded via `expand_path()` validator)
-3. **Configuration**: Stored in `air-config.json`, validates against AssessmentConfig model
+3. **Configuration**: Stored in `.air/air-config.json`, validates against AssessmentConfig model
 4. **Templates**: Will be embedded using importlib.resources (not external directory)
 5. **Git operations**: Use GitPython, not shell commands
 6. **Error handling**: Create AirError subclasses with helpful messages

@@ -41,18 +41,6 @@ This is a **mixed-mode** project supporting both review and development workflow
 
 ## Getting Started
 
-### Prerequisites
-
-**AIR Toolkit (Optional):** This project uses AIR for enhanced workflow management. You can work on this project without installing AIR toolkit - see `.air/README.md` for manual alternatives.
-
-```bash
-# Optional: Install AIR toolkit for streamlined workflow
-pip install air-toolkit
-
-# Verify installation
-air --version
-```
-
 ### Link Repositories
 
 ```bash
@@ -92,7 +80,8 @@ air status
 {{ name }}/
 ├── README.md              # This file
 ├── CLAUDE.md              # AI assistant instructions
-├── air-config.json        # Project configuration
+├── .air/
+│   └── air-config.json    # Project configuration
 {% if mode == "review" or mode == "mixed" -%}
 ├── repos/                 # Linked repositories (symlinks)
 {% endif -%}
@@ -117,6 +106,10 @@ air status
 
 ## Commands
 
+**Note**: The `air` CLI is optional. If not installed, you can still work with this project using manual task file creation (see `.air/README.md`).
+
+**If you have `air` installed** (`pip install air-toolkit`):
+
 ```bash
 # Project management
 air init [name]            # Create new project
@@ -137,6 +130,11 @@ air pr <resource>          # Create pull request
 # Utilities
 air version                # Show version
 ```
+
+**Without `air` installed:**
+- Manually create task files in `.air/tasks/` using the format in `.air/README.md`
+- Edit `.air/air-config.json` directly to manage configuration
+- Use standard git/development tools
 
 ## Goals
 

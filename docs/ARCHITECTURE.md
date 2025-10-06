@@ -205,7 +205,7 @@ class Resource(BaseModel):
 
 
 class AirConfig(BaseModel):
-    """Project configuration (air-config.json)."""
+    """Project configuration (.air/air-config.json)."""
     version: str = "2.0.0"
     name: str
     mode: ProjectMode
@@ -238,7 +238,7 @@ class TaskFile(BaseModel):
 
 ### 3.2 Configuration Schema
 
-**`air-config.json`:**
+**`.air/air-config.json`:**
 ```json
 {
   "$schema": "https://air-toolkit.dev/schemas/assess-config.schema.json",
@@ -293,7 +293,7 @@ class TaskFile(BaseModel):
 - V2 performance improvements
 
 **Use Cases:**
-- Validate `air-config.json`
+- Validate `.air/air-config.json`
 - Parse task file metadata
 - Ensure data integrity
 

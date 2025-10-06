@@ -12,7 +12,7 @@ from rich.table import Table
 
 from air.core.models import AirConfig
 from air.services.agent_manager import list_agents, get_agent_progress
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 from air.utils.console import error, info
 from air.utils.dates import format_relative_time
 from air.utils.tables import render_resource_table
@@ -81,7 +81,7 @@ def status(
         return
 
     # Load config
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
     if not config_path.exists():
         if output_format == "json":
             print(json.dumps({"success": False, "error": "Missing air-config.json"}))

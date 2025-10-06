@@ -7,33 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.3] - 2025-10-05
+## [0.6.3] - TBD
 
-### Improved - Parallel Analysis Progress Display
+### Changed (BREAKING)
+- **Config file location moved**: `air-config.json` now lives in `.air/air-config.json` instead of project root
+  - Keeps all AIR-specific files organized in `.air/` directory
+  - `air upgrade --force` automatically migrates config from old to new location
+  - All commands automatically detect and use correct location for backward compatibility
+  - New projects created with `air init` use new location by default
 
-- **Enhanced Progress Tracking** - Individual analyzer rows with animated spinners
-- Show each analyzer with spinner while running, replaced with ✓ (success) or ✗ (failure)
-- Display total elapsed time after parallel analysis completes
-- Add startup banner showing repo count and analysis mode
-- Animated spinner during dependency graph building phase
-- Color-coded repo names (magenta) for visual consistency
-- Cleaner output with spinners only (removed redundant progress bars)
+### Added - Task Archiving (AI Context Window Optimization)
 
-### Improved - Analysis Report Structure
+**Archive Command** - Organize completed tasks to reduce AI context window usage
+- Archive tasks to `.air/tasks/archive/YYYY-MM/` organized by year and month
+- Helps manage growing task files that can affect AI context window
+- Multiple archiving strategies: by-month (default), by-quarter, or flat
+- Commands:
+  - `air task archive TASK_ID` - Archive specific task
+  - `air task archive --all` - Archive all tasks
+  - `air task archive --before=YYYY-MM-DD` - Archive before date
+  - `air task archive --dry-run` - Preview without archiving
+  - `air task restore TASK_ID` - Restore archived task
+  - `air task archive-status` - View archive statistics
+- Archive structure: `.air/tasks/archive/YYYY-MM/`
+- Maintains full history while keeping active tasks manageable
+- `air task list` includes `--all` and `--archived` flags for viewing archived tasks
+- `air task status` can read from both active and archived tasks
+- **Auto-generated archive summary** - `ARCHIVE.md` file automatically created/updated with:
+  - Table of contents with links to each time period
+  - Organized index of all archived tasks by month/quarter
+  - Task titles, dates, statuses, and prompt summaries
+  - Quick navigation to understand project history without reading individual files
 
-- **Restructured Findings Format** - Separate classification metadata from findings
-- New JSON structure: `{repository, classification, findings}`
-- Classification data now at top level (not as individual finding entry)
-- Fixed total findings count to exclude summary entries
-- Enables better report rendering with classification table at top
+### Added
+- `get_config_path()` helper function for consistent config path resolution across codebase
+- Migration logic in `air upgrade` to move config file from root to `.air/`
+- Task archive service with flexible organization strategies
+- Archive statistics tracking by month and quarter
 
-### Fixed - Analysis Display Issues
-
-- Fix AttributeError when displaying repository names from dependency graph
-- Remove deprecated 'contributions' directory from validation checks
-- Correct total findings count calculation (was including summary entries)
-
-## [0.6.2.post2] - 2025-10-05
+### Fixed
+- All commands now use centralized config path resolution
+- Project structure validation updated for new config location
 
 ### Improved - Show Writable Status in Resource Tables
 

@@ -1,43 +1,20 @@
 # AIR Toolkit - Project Status
 
-**Current Version:** 0.6.3
-**Last Updated:** 2025-10-05
+**Current Version:** 0.6.3 (in development)
+**Last Updated:** 2025-10-06
 **Status:** Production-Ready with Advanced Features ✅
 
 ## Executive Summary
 
-AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, parallel agent coordination, and enhanced progress tracking.
+AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, and parallel agent coordination.
 
 **Key Metrics:**
 - **410 tests** - All passing ✅
-- **Version:** 0.6.3 (production-ready)
+- **Version:** 0.6.3 (in development - task archiving & config reorganization)
 - **Distribution:** Available on PyPI (`pip install air-toolkit`)
-- **Commands:** 11 command groups, 30+ subcommands
+- **Commands:** 11 command groups, 35+ subcommands
 - **Analysis:** 5 specialized analyzers with pluggable architecture
 - **Languages:** Python 3.10+, cross-platform (macOS, Linux, Windows)
-
-## What's New in v0.6.3
-
-### ✅ Enhanced Parallel Analysis UX
-
-**Improved Progress Display:**
-- Individual analyzer rows with animated spinners (⠋) while running
-- Spinners replaced with ✓ (success) or ✗ (failure) upon completion
-- Total elapsed time displayed after parallel analysis
-- Startup banner showing repo count and analysis mode
-- Animated spinner during dependency graph building
-- All analyzer rows stay visible throughout analysis
-
-**Restructured Findings Format:**
-- New JSON structure: `{repository, classification, findings}`
-- Classification data at top level (separate from findings array)
-- Enables better report rendering with classification table at top
-- Fixed total findings count to exclude summary entries
-
-**Bug Fixes:**
-- Fixed AttributeError when displaying repository names from graph
-- Removed deprecated 'contributions' directory from validation
-- Corrected total findings calculation
 
 ## What's Working (v0.6.0)
 
@@ -59,10 +36,13 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 
 **Task Tracking:**
 - `air task new DESCRIPTION` - Create timestamped task files (YYYYMMDD-NNN-HHMM format)
-- `air task list` - Filter, sort, search tasks
-- `air task status ID` - View detailed task information
+- `air task list` - Filter, sort, search tasks (includes `--all` and `--archived` flags)
+- `air task status ID` - View detailed task information (reads from active and archived)
 - `air task complete ID` - Mark tasks complete
-- `air task archive` - Archive and restore system
+- `air task archive` - Archive tasks to `.air/tasks/archive/YYYY-MM/` with auto-generated summary
+- `air task restore ID` - Restore archived tasks back to active
+- `air task archive-status` - View archive statistics
+- Auto-generated `ARCHIVE.md` summary with table of contents and task index
 
 **Validation & Status:**
 - `air validate` - Check project structure and symlinks
@@ -102,7 +82,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 - Detects 11+ programming languages
 - Detects 10+ major frameworks
 - Confidence scoring and technology stack generation
-- `air classify --update` - Update air-config.json automatically
+- `air classify --update` - Update .air/air-config.json automatically
 
 ### ✅ Agent Coordination (v0.6.0)
 
@@ -149,7 +129,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 
 **Orphaned Repository Recovery:**
 - `air upgrade` detects symlinks in `repos/` not listed in config
-- Automatically creates air-config.json if missing
+- Automatically creates .air/air-config.json if missing
 - Classifies and recovers orphaned repos with `--force`
 - Handles corrupted or manually edited configs
 - Defaults recovered repos to review-only (safe)
@@ -427,7 +407,8 @@ air --help
 - **Oct 4, 2025:** v0.6.0 - Deep analysis & agent coordination
 - **Oct 5, 2025:** v0.6.1 - Analysis caching (100x faster repeat runs)
 - **Oct 5, 2025:** v0.6.1.post1 - Orphaned repo recovery & config repair
-- **Future:** v0.6.2 - Shell completion (bash, zsh, fish)
+- **Oct 5, 2025:** v0.6.2 - Shell completion (bash, zsh, fish), HTML findings, external library exclusion
+- **Oct 6, 2025:** v0.6.3 - Task archiving with auto-summary, config moved to .air/ folder (BREAKING)
 - **Future:** v0.7.0+ - Advanced features and integrations
 
 ---

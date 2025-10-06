@@ -14,7 +14,7 @@ from typing import Any
 import click
 
 from air.core.models import ResourceRelationship
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 
 
 def complete_resource_names(
@@ -35,7 +35,7 @@ def complete_resource_names(
         if not project_root:
             return []
 
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if not config_path.exists():
             return []
 
@@ -70,7 +70,7 @@ def complete_developer_resources(
         if not project_root:
             return []
 
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if not config_path.exists():
             return []
 

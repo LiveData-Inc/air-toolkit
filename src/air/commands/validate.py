@@ -9,7 +9,12 @@ from rich.console import Console
 from rich.table import Table
 
 from air.core.models import AirConfig
-from air.services.filesystem import get_project_root, is_symlink_valid, validate_project_structure
+from air.services.filesystem import (
+    get_config_path,
+    get_project_root,
+    is_symlink_valid,
+    validate_project_structure,
+)
 from air.utils.console import error, info, success, warn
 
 console = Console()
@@ -72,7 +77,7 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
 
     # Check structure
     if check_type in ["structure", "all"]:
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if config_path.exists():
             try:
                 with open(config_path) as f:
@@ -87,7 +92,7 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
 
     # Check config
     if check_type in ["config", "all"]:
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if config_path.exists():
             try:
                 with open(config_path) as f:
@@ -103,7 +108,7 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
     fixed = []
     if check_type in ["links", "all"]:
         # First, check that configured resources actually exist
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if config_path.exists():
             try:
                 with open(config_path) as f:

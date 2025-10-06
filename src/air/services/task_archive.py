@@ -286,3 +286,117 @@ def get_archive_stats(archive_root: Path) -> dict[str, int]:
                     stats["by_quarter"][parent] = stats["by_quarter"].get(parent, 0) + 1
 
     return stats
+
+
+def generate_archive_summary(archive_root: Path) -> str:
+    """Generate markdown summary of all archived tasks.
+
+    Args:
+        archive_root: Root archive directory
+
+    Returns:
+        Markdown formatted summary of archived tasks
+    """
+    from air.services.task_parser import parse_task_file
+
+    if not archive_root.exists():
+        return "# Archive Summary\n\nNo archived tasks yet.\n"
+
+    # Collect all archived tasks with parsed info
+    tasks_by_period: dict[str, list[tuple[Path, dict]]] = {}
+
+    for task_file in sorted(archive_root.rglob("*.md")):
+        if not task_file.is_file():
+            continue
+
+        try:
+            task_info = parse_task_file(task_file)
+            # Get period from parent directory (e.g., "2025-10")
+            period = task_file.parent.name
+            if period == archive_root.name:
+                period = "Uncategorized"
+
+            if period not in tasks_by_period:
+                tasks_by_period[period] = []
+
+            tasks_by_period[period].append((task_file, task_info))
+        except Exception:
+            # Skip files that can't be parsed
+            continue
+
+    # Generate summary
+    lines = ["# Archive Summary", ""]
+    lines.append("Summary of all archived tasks organized by time period.")
+    lines.append("")
+
+    # Stats
+    total = sum(len(tasks) for tasks in tasks_by_period.values())
+    lines.append(f"**Total Archived Tasks:** {total}")
+    lines.append("")
+
+    # Table of Contents
+    lines.append("## Table of Contents")
+    lines.append("")
+    for period in sorted(tasks_by_period.keys(), reverse=True):
+        count = len(tasks_by_period[period])
+        anchor = period.lower().replace(" ", "-")
+        lines.append(f"- [{period}](#{anchor}) ({count} tasks)")
+    lines.append("")
+
+    # Details by period
+    for period in sorted(tasks_by_period.keys(), reverse=True):
+        tasks = tasks_by_period[period]
+        anchor = period.lower().replace(" ", "-")
+        lines.append(f"## {period}")
+        lines.append("")
+        lines.append(f"**{len(tasks)} tasks**")
+        lines.append("")
+
+        # Status emoji
+        status_emoji = {
+            "success": "✅",
+            "in_progress": "⏳",
+            "partial": "⚠️",
+            "blocked": "🚫",
+        }
+
+        # Sort by date (newest first)
+        sorted_tasks = sorted(
+            tasks,
+            key=lambda t: t[1].timestamp or t[0].name,
+            reverse=True
+        )
+
+        for task_file, task_info in sorted_tasks:
+            emoji = status_emoji.get(task_info.outcome or "in_progress", "❓")
+            title = task_info.title or task_file.stem
+            date = task_info.date or "Unknown date"
+            rel_path = task_file.relative_to(archive_root)
+
+            lines.append(f"### {emoji} {title}")
+            lines.append("")
+            lines.append(f"- **File:** `{rel_path}`")
+            lines.append(f"- **Date:** {date}")
+            lines.append(f"- **Status:** {task_info.outcome or 'in_progress'}")
+
+            if task_info.prompt:
+                lines.append(f"- **Prompt:** {task_info.prompt[:100]}{'...' if len(task_info.prompt) > 100 else ''}")
+
+            lines.append("")
+
+        lines.append("---")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def update_archive_summary(archive_root: Path) -> None:
+    """Update the ARCHIVE.md summary file.
+
+    Args:
+        archive_root: Root archive directory
+    """
+    summary_path = archive_root / "ARCHIVE.md"
+    summary_content = generate_archive_summary(archive_root)
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(summary_content)

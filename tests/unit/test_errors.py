@@ -97,11 +97,11 @@ class TestConfigurationError:
         """Test error message format."""
         error = ConfigurationError("Invalid config")
         assert error.message == "Invalid config"
-        assert "air-config.json" in error.hint
+        assert ".air/air-config.json" in error.hint
 
     def test_with_config_path(self):
         """Test error with config path."""
-        config_path = Path("/tmp/air-config.json")
+        config_path = Path("/tmp/.air/air-config.json")
         error = ConfigurationError("Invalid config", config_path=config_path)
         assert str(config_path) in error.details
 

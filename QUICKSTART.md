@@ -55,7 +55,7 @@ You now have a complete AIR project:
 
 ```
 my-review/
-├── air-config.json      # Project configuration
+├── .air/air-config.json      # Project configuration
 ├── README.md            # Project overview
 ├── CLAUDE.md            # AI assistant instructions
 ├── .air/                # Task tracking & agent coordination

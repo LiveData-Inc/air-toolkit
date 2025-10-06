@@ -137,7 +137,7 @@ def test_render_ai_templates():
 
 
 def test_create_config_file():
-    """Test creating air-config.json content."""
+    """Test creating .air/air-config.json content."""
     config_json = create_config_file(
         project_name="test-project",
         mode="review",

@@ -227,20 +227,9 @@ def findings(
     for findings_file in analysis_dir.glob("*-findings.json"):
         try:
             findings_data = json.loads(findings_file.read_text())
-
-            # Handle both old format (array) and new format (object with findings array)
-            if isinstance(findings_data, dict):
-                # New format: {repository, classification, findings}
-                repo_name = findings_data.get("repository", findings_file.stem.replace("-findings", ""))
-                findings_array = findings_data.get("findings", [])
-            else:
-                # Old format: array of findings
-                repo_name = findings_file.stem.replace("-findings", "")
-                findings_array = findings_data
-
-            for finding in findings_array:
+            for finding in findings_data:
                 # Add source file info
-                finding["source"] = repo_name
+                finding["source"] = findings_file.stem.replace("-findings", "")
                 all_findings_list.append(finding)
         except json.JSONDecodeError:
             # Skip corrupted files

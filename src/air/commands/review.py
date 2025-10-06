@@ -8,7 +8,7 @@ from typing import Any
 import click
 from rich.console import Console
 
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 from air.utils.console import error, info
 
 console = Console()
@@ -119,11 +119,11 @@ def get_air_context() -> dict[str, Any]:
 
     context = {
         "project_root": str(project_root),
-        "config_exists": (project_root / "air-config.json").exists(),
+        "config_exists": get_config_path(project_root).exists(),
     }
 
     # Load config if available
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
     if config_path.exists():
         try:
             with open(config_path) as f:

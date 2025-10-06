@@ -15,6 +15,7 @@ from air.services.task_archive import (
     get_tasks_before_date,
     list_tasks,
     restore_task,
+    update_archive_summary,
 )
 from air.utils.completion import complete_task_ids
 from air.utils.console import error, success
@@ -633,6 +634,9 @@ def task_archive(
     if dry_run:
         console.print(f"\n[dim]Dry run: {len(tasks_to_archive)} tasks would be archived[/dim]")
     else:
+        # Update archive summary
+        update_archive_summary(archive_root)
+        console.print(f"[dim]Updated archive summary: {(archive_root / 'ARCHIVE.md').relative_to(project_root)}[/dim]")
         success(f"Archived {archived_count} tasks to {archive_root.relative_to(project_root)}/")
 
 
@@ -662,6 +666,11 @@ def task_restore(task_ids: tuple[str, ...]) -> None:
         restored_path = restore_task(task_id, tasks_root, archive_root)
         console.print(f"[green]✓[/green] Restored: {restored_path.name}")
         restored_count += 1
+
+    # Update archive summary after restoration
+    if restored_count > 0:
+        update_archive_summary(archive_root)
+        console.print(f"[dim]Updated archive summary: {(archive_root / 'ARCHIVE.md').relative_to(project_root)}[/dim]")
 
     success(f"Restored {restored_count} tasks from archive")
 

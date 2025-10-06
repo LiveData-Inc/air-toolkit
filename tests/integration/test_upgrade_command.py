@@ -38,7 +38,7 @@ class TestUpgradeCommand:
             "resources": {"review": [], "develop": []},
             "goals": [],
         }
-        (project_dir / "air-config.json").write_text(json.dumps(config, indent=2))
+        (project_dir / ".air/air-config.json").write_text(json.dumps(config, indent=2))
 
         # Create README
         (project_dir / "README.md").write_text("# Old Project\n")
@@ -103,7 +103,7 @@ class TestUpgradeCommand:
 
         assert result.exit_code == 0
         # Should detect missing version field
-        assert "air-config.json" in result.output or "Update" in result.output
+        assert ".air/air-config.json" in result.output or "Update" in result.output
 
     def test_upgrade_force_creates_directories(self, runner, old_project):
         """Test upgrade --force creates missing directories."""
@@ -145,7 +145,7 @@ class TestUpgradeCommand:
         os.chdir(old_project)
 
         # Verify config missing version field
-        config_before = json.loads((old_project / "air-config.json").read_text())
+        config_before = json.loads((old_project / ".air/air-config.json").read_text())
         assert "version" not in config_before
 
         result = runner.invoke(main, ["upgrade", "--force"])
@@ -153,7 +153,7 @@ class TestUpgradeCommand:
         assert result.exit_code == 0
 
         # Verify version field added
-        config_after = json.loads((old_project / "air-config.json").read_text())
+        config_after = json.loads((old_project / ".air/air-config.json").read_text())
         assert "version" in config_after
         assert config_after["version"] == "2.0.0"
 
@@ -173,7 +173,7 @@ class TestUpgradeCommand:
         assert len(backup_dirs) == 1
 
         backup_dir = backup_dirs[0]
-        assert (backup_dir / "air-config.json").exists()
+        assert (backup_dir / ".air/air-config.json").exists()
 
     def test_upgrade_no_backup_flag(self, runner, old_project):
         """Test upgrade --no-backup skips backup."""
@@ -265,7 +265,7 @@ class TestUpgradeEdgeCases:
 
         # Should succeed and create config
         assert result.exit_code == 0
-        assert (project_dir / "air-config.json").exists()
+        assert (project_dir / ".air/air-config.json").exists()
 
         # Should show recovery needed for the orphaned repo
         output = result.output.lower()
@@ -276,7 +276,7 @@ class TestUpgradeEdgeCases:
         project_dir = tmp_path / "invalid-project"
         project_dir.mkdir()
         (project_dir / ".air").mkdir()
-        (project_dir / "air-config.json").write_text("{ invalid json }")
+        (project_dir / ".air/air-config.json").write_text("{ invalid json }")
 
         os.chdir(project_dir)
         result = runner.invoke(main, ["upgrade"])
@@ -300,7 +300,7 @@ class TestUpgradeEdgeCases:
             "version": "2.0.0",
             "resources": {"review": [], "develop": []},
         }
-        (project_dir / "air-config.json").write_text(json.dumps(config))
+        (project_dir / ".air/air-config.json").write_text(json.dumps(config))
 
         os.chdir(project_dir)
         result = runner.invoke(main, ["upgrade"])
@@ -338,7 +338,7 @@ class TestUpgradeEdgeCases:
             "version": "2.0.0",
             "resources": {"review": [], "develop": []},
         }
-        (project_dir / "air-config.json").write_text(json.dumps(config))
+        (project_dir / ".air/air-config.json").write_text(json.dumps(config))
 
         os.chdir(project_dir)
         result = runner.invoke(main, ["upgrade"])
@@ -375,7 +375,7 @@ class TestUpgradeEdgeCases:
             "version": "2.0.0",
             "resources": {"review": [], "develop": []},
         }
-        config_file = project_dir / "air-config.json"
+        config_file = project_dir / ".air/air-config.json"
         config_file.write_text(json.dumps(config))
 
         os.chdir(project_dir)
@@ -425,7 +425,7 @@ class TestUpgradeEdgeCases:
             "version": "2.0.0",
             "resources": {"review": [], "develop": []},
         }
-        (project_dir / "air-config.json").write_text(json.dumps(config))
+        (project_dir / ".air/air-config.json").write_text(json.dumps(config))
 
         os.chdir(project_dir)
         result = runner.invoke(main, ["upgrade"])

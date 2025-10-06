@@ -127,7 +127,7 @@ air summary
 - Detects 10 major frameworks (Django, React, Rails, Spring, etc.)
 - Classifies as: implementation, documentation, library, or service
 - Confidence scoring and verbose output
-- Updates air-config.json automatically
+- Updates .air/air-config.json automatically
 
 ### Deep Code Analysis (v0.6.0) ✅
 
@@ -178,7 +178,7 @@ air summary
 - **Tab Completion** - Complete commands, options, and dynamic arguments
 - Multi-shell support: bash, zsh, and fish
 - **Dynamic Completion**:
-  - Resource names from air-config.json
+  - Resource names from .air/air-config.json
   - Task IDs from .air/tasks/ directory
   - Analyzer focus types (security, performance, etc.)
   - Developer resources for PR commands
@@ -323,7 +323,7 @@ air summary [OPTIONS]                # Generate summary
 # Resource Classification
 air classify [OPTIONS]               # Classify resources
   --verbose                          # Show detection details
-  --update                           # Update air-config.json
+  --update                           # Update .air/air-config.json
 air classify RESOURCE                # Classify specific resource
 
 # Pull Requests (v0.3.1)

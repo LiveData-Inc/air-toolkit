@@ -35,7 +35,9 @@ This `.air/` folder implements a comprehensive tracking system for AI-assisted d
 │   └── archive-tasks.py       # Archive old tasks
 └── tasks/                      # Individual task logs
     ├── TASKS.md               # Index/backlog of tasks
-    └── YYYYMMDD-HHMM-description.md
+    ├── YYYYMMDD-HHMM-description.md  # Active tasks
+    └── archive/               # Archived tasks (v0.6.3)
+        └── YYYY-MM/          # Organized by year-month
 ```
 
 ## 📝 Task Logging Protocol
@@ -273,24 +275,78 @@ To understand project history:
 4. Search for specific work: `python .air/scripts/search-tasks.py "keyword"`
 5. Review context files in `.air/context/` for patterns
 
-## 📦 Archive Strategy
+## 📦 Archive Strategy (v0.6.3+)
 
-When `.air/tasks/` grows large (>100 files):
+AIR toolkit includes automated task archiving to reduce AI context window usage.
 
-1. Create archive directories:
-   ```
-   .air/archives/
-   ├── 2025-Q1/
-   ├── 2025-Q2/
-   └── 2025-Q3/
-   ```
+### Using `air task archive`
 
-2. Move older tasks (keep recent 50-100 in main folder)
-3. Update AI_CHANGELOG.md to reference archived periods
-4. Keep archives in git for complete history
-5. Update TASKS.md index to note archived tasks
+```bash
+# Archive specific tasks
+air task archive 20251003-1200
 
-**Quick command**: `python .air/scripts/archive-tasks.py 2025-Q1`
+# Archive all tasks
+air task archive --all
+
+# Archive tasks before a date
+air task archive --before=2025-10-01
+
+# Preview what would be archived
+air task archive --all --dry-run
+
+# Use different organization strategy
+air task archive --all --strategy=by-quarter
+```
+
+### Archive Structure
+
+Tasks are organized by default in year-month folders:
+```
+.air/tasks/archive/
+├── ARCHIVE.md            # Auto-generated summary of all archived tasks
+├── 2025-10/
+│   ├── 20251003-001-1200-task.md
+│   └── 20251003-002-1430-another-task.md
+├── 2025-09/
+└── 2025-08/
+```
+
+The `ARCHIVE.md` file is automatically generated and updated whenever tasks are archived or restored. It provides:
+- Table of contents with links to each time period
+- Summary of all archived tasks organized by month/quarter
+- Task titles, dates, statuses, and prompts
+- Quick navigation to understand project history without reading individual files
+
+### Archive Strategies
+
+- **by-month** (default): `.air/tasks/archive/YYYY-MM/`
+- **by-quarter**: `.air/tasks/archive/YYYY-QN/`
+- **flat**: `.air/tasks/archive/` (no subdirectories)
+
+### Restoring Tasks
+
+```bash
+# Restore archived tasks back to active
+air task restore 20251003-1200
+```
+
+### Archive Statistics
+
+```bash
+# View archive stats
+air task archive-status
+
+# JSON output
+air task archive-status --format=json
+```
+
+### Best Practices
+
+1. **Archive regularly** - Keep active tasks under 50-100 files
+2. **Archive completed tasks** - Move finished work out of AI context
+3. **Keep archives in git** - Maintain complete history
+4. **Use `--all` flag** - Bulk archive when needed
+5. **Preview first** - Use `--dry-run` to see what will be archived
 
 ## 🎯 Project Customization
 

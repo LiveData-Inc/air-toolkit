@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.table import Table
 
 from air.core.models import AirConfig, ResourceRelationship
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 from air.services.pr_generator import (
     check_gh_cli_available,
     copy_contributions_to_resource,
@@ -90,7 +90,7 @@ def pr(
         sys.exit(1)
 
     # Load config
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
     try:
         with open(config_path) as f:
             config = AirConfig.model_validate_json(f.read())

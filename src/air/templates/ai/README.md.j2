@@ -2,19 +2,6 @@
 
 This directory tracks all AI-assisted development work for this project.
 
-## ⚠️ Important: AIR Toolkit is Optional
-
-This project uses the `.air/` directory structure for AI-assisted development tracking. **You do NOT need to install `air-toolkit` to work on this project.**
-
-- **With air-toolkit**: Use `air` commands for streamlined workflow
-- **Without air-toolkit**: Use Python scripts or manual task file creation (examples below)
-- **Claude Code**: Will automatically adapt based on whether `air` is installed
-
-To install air-toolkit (optional):
-```bash
-pip install air-toolkit
-```
-
 ## Structure
 
 ```
@@ -62,7 +49,9 @@ YYYY-MM-DD HH:MM UTC
 
 ## Creating Task Files
 
-### Using Python (Recommended for AI)
+### Using Python (Recommended for AI and when `air` is not installed)
+
+**This method works without installing `air-toolkit`:**
 
 ```python
 from datetime import datetime, timezone
@@ -96,20 +85,18 @@ content = f\"\"\"# Task: {description.replace('-', ' ').title()}
 Path(filename).write_text(content)
 ```
 
-### Using AIR Command (Optional - For Humans)
+### Using AIR Command (Optional - requires `air-toolkit` installation)
 
-**Note:** The `air` command is optional. If you don't have `air-toolkit` installed, use the Python method above instead.
+**If you have installed `air-toolkit` (`pip install air-toolkit`):**
 
 ```bash
-# Check if air is installed
-which air
-
-# If installed, use it:
 air task new "description of task"
-
-# If not installed, install with:
-pip install air-toolkit
 ```
+
+**If `air` is not installed:**
+- Use the Python method above
+- All task tracking functionality works the same
+- No errors or warnings will be shown
 
 ## Context Files
 

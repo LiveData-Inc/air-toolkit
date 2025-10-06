@@ -6,7 +6,12 @@ from pathlib import Path
 import click
 
 from air.core.models import ProjectMode, ProjectStructure
-from air.services.filesystem import create_directory, create_file, get_project_root
+from air.services.filesystem import (
+    create_directory,
+    create_file,
+    get_config_path,
+    get_project_root,
+)
 from air.services.templates import (
     create_config_file,
     get_context_template,
@@ -163,9 +168,9 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
         file_path = project_dir / filename
         create_file(file_path, content, overwrite=True)
 
-    # Config file
+    # Config file (use new location .air/air-config.json)
     config_content = create_config_file(project_name, mode, created)
-    config_path = project_dir / "air-config.json"
+    config_path = get_config_path(project_dir)
     create_file(config_path, config_content, overwrite=True)
 
     # AI tracking templates
@@ -311,7 +316,7 @@ def _init_interactive() -> None:
     # Add goals to config if provided
     if goals:
         project_dir = Path.cwd() / project_name if create_dir else Path.cwd()
-        config_path = project_dir / "air-config.json"
+        config_path = get_config_path(project_dir)
 
         import json
         with open(config_path) as f:

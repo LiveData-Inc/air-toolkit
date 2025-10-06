@@ -47,7 +47,7 @@ class TestInitCommand:
         assert project_dir.exists()
         assert (project_dir / "README.md").exists()
         assert (project_dir / "CLAUDE.md").exists()
-        assert (project_dir / "air-config.json").exists()
+        assert (project_dir / ".air/air-config.json").exists()
         assert (project_dir / ".gitignore").exists()
 
         # Check directories
@@ -89,8 +89,9 @@ class TestInitCommand:
         assert result.exit_code == 0
 
         project_dir = isolated_project / "mixed-proj"
-        # Mixed mode: repos for external assessment
+        # Mixed mode: repos for external assessment, contributions for PRs
         assert (project_dir / "repos").exists()
+        assert (project_dir / "contributions").exists()
         assert (project_dir / "analysis").exists()
         assert (project_dir / ".air").exists()
 
@@ -99,7 +100,7 @@ class TestInitCommand:
         result = runner.invoke(main, ["init", ".", "--mode=review"])
 
         assert result.exit_code == 0
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
 
     def test_init_no_track(self, runner, isolated_project):
         """Test air init without task tracking."""
@@ -117,7 +118,7 @@ class TestInitCommand:
 
         assert result.exit_code == 0
 
-        config_path = isolated_project / "config-test" / "air-config.json"
+        config_path = isolated_project / "config-test" / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -161,10 +162,10 @@ class TestInitCommand:
         # Check project was created
         project_dir = isolated_project / "interactive-test"
         assert project_dir.exists()
-        assert (project_dir / "air-config.json").exists()
+        assert (project_dir / ".air/air-config.json").exists()
 
         # Check config contains goals
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -211,7 +212,7 @@ class TestInitCommand:
 
         assert result.exit_code == 0
         assert "Using current directory" in result.output
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
 
 
 class TestValidateCommand:
@@ -840,7 +841,7 @@ class TestInitInExistingProject:
         assert "AIR initialized in" in result.output
 
         # Check project structure in current directory
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
         assert (isolated_project / "README.md").exists()
         assert (isolated_project / ".air").exists()
 
@@ -852,7 +853,7 @@ class TestInitInExistingProject:
         assert "review" in result.output
 
         # Should be in current directory
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
         assert (isolated_project / "repos").exists()
         assert not (isolated_project / "develop").exists()
 
@@ -870,7 +871,7 @@ class TestInitInExistingProject:
         assert "existing files" in result.output
 
         # AIR files should be created alongside existing ones
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
         assert (isolated_project / ".air").exists()
         # Original files should still exist
         assert (isolated_project / "src/main.py").exists()
@@ -884,7 +885,7 @@ class TestInitInExistingProject:
 
         project_dir = isolated_project / "new-proj"
         assert project_dir.exists()
-        assert (project_dir / "air-config.json").exists()
+        assert (project_dir / ".air/air-config.json").exists()
 
     def test_init_create_dir_without_name_error(self, runner, isolated_project):
         """Test air init --create-dir without name fails."""
@@ -914,7 +915,7 @@ class TestInitInExistingProject:
         # Should create new directory
         project_dir = isolated_project / "my-project"
         assert project_dir.exists()
-        assert (project_dir / "air-config.json").exists()
+        assert (project_dir / ".air/air-config.json").exists()
 
     def test_init_dot_in_current_directory(self, runner, isolated_project):
         """Test air init . initializes current directory."""
@@ -923,7 +924,7 @@ class TestInitInExistingProject:
         assert result.exit_code == 0
         assert "Initializing AIR in current directory" in result.output
 
-        assert (isolated_project / "air-config.json").exists()
+        assert (isolated_project / ".air/air-config.json").exists()
 
     def test_init_non_empty_directory_error(self, runner, isolated_project):
         """Test creating new project in non-empty directory fails."""
@@ -972,7 +973,7 @@ class TestLinkCommand:
         assert link_path.resolve() == source_dir
 
         # Verify config updated
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1010,7 +1011,7 @@ class TestLinkCommand:
         assert link_path.is_symlink()
 
         # Verify config
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1039,7 +1040,7 @@ class TestLinkCommand:
         assert "Linked review resource: service-lib" in result.output
 
         # Verify type in config
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1104,7 +1105,7 @@ class TestLinkCommand:
         assert "Linked review resource: lib" in result.output
 
         # Verify it's in review category
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1137,7 +1138,7 @@ class TestLinkCommand:
         assert "Linked review resource: python-lib" in result.output
 
         # Verify config has detected type
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1174,7 +1175,7 @@ class TestLinkCommand:
         assert link_path.resolve() == source_dir
 
         # Verify config uses folder name
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1206,7 +1207,7 @@ class TestLinkCommand:
         assert link_path.exists()
         assert link_path.is_symlink()
 
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1253,7 +1254,7 @@ class TestLinkCommand:
         assert "Linked develop resource: source-repo" in result.output
 
         # Verify writable field is set to True
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1282,7 +1283,7 @@ class TestLinkCommand:
         assert result.exit_code == 0
 
         # Verify writable field defaults to False
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1311,7 +1312,7 @@ class TestLinkCommand:
         assert result.exit_code == 0
 
         # Verify branch field is set correctly
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1340,7 +1341,7 @@ class TestLinkCommand:
         assert result.exit_code == 0
 
         # Verify branch field defaults to 'main'
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1578,7 +1579,7 @@ class TestPRCommand:
         assert not link_path.exists()
 
         # Verify config updated
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -1607,7 +1608,7 @@ class TestPRCommand:
         assert link_path.exists()
 
         # But config updated
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             config = json.load(f)
 
@@ -2501,7 +2502,7 @@ class TestClassifyCommand:
         assert "Languages:" in result.output or "Reasoning:" in result.output
 
     def test_classify_update_config(self, runner, isolated_project):
-        """Test --update flag updates air-config.json."""
+        """Test --update flag updates .air/air-config.json."""
         runner.invoke(main, ["init", "classify-update"])
         project_dir = isolated_project / "classify-update"
 
@@ -2525,7 +2526,7 @@ class TestClassifyCommand:
         assert result.exit_code == 0
 
         # Verify config was updated
-        config_path = project_dir / "air-config.json"
+        config_path = project_dir / ".air/air-config.json"
         with open(config_path) as f:
             import json
             config = json.load(f)

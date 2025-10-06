@@ -154,9 +154,10 @@ def ensure_empty_directory(path: Path) -> None:
 
 
 def get_project_root() -> Path | None:
-    """Find the AIR project root by looking for air-config.json.
+    """Find the AIR project root by looking for .air/air-config.json.
 
-    Searches current directory and parents.
+    Searches current directory and parents for both new location (.air/air-config.json)
+    and legacy location (air-config.json in root).
 
     Returns:
         Path to project root, or None if not found
@@ -165,8 +166,14 @@ def get_project_root() -> Path | None:
 
     # Check current directory and all parents
     for directory in [current] + list(current.parents):
-        config_file = directory / "air-config.json"
-        if config_file.exists():
+        # Check new location first (.air/air-config.json)
+        new_config_file = directory / ".air" / "air-config.json"
+        if new_config_file.exists():
+            return directory
+
+        # Check legacy location for backward compatibility
+        legacy_config_file = directory / "air-config.json"
+        if legacy_config_file.exists():
             return directory
 
         # Also check for .air directory as indicator
@@ -177,8 +184,35 @@ def get_project_root() -> Path | None:
     return None
 
 
+def get_config_path(project_root: Path) -> Path:
+    """Get the path to air-config.json for a project.
+
+    Checks new location (.air/air-config.json) first, falls back to legacy location
+    (air-config.json in root) for backward compatibility.
+
+    Args:
+        project_root: Path to project root
+
+    Returns:
+        Path to config file (may not exist yet for new projects)
+    """
+    new_config = project_root / ".air" / "air-config.json"
+    legacy_config = project_root / "air-config.json"
+
+    # Return existing config if found, otherwise return new location
+    if new_config.exists():
+        return new_config
+    elif legacy_config.exists():
+        return legacy_config
+    else:
+        # For new projects, return the new location
+        return new_config
+
+
 def load_config(project_root: Path) -> "AirConfig":
     """Load AIR configuration from air-config.json.
+
+    Uses get_config_path() to find config in new or legacy location.
 
     Args:
         project_root: Path to project root
@@ -191,9 +225,14 @@ def load_config(project_root: Path) -> "AirConfig":
     """
     from air.core.models import AirConfig
 
-    config_file = project_root / "air-config.json"
+    config_file = get_config_path(project_root)
+
     if not config_file.exists():
-        error(f"Config file not found: {config_file}", exit_code=1)
+        error(
+            f"Config file not found at {config_file}",
+            hint="Run 'air upgrade --force' to migrate from legacy location or 'air init' to create a new project",
+            exit_code=1,
+        )
 
     try:
         config_data = json.loads(config_file.read_text())

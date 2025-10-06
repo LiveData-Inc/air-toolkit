@@ -129,11 +129,12 @@ def test_is_symlink_valid_not_symlink(tmp_path):
 
 
 def test_get_project_root_with_config(tmp_path, monkeypatch):
-    """Test get_project_root finds air-config.json."""
+    """Test get_project_root finds .air/air-config.json."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
-    config_file = project_dir / "air-config.json"
+    (project_dir / ".air").mkdir()
+    config_file = project_dir / ".air/air-config.json"
     config_file.write_text("{}")
 
     subdir = project_dir / "subdir"
@@ -177,7 +178,8 @@ def test_validate_project_structure_valid(tmp_path):
     # Create minimal review project
     (tmp_path / "README.md").write_text("# Test")
     (tmp_path / "CLAUDE.md").write_text("# Test")
-    (tmp_path / "air-config.json").write_text("{}")
+    (tmp_path / ".air").mkdir()
+    (tmp_path / ".air/air-config.json").write_text("{}")
     (tmp_path / ".gitignore").write_text("")
 
     # Create directories
@@ -205,7 +207,8 @@ def test_validate_project_structure_missing_directory(tmp_path):
     # Create required files
     (tmp_path / "README.md").write_text("# Test")
     (tmp_path / "CLAUDE.md").write_text("# Test")
-    (tmp_path / "air-config.json").write_text("{}")
+    (tmp_path / ".air").mkdir()
+    (tmp_path / ".air/air-config.json").write_text("{}")
     (tmp_path / ".gitignore").write_text("")
 
     # Create only some directories

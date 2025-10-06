@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 from air.core.models import AirConfig
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 from air.services.summary_generator import (
     generate_json_summary,
     generate_markdown_summary,
@@ -80,7 +80,7 @@ def summary(output: str | None, output_format: str, since: str | None) -> None:
             )
 
     # Get project name
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
     project_name = "AIR Project"
     if config_path.exists():
         try:

@@ -40,7 +40,7 @@ class TestLoadConfig:
             "created": "2025-10-03T14:00:00",
         }
 
-        config_path = tmp_path / "air-config.json"
+        config_path = tmp_path / ".air/air-config.json"
         with open(config_path, "w") as f:
             json.dump(config_data, f)
 
@@ -59,7 +59,7 @@ class TestLoadConfig:
 
     def test_load_invalid_json(self, tmp_path):
         """Test error when config has invalid JSON."""
-        config_path = tmp_path / "air-config.json"
+        config_path = tmp_path / ".air/air-config.json"
         with open(config_path, "w") as f:
             f.write("{ invalid json")
 
@@ -69,7 +69,7 @@ class TestLoadConfig:
 
     def test_load_invalid_schema(self, tmp_path):
         """Test error when config has invalid schema."""
-        config_path = tmp_path / "air-config.json"
+        config_path = tmp_path / ".air/air-config.json"
         with open(config_path, "w") as f:
             json.dump({"invalid": "schema"}, f)
 
@@ -98,7 +98,7 @@ class TestSaveConfig:
 
         save_config(tmp_path, config)
 
-        config_path = tmp_path / "air-config.json"
+        config_path = tmp_path / ".air/air-config.json"
         assert config_path.exists()
 
         with open(config_path) as f:
@@ -118,7 +118,7 @@ class TestSaveConfig:
 
         save_config(tmp_path, config)
 
-        config_path = tmp_path / "air-config.json"
+        config_path = tmp_path / ".air/air-config.json"
         with open(config_path, "rb") as f:
             content = f.read()
 

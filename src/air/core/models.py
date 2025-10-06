@@ -189,7 +189,7 @@ class ProjectStructure(BaseModel):
                 directories=[".air", ".air/tasks", ".air/context", ".air/templates",
                            ".air/agents", ".air/shared",
                            "repos", "analysis", "analysis/reviews"],
-                required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
+                required_files=["README.md", "CLAUDE.md", ".air/air-config.json", ".gitignore"],
                 optional_files=["repos-to-link.txt"],
             )
         elif mode == ProjectMode.DEVELOP:
@@ -199,7 +199,7 @@ class ProjectStructure(BaseModel):
                 mode=mode,
                 directories=[".air", ".air/tasks", ".air/context", ".air/templates",
                            ".air/agents", ".air/shared"],
-                required_files=["air-config.json"],
+                required_files=[".air/air-config.json"],
                 optional_files=[],
             )
         else:  # MIXED
@@ -209,6 +209,6 @@ class ProjectStructure(BaseModel):
                 directories=[".air", ".air/tasks", ".air/context", ".air/templates",
                            ".air/agents", ".air/shared",
                            "repos", "analysis", "analysis/reviews"],
-                required_files=["README.md", "CLAUDE.md", "air-config.json", ".gitignore"],
+                required_files=["README.md", "CLAUDE.md", ".air/air-config.json", ".gitignore"],
                 optional_files=["repos-to-link.txt"],
             )

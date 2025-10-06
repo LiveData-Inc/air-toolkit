@@ -7,7 +7,7 @@ import click
 from rich.console import Console
 
 from air.core.models import AirConfig
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 from air.utils.console import info
 
 console = Console()
@@ -47,7 +47,7 @@ def context(format: str) -> None:
 
     if project_root:
         # Get AIR project status
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if config_path.exists():
             try:
                 with open(config_path) as f:
@@ -104,7 +104,7 @@ def context(format: str) -> None:
             context_data["standards"] = []
 
         # Get project goals
-        config_path = project_root / "air-config.json"
+        config_path = get_config_path(project_root)
         if config_path.exists():
             try:
                 with open(config_path) as f:

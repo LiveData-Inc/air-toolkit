@@ -10,7 +10,7 @@ from rich.table import Table
 
 from air.core.models import AirConfig, Resource, ResourceType
 from air.services.classifier import classify_resource
-from air.services.filesystem import get_project_root
+from air.services.filesystem import get_config_path, get_project_root
 
 console = Console()
 
@@ -62,7 +62,7 @@ def classify(
         sys.exit(1)
 
     # Load config
-    config_path = project_root / "air-config.json"
+    config_path = get_config_path(project_root)
     try:
         with open(config_path) as f:
             config = AirConfig.model_validate_json(f.read())

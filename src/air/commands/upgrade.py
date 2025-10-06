@@ -56,11 +56,18 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     console.print("[bold cyan]AIR Project Upgrade[/bold cyan]")
     console.print()
 
-    # Load or create project config
-    config_file = project_root / "air-config.json"
+    # Load or create project config - check both new and legacy locations
+    new_config_file = project_root / ".air" / "air-config.json"
+    legacy_config_file = project_root / "air-config.json"
+
+    # Determine which config file to use
+    config_file = new_config_file if new_config_file.exists() else legacy_config_file
+
     if not config_file.exists():
         warn("air-config.json not found - will attempt to recover from directory structure")
-        # Create a minimal config that we'll populate from discovered repos
+        # Create a minimal config in the NEW location
+        (project_root / ".air").mkdir(parents=True, exist_ok=True)
+        config_file = new_config_file
         config_data = {
             "name": project_root.name,
             "mode": "mixed",  # Default to mixed mode
@@ -69,7 +76,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
         }
         # Write it so we can use it
         config_file.write_text(json.dumps(config_data, indent=2) + "\n")
-        info("✓ Created air-config.json")
+        info("✓ Created .air/air-config.json")
     else:
         try:
             config_data = json.loads(config_file.read_text())
@@ -86,27 +93,31 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     # Collect upgrade actions
     actions = []
 
-    # 1. Check for missing directories
+    # 1. Check for config migration (v0.6.3 breaking change)
+    if legacy_config_file.exists() and not new_config_file.exists():
+        actions.append(("migrate_config", legacy_config_file, "Move air-config.json to .air/ (v0.6.3)"))
+
+    # 2. Check for missing directories
     missing_dirs = _check_directories(project_root)
     for dir_path, description in missing_dirs:
         actions.append(("create_dir", dir_path, description))
 
-    # 2. Check for missing scripts
+    # 3. Check for missing scripts
     missing_scripts = _check_scripts(project_root)
     for script_path, description in missing_scripts:
         actions.append(("create_file", script_path, description))
 
-    # 3. Check for outdated templates
+    # 4. Check for outdated templates
     outdated_templates = _check_templates(project_root, force)
     for template_path, description in outdated_templates:
         actions.append(("update_file", template_path, description))
 
-    # 4. Check for orphaned repos (symlinks not in config)
+    # 5. Check for orphaned repos (symlinks not in config)
     orphaned_repos = _check_orphaned_repos(project_root, config_data)
     if orphaned_repos:
         actions.append(("recover_repos", config_file, f"Recover {len(orphaned_repos)} orphaned repo(s)"))
 
-    # 5. Check config schema
+    # 6. Check config schema
     config_updates = _check_config_schema(config_data)
     if config_updates:
         actions.append(("update_config", config_file, f"Add {len(config_updates)} new fields"))
@@ -123,6 +134,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
 
     for action_type, path, description in actions:
         action_icon = {
+            "migrate_config": "🚚 Migrate",
             "create_dir": "📁 Create",
             "create_file": "📄 Create",
             "update_file": "🔄 Update",
@@ -150,7 +162,11 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
 
     for action_type, path, description in actions:
         try:
-            if action_type == "create_dir":
+            if action_type == "migrate_config":
+                _migrate_config(path, new_config_file)
+                success(f"✓ Migrated air-config.json to .air/")
+
+            elif action_type == "create_dir":
                 Path(path).mkdir(parents=True, exist_ok=True)
                 success(f"✓ Created {Path(path).relative_to(project_root)}")
 
@@ -257,6 +273,22 @@ def _check_config_schema(config_data: dict) -> dict:
     return updates
 
 
+def _migrate_config(legacy_path: Path, new_path: Path) -> None:
+    """Migrate air-config.json from root to .air/ directory.
+
+    Args:
+        legacy_path: Path to legacy air-config.json (in root)
+        new_path: Path to new location (.air/air-config.json)
+    """
+    # Ensure .air directory exists
+    new_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Move (not copy) the config file
+    shutil.move(str(legacy_path), str(new_path))
+
+    info(f"Migrated {legacy_path.name} from root to .air/")
+
+
 def _create_backup(project_root: Path) -> None:
     """Create backup of project before upgrading."""
     from datetime import datetime
@@ -266,9 +298,10 @@ def _create_backup(project_root: Path) -> None:
 
     info(f"Creating backup: {backup_name}")
 
-    # Backup critical files
+    # Backup critical files (check both locations for config)
     files_to_backup = [
-        "air-config.json",
+        "air-config.json",  # Legacy location
+        ".air/air-config.json",  # New location
         ".air/tasks",
         ".air/context",
         ".air/templates",

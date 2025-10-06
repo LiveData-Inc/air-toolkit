@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.6.3
+**Version:** 0.6.2.post2
 **Last Updated:** 2025-10-05
 
 Complete reference for all AIR commands.
@@ -139,7 +139,7 @@ Creates project structure:
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── air-config.json
+├── .air/air-config.json
 ├── .gitignore
 ├── repos/
 ├── analysis/
@@ -153,7 +153,7 @@ project-name/
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── air-config.json
+├── .air/air-config.json
 ├── .gitignore
 ├── repos/
 ├── analysis/
@@ -168,7 +168,7 @@ project-name/
 project-name/
 ├── README.md
 ├── CLAUDE.md
-├── air-config.json
+├── .air/air-config.json
 ├── .gitignore
 ├── repos/
 ├── analysis/
@@ -392,7 +392,7 @@ air link remove -i --keep-link
 
 **All Resources:**
 - Stored in `repos/` directory
-- Managed in `air-config.json`
+- Managed in `.air/air-config.json`
 - Validated for uniqueness
 
 #### Exit Codes
@@ -439,7 +439,7 @@ air validate --fix
 
 **Structure Check:**
 - Required directories exist
-- `air-config.json` present
+- `.air/air-config.json` present
 - Mode-appropriate structure (repos/, analysis/, contributions/, etc.)
 
 **Links Check:**
@@ -460,7 +460,7 @@ air validate --fix
 
 Structure:
   ✓ README.md
-  ✓ air-config.json
+  ✓ .air/air-config.json
   ✓ repos/
   ✓ analysis/reviews/
 
@@ -569,7 +569,7 @@ air classify [OPTIONS]
 #### Options
 
 - `--verbose` - Show detailed classification reasoning
-- `--update` - Update `air-config.json` with classifications
+- `--update` - Update `.air/air-config.json` with classifications
 
 #### Examples
 
@@ -868,13 +868,9 @@ air analyze RESOURCE_PATH [OPTIONS]
 
 - `--background` - Run analysis in background as an agent
 - `--id TEXT` - Agent identifier (for background mode)
-- `--focus TEXT` - Analysis focus area (security, architecture, performance, quality)
-- `--parallel` - Run analyzers in parallel using subprocess workers (v0.6.3+)
-- `--workers N` - Number of parallel workers (default: CPU count)
-- `--all` - Analyze all linked repositories
+- `--focus TEXT` - Analysis focus area (security, architecture, performance)
 - `--no-cache` - Force fresh analysis (skip cache lookup)
 - `--clear-cache` - Clear cache before running analysis
-- `--include-external` - Include vendor/external code in analysis
 
 **Examples:**
 
@@ -907,15 +903,9 @@ air analyze repos/service-a --clear-cache
 
 **Files Created:**
 
-- `analysis/reviews/<resource>-findings.json` - Analysis findings (v0.6.3+ format: `{repository, classification, findings}`)
+- `analysis/reviews/<resource>-findings.json` - Analysis findings
 - `.air/agents/<id>/metadata.json` - Agent metadata (background only)
 - `.air/agents/<id>/stdout.log` - Agent output (background only)
-
-**New in v0.6.3:**
-- Enhanced progress tracking with individual analyzer rows
-- Animated spinners (⠋) replaced with ✓/✗ upon completion
-- Restructured findings JSON format with classification metadata at top level
-- `--parallel` flag for subprocess-based parallel execution
 
 ---
 
@@ -1249,7 +1239,11 @@ air task SUBCOMMAND [OPTIONS]
 
 - `new` - Create new task file
 - `list` - List all task files
+- `status` - Show task details
 - `complete` - Mark task as complete
+- `archive` - Archive task files
+- `restore` - Restore archived tasks
+- `archive-status` - Show archive statistics
 
 ---
 
@@ -1409,6 +1403,179 @@ air task complete 1003-1200
 ```
 
 Updates task file outcome to `✅ Success`.
+
+---
+
+#### air task status
+
+Show detailed information about a task.
+
+#### Usage
+
+```bash
+air task status TASK_ID [OPTIONS]
+```
+
+#### Arguments
+
+- `TASK_ID` - Task identifier (timestamp or prefix)
+
+#### Options
+
+- `--format=FORMAT` - Output format (`human` or `json`)
+
+#### Examples
+
+```bash
+# Show task details
+air task status 20251003-1200
+
+# JSON output
+air task status 20251003-1200 --format=json
+```
+
+#### Output
+
+Displays full task information including prompt, actions taken, files changed, outcome, and notes.
+
+---
+
+#### air task archive
+
+Archive task files to `.air/tasks/archive/` organized by year and month.
+
+#### Usage
+
+```bash
+air task archive [TASK_IDS...] [OPTIONS]
+```
+
+#### Arguments
+
+- `TASK_IDS` - One or more task identifiers (optional if using flags)
+
+#### Options
+
+- `--all` - Archive all tasks
+- `--before=DATE` - Archive tasks before date (YYYY-MM-DD)
+- `--strategy=STRATEGY` - Archive organization strategy (default: `by-month`)
+  - `by-month` - Organize as `.air/tasks/archive/YYYY-MM/`
+  - `by-quarter` - Organize as `.air/tasks/archive/YYYY-QN/`
+  - `flat` - No subdirectories
+- `--dry-run` - Preview what would be archived
+
+#### Examples
+
+```bash
+# Archive specific task
+air task archive 20251003-1200
+
+# Archive multiple tasks
+air task archive 20251003-1200 20251003-1215
+
+# Archive all tasks
+air task archive --all
+
+# Archive tasks before October 1, 2025
+air task archive --before=2025-10-01
+
+# Preview archiving
+air task archive --all --dry-run
+
+# Use quarterly organization
+air task archive --all --strategy=by-quarter
+```
+
+#### Output
+
+```
+[✓] Archived: 20251003-1200-task.md → 2025-10/20251003-1200-task.md
+Updated archive summary: .air/tasks/archive/ARCHIVE.md
+[✓] Archived 1 tasks to .air/tasks/archive/
+```
+
+**Note:**
+- Archiving helps reduce AI context window usage by moving completed tasks out of the active directory while maintaining full history.
+- An `ARCHIVE.md` summary file is automatically generated/updated in the archive directory, providing an organized index of all archived tasks by time period.
+
+---
+
+#### air task restore
+
+Restore archived tasks back to active tasks directory.
+
+#### Usage
+
+```bash
+air task restore TASK_IDS...
+```
+
+#### Arguments
+
+- `TASK_IDS` - One or more task identifiers to restore
+
+#### Examples
+
+```bash
+# Restore single task
+air task restore 20251003-1200
+
+# Restore multiple tasks
+air task restore 20251003-1200 20251003-1215
+```
+
+#### Output
+
+```
+[✓] Restored: 20251003-1200-task.md
+Updated archive summary: .air/tasks/archive/ARCHIVE.md
+[✓] Restored 1 tasks from archive
+```
+
+**Note:** The archive summary is automatically updated when tasks are restored.
+
+---
+
+#### air task archive-status
+
+Show statistics about archived tasks.
+
+#### Usage
+
+```bash
+air task archive-status [OPTIONS]
+```
+
+#### Options
+
+- `--format=FORMAT` - Output format (`human` or `json`)
+
+#### Examples
+
+```bash
+# Show archive statistics
+air task archive-status
+
+# JSON output
+air task archive-status --format=json
+```
+
+#### Output
+
+```
+Archive Statistics
+
+Total archived tasks: 47
+
+By Month:
+  2025-10: 12 tasks
+  2025-09: 18 tasks
+  2025-08: 17 tasks
+
+By Quarter:
+  2025-Q3: 35 tasks
+  2025-Q2: 12 tasks
+```
 
 ---
 
@@ -1696,7 +1863,7 @@ AIR_COLOR=auto                  # Color output (auto|always|never)
 
 ### Project Configuration
 
-`air-config.json` - Project metadata and resource tracking
+`.air/air-config.json` - Project metadata and resource tracking
 
 ### Global Configuration (Future)
 
