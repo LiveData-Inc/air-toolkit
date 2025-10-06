@@ -95,11 +95,9 @@ class CodeStructureAnalyzer(BaseAnalyzer):
             if not file_path.is_file():
                 continue
 
-            # Skip hidden and build directories
-            if any(part.startswith(".") for part in file_path.parts):
-                continue
-            if any(part in ["node_modules", "__pycache__", "dist", "build", "target"]
-                   for part in file_path.parts):
+            # Use path_filter to exclude external code
+            rel_path = file_path.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
                 continue
 
             stats["total_files"] += 1
@@ -152,11 +150,9 @@ class CodeStructureAnalyzer(BaseAnalyzer):
             if file_path.suffix.lower() not in code_extensions:
                 continue
 
-            # Skip hidden and build directories
-            if any(part.startswith(".") for part in file_path.parts):
-                continue
-            if any(part in ["node_modules", "__pycache__", "dist", "build", "target"]
-                   for part in file_path.parts):
+            # Use path_filter to exclude external code
+            rel_path = file_path.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
                 continue
 
             line_count = self._count_lines(file_path)

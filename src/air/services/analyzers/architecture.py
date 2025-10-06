@@ -117,7 +117,13 @@ class ArchitectureAnalyzer(BaseAnalyzer):
 
         import_graph = {}
         for py_file in py_files:
-            if any(part in ["test", "tests", "__pycache__"]
+            # Use path_filter to exclude external code
+            rel_path = py_file.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
+                continue
+
+            # Skip test files
+            if any(part in ["test", "tests"]
                    for part in py_file.parts):
                 continue
 

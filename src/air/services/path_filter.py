@@ -5,6 +5,7 @@ from pathlib import Path
 # Common vendor/external directories to exclude by default
 DEFAULT_EXCLUSIONS = [
     # Python
+    ".poetry",
     ".venv",
     "venv",
     "env",

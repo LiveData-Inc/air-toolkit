@@ -307,6 +307,11 @@ class SecurityAnalyzer(BaseAnalyzer):
 
         for pattern in config_patterns:
             for config_file in self._get_files_by_pattern(pattern):
+                # Use path_filter to exclude external code
+                rel_path = config_file.relative_to(self.repo_path)
+                if should_exclude_path(rel_path, self.include_external):
+                    continue
+
                 # Check if .gitignore exists and includes this file
                 gitignore = self.resource_path / ".gitignore"
                 is_ignored = False
@@ -346,6 +351,10 @@ class SecurityAnalyzer(BaseAnalyzer):
         framework_files.extend(self._get_files_by_pattern("**/server.ts"))
 
         for framework_file in framework_files:
+            # Use path_filter to exclude external code
+            rel_path = framework_file.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
+                continue
             content = self._read_file(framework_file)
 
             # Check for missing security headers

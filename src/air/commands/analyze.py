@@ -2,6 +2,7 @@
 
 import json
 import sys
+import time
 import traceback
 from pathlib import Path
 
@@ -210,6 +211,9 @@ def _analyze_single_repo(
 
     # Run analysis
     try:
+        # Start timing
+        analysis_start = time.time()
+
         # Show progress indicator if we have index/count
         if current_index is not None and total_count is not None:
             info(f"[{current_index}/{total_count}] Analyzing: {resource_path}")
@@ -220,7 +224,9 @@ def _analyze_single_repo(
             info(f"Focus area: {focus}")
 
         # Always start with classification
+        classification_start = time.time()
         result = classify_resource(resource_path)
+        classification_time = time.time() - classification_start
 
         info(f"Type: {result.resource_type.value}")
         if result.technology_stack:
@@ -264,8 +270,10 @@ def _analyze_single_repo(
             analyzers.append(CodeStructureAnalyzer(resource_path, include_external=include_external))
 
         # Run analyzers and collect findings
+        analyzer_times = {}
         for analyzer in analyzers:
             analyzer_result = None
+            analyzer_start = time.time()
 
             # Check cache first (unless --no-cache or no cache_manager)
             if not no_cache and cache_manager:
@@ -289,6 +297,8 @@ def _analyze_single_repo(
                 if not no_cache and cache_manager:
                     repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
                     cache_manager.set_cached_analysis(resource_path, repo_marker, analyzer_result)
+
+            analyzer_times[analyzer.name] = time.time() - analyzer_start
 
             # Add summary to findings
             all_findings.append(
@@ -323,13 +333,16 @@ def _analyze_single_repo(
         )
 
         # Check for dependency issues if requested
+        deps_time = 0
         if check_deps and config:
+            deps_start = time.time()
             info("Checking dependencies...")
             graph = build_dependency_graph(config)
             gaps = detect_dependency_gaps(config, graph)
             if gaps:
                 warn(f"Found {len(gaps)} dependency issues")
                 all_findings.extend(gaps)
+            deps_time = time.time() - deps_start
 
         # Save findings to analysis directory
         analysis_dir = project_root / "analysis" / "reviews"
@@ -337,6 +350,20 @@ def _analyze_single_repo(
 
         findings_file = analysis_dir / f"{resource_path.name}-findings.json"
         findings_file.write_text(json.dumps(all_findings, indent=2))
+
+        # Calculate total time
+        total_time = time.time() - analysis_start
+
+        # Display timing information
+        info("")
+        info("⏱️  Analysis Timing:")
+        info(f"  Classification: {classification_time:.2f}s")
+        for analyzer_name, analyzer_time in analyzer_times.items():
+            info(f"  {analyzer_name}: {analyzer_time:.2f}s")
+        if deps_time > 0:
+            info(f"  Dependencies: {deps_time:.2f}s")
+        info(f"  Total: {total_time:.2f}s")
+        info("")
 
         success(f"Analysis complete: {findings_file}")
 
@@ -376,9 +403,14 @@ def _analyze_multi_repo(
         cache_manager: Cache manager instance
         no_cache: Skip cache lookup/storage
     """
+    # Start total timing
+    multi_repo_start = time.time()
+
     # Build dependency graph
+    graph_start = time.time()
     info("Building dependency graph...")
     graph = build_dependency_graph(config)
+    graph_time = time.time() - graph_start
 
     # Save graph as JSON
     project_root = get_project_root()
@@ -420,8 +452,12 @@ def _analyze_multi_repo(
     total_repos = sum(len(level) for level in levels)
     current_repo = 0
 
+    # Track timing for each level
+    level_times = {}
+
     # Analyze by level
     for level_num, repos_in_level in enumerate(levels, 1):
+        level_start = time.time()
         if respect_deps and len(levels) > 1:
             info(f"\nLevel {level_num}/{len(levels)}: {', '.join(repos_in_level)}")
 
@@ -472,15 +508,34 @@ def _analyze_multi_repo(
             info(f"Use 'air status --agents' to monitor progress")
             info(f"Agents: {', '.join(agent_ids)}")
 
+        # Record level timing
+        level_times[f"Level {level_num}"] = time.time() - level_start
+
     # Detect cross-repo dependency gaps
+    gaps_start = time.time()
     info("\nChecking for dependency gaps...")
     gaps = detect_dependency_gaps(config, graph)
+    gaps_time = time.time() - gaps_start
     if gaps:
         warn(f"Found {len(gaps)} dependency issues:")
         for gap in gaps:
             warn(f"  {gap['message']}")
     else:
         success("No dependency issues found")
+
+    # Calculate total time and display timing summary
+    total_time = time.time() - multi_repo_start
+
+    info("")
+    info("⏱️  Multi-Repo Analysis Timing:")
+    info(f"  Dependency graph: {graph_time:.2f}s")
+    for level_name, level_time in level_times.items():
+        repo_count = len(levels[int(level_name.split()[1]) - 1])
+        info(f"  {level_name} ({repo_count} repos): {level_time:.2f}s")
+    info(f"  Dependency gap check: {gaps_time:.2f}s")
+    info(f"  Total: {total_time:.2f}s")
+    info(f"  Average per repo: {total_time / total_repos:.2f}s")
+    info("")
 
 
 def _analyze_gap(

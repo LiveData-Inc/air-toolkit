@@ -228,9 +228,9 @@ class PerformanceAnalyzer(BaseAnalyzer):
 
         for pattern in ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]:
             for js_file in self._get_files_by_pattern(pattern):
-                # Skip node_modules and dist
-                if any(part in ["node_modules", "dist", "build"]
-                       for part in js_file.parts):
+                # Use path_filter to exclude external code
+                rel_path = js_file.relative_to(self.repo_path)
+                if should_exclude_path(rel_path, self.include_external):
                     continue
 
                 content = self._read_file(js_file)
