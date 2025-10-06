@@ -1,4 +1,4 @@
-# Task: Implement subprocess agent-based parallel analysis
+# Task: Design subprocess agent-based parallel analysis
 
 ## Date
 2025-10-05 22:02

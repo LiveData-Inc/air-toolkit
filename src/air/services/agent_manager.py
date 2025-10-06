@@ -242,3 +242,152 @@ def get_agent_progress(agent_id: str) -> str:
         pass
 
     return ""
+
+
+# Parallel analysis orchestration using ProcessPoolExecutor
+
+import os
+from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
+from typing import Callable
+
+from air.services.analysis_worker import run_analyzer_subprocess
+from air.services.analyzers.base import AnalyzerResult, Finding, FindingSeverity
+from air.utils.console import error, info
+
+
+class AnalysisOrchestrator:
+    """Orchestrates parallel analysis across subprocesses.
+
+    Uses ProcessPoolExecutor to run multiple analyzers in parallel,
+    collecting results via JSON communication.
+    """
+
+    def __init__(self, max_workers: int | None = None, timeout: int = 300):
+        """Initialize orchestrator.
+
+        Args:
+            max_workers: Maximum number of parallel processes (defaults to CPU count)
+            timeout: Timeout per analyzer in seconds (default: 5 minutes)
+        """
+        self.max_workers = max_workers or os.cpu_count()
+        self.timeout = timeout
+        self.executor = ProcessPoolExecutor(max_workers=self.max_workers)
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - cleanup executor."""
+        self.executor.shutdown(wait=True)
+
+    def analyze_parallel(
+        self,
+        repo_paths: list[Path],
+        analyzers: list[str],
+        include_external: bool = False,
+        progress_callback: Callable[[str, str, bool], None] | None = None,
+    ) -> dict[str, list[dict]]:
+        """Execute analyzers in parallel, return aggregated results.
+
+        Args:
+            repo_paths: List of repository paths to analyze
+            analyzers: List of analyzer types (security, performance, etc.)
+            include_external: Include external/vendor code in analysis
+            progress_callback: Optional callback for progress updates (repo, analyzer, success)
+
+        Returns:
+            Dict mapping repo_path -> list of analyzer results (as dicts)
+        """
+        # Submit all tasks
+        futures = {}
+        task_count = len(repo_paths) * len(analyzers)
+        info(f"Submitting {task_count} analysis tasks to {self.max_workers} workers...")
+
+        for repo_path in repo_paths:
+            for analyzer_type in analyzers:
+                future = self.executor.submit(
+                    run_analyzer_subprocess,
+                    analyzer_type=analyzer_type,
+                    repo_path=str(repo_path),
+                    include_external=include_external,
+                )
+                futures[future] = (repo_path, analyzer_type)
+
+        # Collect results as they complete
+        results = defaultdict(list)
+        completed = 0
+
+        for future in as_completed(futures, timeout=self.timeout * task_count):
+            repo_path, analyzer_type = futures[future]
+            completed += 1
+
+            try:
+                # Get result from subprocess
+                result_json = future.result(timeout=self.timeout)
+
+                # Store result
+                results[str(repo_path)].append(result_json)
+
+                # Report progress
+                if result_json.get("success"):
+                    elapsed = result_json.get("elapsed_time", 0)
+                    info(f"✓ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                    if progress_callback:
+                        progress_callback(str(repo_path), analyzer_type, True)
+                else:
+                    error_msg = result_json.get("error", "Unknown error")
+                    error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {error_msg}")
+                    if progress_callback:
+                        progress_callback(str(repo_path), analyzer_type, False)
+
+            except FuturesTimeoutError:
+                error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - Timeout after {self.timeout}s")
+                if progress_callback:
+                    progress_callback(str(repo_path), analyzer_type, False)
+
+            except Exception as e:
+                error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {e}")
+                if progress_callback:
+                    progress_callback(str(repo_path), analyzer_type, False)
+
+        return dict(results)
+
+
+def reconstruct_analyzer_result(result_dict: dict) -> AnalyzerResult | None:
+    """Reconstruct AnalyzerResult from JSON dict.
+
+    Args:
+        result_dict: JSON result from subprocess
+
+    Returns:
+        AnalyzerResult object or None if failed
+    """
+    if not result_dict.get("success"):
+        return None
+
+    result_data = result_dict.get("result", {})
+
+    # Reconstruct Finding objects
+    findings = []
+    for finding_dict in result_data.get("findings", []):
+        finding = Finding(
+            category=finding_dict.get("category", "unknown"),
+            severity=FindingSeverity(finding_dict.get("severity", "info")),
+            title=finding_dict.get("title", ""),
+            description=finding_dict.get("description", ""),
+            location=finding_dict.get("location"),
+            line_number=finding_dict.get("line_number"),
+            suggestion=finding_dict.get("suggestion"),
+            metadata=finding_dict.get("metadata", {}),
+        )
+        findings.append(finding)
+
+    # Reconstruct AnalyzerResult
+    return AnalyzerResult(
+        analyzer_name=result_data.get("analyzer", "unknown"),
+        findings=findings,
+        summary=result_data.get("summary", {}),
+        metadata=result_data.get("metadata", {}),
+    )

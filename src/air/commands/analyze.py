@@ -9,7 +9,13 @@ from pathlib import Path
 import click
 
 from air.core.models import AirConfig
-from air.services.agent_manager import generate_agent_id, spawn_background_agent, update_agent_status
+from air.services.agent_manager import (
+    AnalysisOrchestrator,
+    generate_agent_id,
+    reconstruct_analyzer_result,
+    spawn_background_agent,
+    update_agent_status,
+)
 from air.services.analyzers import (
     ArchitectureAnalyzer,
     CodeStructureAnalyzer,
@@ -43,6 +49,8 @@ from air.utils.console import error, info, success, warn
 @click.option("--no-cache", is_flag=True, help="Force fresh analysis (skip cache)")
 @click.option("--clear-cache", is_flag=True, help="Clear cache before analysis")
 @click.option("--include-external", is_flag=True, help="Include external/vendor libraries in analysis")
+@click.option("--parallel", is_flag=True, help="Run analyzers in parallel (faster)")
+@click.option("--workers", type=int, default=None, help="Number of parallel workers (default: CPU count)")
 def analyze(
     resource: str | None,
     analyze_all: bool,
@@ -56,6 +64,8 @@ def analyze(
     no_cache: bool,
     clear_cache: bool,
     include_external: bool,
+    parallel: bool,
+    workers: int | None,
 ) -> None:
     """Analyze repositories with intelligent defaults.
 
@@ -138,6 +148,8 @@ def analyze(
         cache_manager=cache_manager,
         no_cache=no_cache,
         include_external=include_external,
+        parallel=parallel,
+        max_workers=workers,
     )
 
 
@@ -167,6 +179,30 @@ def _resolve_resource(config: AirConfig, resource: str) -> Path:
     error(f"Resource not found: {resource}", exit_code=1)
 
 
+def _get_analyzer_list(focus: str | None) -> list[str]:
+    """Get list of analyzer names based on focus.
+
+    Args:
+        focus: Analysis focus area or None for all
+
+    Returns:
+        List of analyzer names
+    """
+    if focus == "security":
+        return ["security"]
+    elif focus == "performance":
+        return ["performance"]
+    elif focus == "architecture":
+        return ["architecture"]
+    elif focus == "quality":
+        return ["quality"]
+    elif not focus:
+        # All analyzers
+        return ["security", "performance", "architecture", "quality", "code_structure"]
+    else:
+        return []
+
+
 def _analyze_single_repo(
     resource_path: Path,
     focus: str | None,
@@ -180,6 +216,8 @@ def _analyze_single_repo(
     current_index: int | None = None,
     total_count: int | None = None,
     include_external: bool = False,
+    parallel: bool = False,
+    max_workers: int | None = None,
 ) -> None:
     """Analyze a single repository.
 
@@ -252,72 +290,108 @@ def _analyze_single_repo(
         ]
 
         # Run deep analysis based on focus
-        analyzers = []
-
-        if focus == "security" or not focus:
-            analyzers.append(SecurityAnalyzer(resource_path, include_external=include_external))
-
-        if focus == "performance" or not focus:
-            analyzers.append(PerformanceAnalyzer(resource_path, include_external=include_external))
-
-        if focus == "architecture" or not focus:
-            analyzers.append(ArchitectureAnalyzer(resource_path, include_external=include_external))
-
-        if focus == "quality" or not focus:
-            analyzers.append(QualityAnalyzer(resource_path, include_external=include_external))
-
-        if not focus:  # Always run structure analysis when no focus
-            analyzers.append(CodeStructureAnalyzer(resource_path, include_external=include_external))
-
-        # Run analyzers and collect findings
         analyzer_times = {}
-        for analyzer in analyzers:
-            analyzer_result = None
-            analyzer_start = time.time()
 
-            # Check cache first (unless --no-cache or no cache_manager)
-            if not no_cache and cache_manager:
-                # Create a marker file representing the whole repo
-                # (We cache at repo level, not file level for now)
-                repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
-                cached_result = cache_manager.get_cached_analysis(
-                    resource_path, repo_marker, analyzer.name
+        if parallel:
+            # PARALLEL EXECUTION using subprocess orchestrator
+            analyzer_names = _get_analyzer_list(focus)
+
+            with AnalysisOrchestrator(max_workers=max_workers) as orchestrator:
+                results = orchestrator.analyze_parallel(
+                    repo_paths=[resource_path],
+                    analyzers=analyzer_names,
+                    include_external=include_external,
                 )
 
-                if cached_result:
-                    info(f"{analyzer.name} analysis (cached)...")
-                    analyzer_result = cached_result
+            # Process results from parallel execution
+            for result_dict in results.get(str(resource_path), []):
+                if result_dict.get("success"):
+                    # Extract timing
+                    analyzer_name = result_dict.get("analyzer")
+                    analyzer_times[analyzer_name] = result_dict.get("elapsed_time", 0)
 
-            # Run analysis if not cached
-            if not analyzer_result:
-                info(f"Running {analyzer.name} analysis...")
-                analyzer_result = analyzer.analyze()
+                    # Reconstruct result and add findings
+                    analyzer_result = reconstruct_analyzer_result(result_dict)
+                    if analyzer_result:
+                        # Add summary
+                        all_findings.append({
+                            "category": analyzer_result.analyzer_name,
+                            "severity": "info",
+                            "type": "summary",
+                            "summary": analyzer_result.summary,
+                        })
 
-                # Cache the result (unless --no-cache or no cache_manager)
+                        # Add individual findings
+                        for finding in analyzer_result.findings:
+                            all_findings.append(finding.to_dict())
+
+        else:
+            # SEQUENTIAL EXECUTION (original code path)
+            analyzers = []
+
+            if focus == "security" or not focus:
+                analyzers.append(SecurityAnalyzer(resource_path, include_external=include_external))
+
+            if focus == "performance" or not focus:
+                analyzers.append(PerformanceAnalyzer(resource_path, include_external=include_external))
+
+            if focus == "architecture" or not focus:
+                analyzers.append(ArchitectureAnalyzer(resource_path, include_external=include_external))
+
+            if focus == "quality" or not focus:
+                analyzers.append(QualityAnalyzer(resource_path, include_external=include_external))
+
+            if not focus:  # Always run structure analysis when no focus
+                analyzers.append(CodeStructureAnalyzer(resource_path, include_external=include_external))
+
+            # Run analyzers and collect findings
+            for analyzer in analyzers:
+                analyzer_result = None
+                analyzer_start = time.time()
+
+                # Check cache first (unless --no-cache or no cache_manager)
                 if not no_cache and cache_manager:
+                    # Create a marker file representing the whole repo
+                    # (We cache at repo level, not file level for now)
                     repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
-                    cache_manager.set_cached_analysis(resource_path, repo_marker, analyzer_result)
+                    cached_result = cache_manager.get_cached_analysis(
+                        resource_path, repo_marker, analyzer.name
+                    )
 
-            analyzer_times[analyzer.name] = time.time() - analyzer_start
+                    if cached_result:
+                        info(f"{analyzer.name} analysis (cached)...")
+                        analyzer_result = cached_result
 
-            # Add summary to findings
-            all_findings.append(
-                {
-                    "category": analyzer.name,
-                    "severity": "info",
-                    "type": "summary",
-                    "summary": analyzer_result.summary,
-                }
-            )
+                # Run analysis if not cached
+                if not analyzer_result:
+                    info(f"Running {analyzer.name} analysis...")
+                    analyzer_result = analyzer.analyze()
 
-            # Add individual findings
-            for finding in analyzer_result.findings:
-                all_findings.append(finding.to_dict())
+                    # Cache the result (unless --no-cache or no cache_manager)
+                    if not no_cache and cache_manager:
+                        repo_marker = resource_path / ".git" if (resource_path / ".git").exists() else resource_path
+                        cache_manager.set_cached_analysis(resource_path, repo_marker, analyzer_result)
 
-            # Show summary
-            if analyzer_result.summary:
-                summary_items = [f"{k}: {v}" for k, v in analyzer_result.summary.items()]
-                info(f"{analyzer.name}: {', '.join(summary_items[:3])}")
+                analyzer_times[analyzer.name] = time.time() - analyzer_start
+
+                # Add summary to findings
+                all_findings.append(
+                    {
+                        "category": analyzer.name,
+                        "severity": "info",
+                        "type": "summary",
+                        "summary": analyzer_result.summary,
+                    }
+                )
+
+                # Add individual findings
+                for finding in analyzer_result.findings:
+                    all_findings.append(finding.to_dict())
+
+                # Show summary
+                if analyzer_result.summary:
+                    summary_items = [f"{k}: {v}" for k, v in analyzer_result.summary.items()]
+                    info(f"{analyzer.name}: {', '.join(summary_items[:3])}")
 
         # Count findings by severity
         severity_counts = {}
