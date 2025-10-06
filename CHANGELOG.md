@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2025-10-05
+
+### Improved - Parallel Analysis Progress Display
+
+- **Enhanced Progress Tracking** - Individual analyzer rows with animated spinners
+- Show each analyzer with spinner while running, replaced with ✓ (success) or ✗ (failure)
+- Display total elapsed time after parallel analysis completes
+- Add startup banner showing repo count and analysis mode
+- Animated spinner during dependency graph building phase
+- Color-coded repo names (magenta) for visual consistency
+- Cleaner output with spinners only (removed redundant progress bars)
+
+### Improved - Analysis Report Structure
+
+- **Restructured Findings Format** - Separate classification metadata from findings
+- New JSON structure: `{repository, classification, findings}`
+- Classification data now at top level (not as individual finding entry)
+- Fixed total findings count to exclude summary entries
+- Enables better report rendering with classification table at top
+
+### Fixed - Analysis Display Issues
+
+- Fix AttributeError when displaying repository names from dependency graph
+- Remove deprecated 'contributions' directory from validation checks
+- Correct total findings count calculation (was including summary entries)
+
+## [0.6.2.post2] - 2025-10-05
+
 ### Improved - Show Writable Status in Resource Tables
 
 - **Writable Column** - Display AI write permissions in resource listings

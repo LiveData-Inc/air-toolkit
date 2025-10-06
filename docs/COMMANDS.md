@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.6.2.post2
+**Version:** 0.6.3
 **Last Updated:** 2025-10-05
 
 Complete reference for all AIR commands.
@@ -868,9 +868,13 @@ air analyze RESOURCE_PATH [OPTIONS]
 
 - `--background` - Run analysis in background as an agent
 - `--id TEXT` - Agent identifier (for background mode)
-- `--focus TEXT` - Analysis focus area (security, architecture, performance)
+- `--focus TEXT` - Analysis focus area (security, architecture, performance, quality)
+- `--parallel` - Run analyzers in parallel using subprocess workers (v0.6.3+)
+- `--workers N` - Number of parallel workers (default: CPU count)
+- `--all` - Analyze all linked repositories
 - `--no-cache` - Force fresh analysis (skip cache lookup)
 - `--clear-cache` - Clear cache before running analysis
+- `--include-external` - Include vendor/external code in analysis
 
 **Examples:**
 
@@ -903,9 +907,15 @@ air analyze repos/service-a --clear-cache
 
 **Files Created:**
 
-- `analysis/reviews/<resource>-findings.json` - Analysis findings
+- `analysis/reviews/<resource>-findings.json` - Analysis findings (v0.6.3+ format: `{repository, classification, findings}`)
 - `.air/agents/<id>/metadata.json` - Agent metadata (background only)
 - `.air/agents/<id>/stdout.log` - Agent output (background only)
+
+**New in v0.6.3:**
+- Enhanced progress tracking with individual analyzer rows
+- Animated spinners (⠋) replaced with ✓/✗ upon completion
+- Restructured findings JSON format with classification metadata at top level
+- `--parallel` flag for subprocess-based parallel execution
 
 ---
 

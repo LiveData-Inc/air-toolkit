@@ -1,20 +1,43 @@
 # AIR Toolkit - Project Status
 
-**Current Version:** 0.6.2.post2
+**Current Version:** 0.6.3
 **Last Updated:** 2025-10-05
 **Status:** Production-Ready with Advanced Features ✅
 
 ## Executive Summary
 
-AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, and parallel agent coordination.
+AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assisted development and multi-project code assessment. The project has evolved from initial scaffolding (v0.1.0) to a feature-complete toolkit with advanced capabilities including deep code analysis, dependency-aware multi-repo analysis, parallel agent coordination, and enhanced progress tracking.
 
 **Key Metrics:**
 - **410 tests** - All passing ✅
-- **Version:** 0.6.2.post2 (production-ready)
+- **Version:** 0.6.3 (production-ready)
 - **Distribution:** Available on PyPI (`pip install air-toolkit`)
 - **Commands:** 11 command groups, 30+ subcommands
 - **Analysis:** 5 specialized analyzers with pluggable architecture
 - **Languages:** Python 3.10+, cross-platform (macOS, Linux, Windows)
+
+## What's New in v0.6.3
+
+### ✅ Enhanced Parallel Analysis UX
+
+**Improved Progress Display:**
+- Individual analyzer rows with animated spinners (⠋) while running
+- Spinners replaced with ✓ (success) or ✗ (failure) upon completion
+- Total elapsed time displayed after parallel analysis
+- Startup banner showing repo count and analysis mode
+- Animated spinner during dependency graph building
+- All analyzer rows stay visible throughout analysis
+
+**Restructured Findings Format:**
+- New JSON structure: `{repository, classification, findings}`
+- Classification data at top level (separate from findings array)
+- Enables better report rendering with classification table at top
+- Fixed total findings count to exclude summary entries
+
+**Bug Fixes:**
+- Fixed AttributeError when displaying repository names from graph
+- Removed deprecated 'contributions' directory from validation
+- Corrected total findings calculation
 
 ## What's Working (v0.6.0)
 
