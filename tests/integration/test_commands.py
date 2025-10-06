@@ -89,9 +89,8 @@ class TestInitCommand:
         assert result.exit_code == 0
 
         project_dir = isolated_project / "mixed-proj"
-        # Mixed mode: repos for external assessment, contributions for PRs
+        # Mixed mode: repos for external assessment
         assert (project_dir / "repos").exists()
-        assert (project_dir / "contributions").exists()
         assert (project_dir / "analysis").exists()
         assert (project_dir / ".air").exists()
 
