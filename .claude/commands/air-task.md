@@ -1,8 +1,8 @@
 ---
-description: Start AIR-tracked work session
+description: Create and start new AIR task
 ---
 
-I'll help you start a new tracked task.
+I'll help you create and start a new tracked task.
 
 First, let me check the project context:
 
