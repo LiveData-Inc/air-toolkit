@@ -322,8 +322,9 @@ class AnalysisOrchestrator:
         results = defaultdict(list)
 
         if show_progress:
-            from rich.console import Console
-            console = Console()
+            from rich.live import Live
+            from rich.console import Group
+            from rich.text import Text
 
             with Progress(
                 SpinnerColumn(),
@@ -337,38 +338,50 @@ class AnalysisOrchestrator:
                     total=task_count
                 )
 
-                for future in as_completed(futures, timeout=self.timeout * task_count):
-                    repo_path, analyzer_type = futures[future]
+                # List to collect completion messages
+                completion_messages = []
 
-                    try:
-                        result_json = future.result(timeout=self.timeout)
-                        results[str(repo_path)].append(result_json)
+                with Live(Group(progress, *completion_messages), refresh_per_second=10) as live:
+                    for future in as_completed(futures, timeout=self.timeout * task_count):
+                        repo_path, analyzer_type = futures[future]
 
-                        if result_json.get("success"):
-                            elapsed = result_json.get("elapsed_time", 0)
-                            # Print status line above progress bar
-                            progress.console.print(f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                        try:
+                            result_json = future.result(timeout=self.timeout)
+                            results[str(repo_path)].append(result_json)
+
+                            if result_json.get("success"):
+                                elapsed = result_json.get("elapsed_time", 0)
+                                # Add completion message below progress bar
+                                msg = Text.from_markup(f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                                completion_messages.append(msg)
+                                progress.update(task_id, advance=1)
+                                live.update(Group(progress, *completion_messages))
+                                if progress_callback:
+                                    progress_callback(str(repo_path), analyzer_type, True)
+                            else:
+                                error_msg = result_json.get("error", "Unknown error")
+                                msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
+                                completion_messages.append(msg)
+                                progress.update(task_id, advance=1)
+                                live.update(Group(progress, *completion_messages))
+                                if progress_callback:
+                                    progress_callback(str(repo_path), analyzer_type, False)
+
+                        except FuturesTimeoutError:
+                            msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
+                            completion_messages.append(msg)
                             progress.update(task_id, advance=1)
-                            if progress_callback:
-                                progress_callback(str(repo_path), analyzer_type, True)
-                        else:
-                            error_msg = result_json.get("error", "Unknown error")
-                            progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
-                            progress.update(task_id, advance=1)
+                            live.update(Group(progress, *completion_messages))
                             if progress_callback:
                                 progress_callback(str(repo_path), analyzer_type, False)
 
-                    except FuturesTimeoutError:
-                        progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
-                        progress.update(task_id, advance=1)
-                        if progress_callback:
-                            progress_callback(str(repo_path), analyzer_type, False)
-
-                    except Exception as e:
-                        progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
-                        progress.update(task_id, advance=1)
-                        if progress_callback:
-                            progress_callback(str(repo_path), analyzer_type, False)
+                        except Exception as e:
+                            msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
+                            completion_messages.append(msg)
+                            progress.update(task_id, advance=1)
+                            live.update(Group(progress, *completion_messages))
+                            if progress_callback:
+                                progress_callback(str(repo_path), analyzer_type, False)
         else:
             # No progress bar - use simple output
             info(f"Submitting {task_count} analysis tasks to {self.max_workers} workers...")
