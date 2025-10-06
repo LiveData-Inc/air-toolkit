@@ -120,6 +120,8 @@ def analyze(
             cache_manager=cache_manager,
             no_cache=no_cache,
             include_external=include_external,
+            parallel=parallel,
+            max_workers=workers,
         )
         return
 
@@ -465,6 +467,8 @@ def _analyze_multi_repo(
     cache_manager: CacheManager | None = None,
     no_cache: bool = False,
     include_external: bool = False,
+    parallel: bool = False,
+    max_workers: int | None = None,
 ) -> None:
     """Analyze multiple repos with dependency awareness.
 
@@ -558,7 +562,7 @@ def _analyze_multi_repo(
                 )
                 agent_ids.append(agent_id)
             else:
-                # Run synchronously
+                # Run synchronously (with optional parallel analyzers per repo)
                 _analyze_single_repo(
                     resource_path=resource_path,
                     focus=focus,
@@ -572,6 +576,8 @@ def _analyze_multi_repo(
                     current_index=current_repo,
                     total_count=total_repos,
                     include_external=include_external,
+                    parallel=parallel,
+                    max_workers=max_workers,
                 )
 
         # If background, wait for this level to complete before next

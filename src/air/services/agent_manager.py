@@ -251,6 +251,8 @@ from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 from typing import Callable
 
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+
 from air.services.analysis_worker import run_analyzer_subprocess
 from air.services.analyzers.base import AnalyzerResult, Finding, FindingSeverity
 from air.utils.console import error, info
@@ -288,6 +290,7 @@ class AnalysisOrchestrator:
         analyzers: list[str],
         include_external: bool = False,
         progress_callback: Callable[[str, str, bool], None] | None = None,
+        show_progress: bool = True,
     ) -> dict[str, list[dict]]:
         """Execute analyzers in parallel, return aggregated results.
 
@@ -296,6 +299,7 @@ class AnalysisOrchestrator:
             analyzers: List of analyzer types (security, performance, etc.)
             include_external: Include external/vendor code in analysis
             progress_callback: Optional callback for progress updates (repo, analyzer, success)
+            show_progress: Show progress bar (default: True)
 
         Returns:
             Dict mapping repo_path -> list of analyzer results (as dicts)
@@ -303,7 +307,6 @@ class AnalysisOrchestrator:
         # Submit all tasks
         futures = {}
         task_count = len(repo_paths) * len(analyzers)
-        info(f"Submitting {task_count} analysis tasks to {self.max_workers} workers...")
 
         for repo_path in repo_paths:
             for analyzer_type in analyzers:
@@ -315,42 +318,82 @@ class AnalysisOrchestrator:
                 )
                 futures[future] = (repo_path, analyzer_type)
 
-        # Collect results as they complete
+        # Collect results with progress bar
         results = defaultdict(list)
-        completed = 0
 
-        for future in as_completed(futures, timeout=self.timeout * task_count):
-            repo_path, analyzer_type = futures[future]
-            completed += 1
+        if show_progress:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TimeElapsedColumn(),
+            ) as progress:
+                task_id = progress.add_task(
+                    f"[cyan]Analyzing {len(repo_paths)} repo(s) with {len(analyzers)} analyzers...",
+                    total=task_count
+                )
 
-            try:
-                # Get result from subprocess
-                result_json = future.result(timeout=self.timeout)
+                for future in as_completed(futures, timeout=self.timeout * task_count):
+                    repo_path, analyzer_type = futures[future]
 
-                # Store result
-                results[str(repo_path)].append(result_json)
+                    try:
+                        result_json = future.result(timeout=self.timeout)
+                        results[str(repo_path)].append(result_json)
 
-                # Report progress
-                if result_json.get("success"):
-                    elapsed = result_json.get("elapsed_time", 0)
-                    info(f"✓ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
-                    if progress_callback:
-                        progress_callback(str(repo_path), analyzer_type, True)
-                else:
-                    error_msg = result_json.get("error", "Unknown error")
-                    error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {error_msg}")
+                        if result_json.get("success"):
+                            elapsed = result_json.get("elapsed_time", 0)
+                            progress.update(task_id, advance=1, description=f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                            if progress_callback:
+                                progress_callback(str(repo_path), analyzer_type, True)
+                        else:
+                            error_msg = result_json.get("error", "Unknown error")
+                            progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
+                            if progress_callback:
+                                progress_callback(str(repo_path), analyzer_type, False)
+
+                    except FuturesTimeoutError:
+                        progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, False)
+
+                    except Exception as e:
+                        progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, False)
+        else:
+            # No progress bar - use simple output
+            info(f"Submitting {task_count} analysis tasks to {self.max_workers} workers...")
+            completed = 0
+
+            for future in as_completed(futures, timeout=self.timeout * task_count):
+                repo_path, analyzer_type = futures[future]
+                completed += 1
+
+                try:
+                    result_json = future.result(timeout=self.timeout)
+                    results[str(repo_path)].append(result_json)
+
+                    if result_json.get("success"):
+                        elapsed = result_json.get("elapsed_time", 0)
+                        info(f"✓ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, True)
+                    else:
+                        error_msg = result_json.get("error", "Unknown error")
+                        error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {error_msg}")
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, False)
+
+                except FuturesTimeoutError:
+                    error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - Timeout after {self.timeout}s")
                     if progress_callback:
                         progress_callback(str(repo_path), analyzer_type, False)
 
-            except FuturesTimeoutError:
-                error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - Timeout after {self.timeout}s")
-                if progress_callback:
-                    progress_callback(str(repo_path), analyzer_type, False)
-
-            except Exception as e:
-                error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {e}")
-                if progress_callback:
-                    progress_callback(str(repo_path), analyzer_type, False)
+                except Exception as e:
+                    error(f"✗ [{completed}/{task_count}] {analyzer_type}: {repo_path.name} - {e}")
+                    if progress_callback:
+                        progress_callback(str(repo_path), analyzer_type, False)
 
         return dict(results)
 
