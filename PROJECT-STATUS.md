@@ -102,7 +102,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 - `air review` - Generate review context from git changes
 - `air review --pr` - Review PR branch
 - `air claude context` - Get project context for AI
-- **9 Claude Code-specific slash commands:** `/air-task`, `/air-link`, `/air-analyze`, `/air-validate`, `/air-status`, `/air-findings`, `/air-summary`, `/air-review`, `/air-done`
+- **9 Claude Code-specific slash commands:** `/air-task`, `/air-link`, `/air-analyze`, `/air-validate`, `/air-status`, `/air-findings`, `/air-summary`, `/air-review`, `/air-task-complete`
 - JSON output optimized for AI consumption
 
 ### ✅ Pull Request Workflow (v0.3.1)
@@ -357,11 +357,12 @@ air --help
 
 ### v0.5.0 Goals (October 2025) ✅
 - ✅ Code review integration
-- ✅ Claude Code slash commands (3 initial: `/air-task`, `/air-review`, `/air-done`)
+- ✅ Claude Code slash commands (3 initial: `/air-task`, `/air-review`, `/air-task-complete`)
 - ✅ AI-first workflows
 
 ### v0.6.2 Goals (October 2025) ✅
 - ✅ Extended Claude Code slash commands (9 total: added `/air-link`, `/air-analyze`, `/air-validate`, `/air-status`, `/air-findings`, `/air-summary`)
+- ✅ Renamed `/air-done` → `/air-task-complete` for clarity
 - ✅ Shell completion (bash/zsh/fish)
 - ✅ External library exclusion
 - ✅ HTML findings reports

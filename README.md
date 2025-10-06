@@ -214,7 +214,7 @@ AIR includes **9 Claude Code-specific slash commands** for streamlined workflow:
 - **`/air-findings`** - Generate HTML findings report (`air findings --all --html`)
 - **`/air-summary`** - Generate work summary (`air summary --format=json`)
 - **`/air-review`** - Generate code review context
-- **`/air-done`** - Complete current task and commit changes
+- **`/air-task-complete`** - Complete current task and commit changes (`air task complete`)
 
 **Note:** These slash commands are specific to Claude Code and are automatically available when working in an AIR project. They are defined in `.claude/commands/` and work only in Claude Code's CLI interface.
 

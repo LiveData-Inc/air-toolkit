@@ -61,7 +61,7 @@ AIR provides **9 Claude Code-specific slash commands** for streamlined workflow.
 | `/air-findings` | Generate HTML findings report | `air findings --all --html` |
 | `/air-summary` | Generate work summary | `air summary --format=json` |
 | `/air-review` | Generate code review context | `air review --format=json` |
-| `/air-done` | Complete current task and commit | Manual task update + git commit |
+| `/air-task-complete` | Complete current task and commit | `air task complete` + git commit |
 
 **Usage Examples:**
 
@@ -79,7 +79,7 @@ AIR provides **9 Claude Code-specific slash commands** for streamlined workflow.
 /air-findings
 
 # Complete work session (Claude Code only)
-/air-done
+/air-task-complete
 ```
 
 **Note:** For other AI assistants or manual CLI use, use the regular `air` commands shown in the "Equivalent Air Command" column.

@@ -1,5 +1,5 @@
 ---
-description: Complete current task and commit changes
+description: Complete current task and commit changes (mirrors air task complete)
 ---
 
 I'll help you complete the current task and commit your work.
