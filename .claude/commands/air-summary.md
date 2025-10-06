@@ -7,7 +7,7 @@ I'll generate a comprehensive summary of all work tracked in this AIR project.
 First, let me check the project context:
 
 ```bash
-air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project. Use air init to create one."}'
+air status --format=json
 ```
 
 Now I'll compile all task files into a structured summary:

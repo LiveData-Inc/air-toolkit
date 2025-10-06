@@ -8,7 +8,7 @@ Let me check what we've been working on:
 
 ```bash
 # Find the most recent in-progress task file
-find .air/tasks -name "*.md" -type f -exec grep -l "⏳ In Progress" {} \; 2>/dev/null | sort -r | head -1
+find .air/tasks -name "*.md" -type f -exec grep -l "⏳ In Progress" {} \; | sort -r | head -1
 ```
 
 I'll:

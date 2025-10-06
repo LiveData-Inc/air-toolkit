@@ -7,7 +7,7 @@ I'll generate a comprehensive HTML report of all analysis findings.
 First, let me check the project status:
 
 ```bash
-air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project. Use air init to create one."}'
+air status --format=json
 ```
 
 Now I'll aggregate findings from all analyzed repositories and generate an HTML report:

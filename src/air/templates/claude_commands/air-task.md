@@ -7,7 +7,7 @@ I'll help you create and start a new tracked task.
 First, let me check the project context:
 
 ```bash
-air claude context --format=json 2>/dev/null || air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project, task tracking available after air init"}'
+air claude context --format=json || air status --format=json
 ```
 
 Now I'll create a task file for this work:

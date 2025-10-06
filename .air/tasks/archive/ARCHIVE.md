@@ -2,12 +2,12 @@
 
 Summary of all archived tasks organized by time period.
 
-**Total Archived Tasks:** 62
+**Total Archived Tasks:** 63
 
 ## Table of Contents
 
 - [Uncategorized](#uncategorized) (1 tasks)
-- [2025-10](#2025-10) (61 tasks)
+- [2025-10](#2025-10) (62 tasks)
 
 ## Uncategorized
 
@@ -23,7 +23,14 @@ Summary of all archived tasks organized by time period.
 
 ## 2025-10
 
-**61 tasks**
+**62 tasks**
+
+### ✅ Fix --develop flag to set writable=true
+
+- **File:** `2025-10/20251006-001-1032-fix-develop-flag-writable-setting.md`
+- **Date:** 2025-10-06 10:32
+- **Status:** success
+- **Prompt:** `air link add ... --develop` must mark the repo as writeable=true in air-config.json.
 
 ### ✅ Fix missing Claude Code slash commands after air init
 

@@ -5,7 +5,7 @@ description: Get current AIR project status and context
 I'll retrieve the current AIR project status for you.
 
 ```bash
-air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project. Use air init to create one."}'
+air status --format=json
 ```
 
 This provides structured information about:

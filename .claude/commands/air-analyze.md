@@ -7,7 +7,7 @@ I'll run a comprehensive code analysis on your AIR project.
 First, let me check the project status:
 
 ```bash
-air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project. Use air init to create one."}'
+air status --format=json
 ```
 
 Now I'll analyze all linked repositories with dependency-aware ordering:

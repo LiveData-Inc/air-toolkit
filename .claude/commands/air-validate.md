@@ -7,7 +7,7 @@ I'll validate your AIR project structure and automatically fix any issues.
 First, let me check if we're in an AIR project:
 
 ```bash
-air status --format=json 2>/dev/null || echo '{"note":"Not an AIR project. Use air init to create one."}'
+air status --format=json
 ```
 
 Now I'll validate the project structure with auto-fix enabled:
