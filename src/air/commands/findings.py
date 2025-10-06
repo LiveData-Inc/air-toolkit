@@ -8,7 +8,8 @@ from rich.console import Console
 from rich.table import Table
 
 from air.services.filesystem import get_project_root
-from air.utils.console import error, info
+from air.services.html_report_generator import generate_findings_html
+from air.utils.console import error, info, success
 
 console = Console()
 
@@ -177,6 +178,8 @@ def _show_details(findings_list: list) -> None:
     default="human",
     help="Output format",
 )
+@click.option("--html", is_flag=True, help="Generate HTML report")
+@click.option("--output", help="Output file path for HTML report (default: analysis/findings-report.html)")
 def findings(
     all_findings: bool,
     severity: str | None,
@@ -184,6 +187,8 @@ def findings(
     summary: bool,
     details: bool,
     output_format: str,
+    html: bool,
+    output: str | None,
 ) -> None:
     """View analysis findings.
 
@@ -195,6 +200,8 @@ def findings(
       air findings --all --summary                # Summary statistics
       air findings --all --details                # Detailed view with locations
       air findings --all --format=json            # JSON output
+      air findings --all --html                   # Generate HTML report
+      air findings --all --html --output report.html  # Custom HTML output path
     """
     project_root = get_project_root()
     if not project_root:
@@ -241,6 +248,28 @@ def findings(
             f for f in all_findings_list
             if f.get("category", "").lower() == category.lower()
         ]
+
+    # HTML output
+    if html:
+        if not all_findings_list:
+            info("No findings to generate HTML report")
+            return
+
+        # Determine output path
+        if output:
+            html_path = Path(output)
+        else:
+            html_path = project_root / "analysis" / "findings-report.html"
+
+        html_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Generate HTML report
+        project_name = project_root.name
+        generate_findings_html(all_findings_list, html_path, project_name)
+
+        success(f"HTML report generated: {html_path}")
+        info(f"Open in browser: file://{html_path.absolute()}")
+        return
 
     if output_format == "json":
         result = {

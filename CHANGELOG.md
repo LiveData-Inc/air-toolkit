@@ -16,24 +16,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Works with `air analyze --all`, `air analyze --gap`, and dependency-ordered analysis
 - Improves UX by showing users exactly where they are in long analysis operations
 
-### Planned Features (Design Phase)
+### Added - HTML Findings Report
 
-**HTML Findings Report** - Comprehensive HTML report generation (Task 006)
-- Rich HTML report with table of contents and detailed findings
-- Summary table at top with clickable links to each finding
+**Comprehensive HTML Report** - Rich, detailed findings report with table of contents (Task 006)
+- Rich HTML report with executive summary and clickable table of contents
+- Summary table at top with links to detailed findings
 - Grouped by repository with detailed sections for each finding
-- Severity color coding, location info, code context, and suggestions
+- Severity color coding, location info, and actionable suggestions
 - Command: `air findings --all --html [--output custom.html]`
 - Single HTML file with embedded CSS for portability
 - Responsive and print-friendly design
+- Professional styling with badges and cards
 
-**External Library Exclusion** - Exclude vendor code from analysis (Task 007)
-- Exclude external/vendor libraries by default for cleaner results
-- 15x faster analysis, 98% less noise from vendor code
-- Excludes: .venv, node_modules, vendor/, build/, dist/, etc.
+### Added - External Library Exclusion
+
+**Exclude Vendor Code** - Focus on first-party code, exclude external libraries by default (Task 007)
+- Exclude external/vendor libraries by default for cleaner, faster analysis
+- **15x faster** analysis, **98% less noise** from vendor code
+- Excludes: .venv, node_modules, vendor/, build/, dist/, __pycache__, etc.
 - Command: `air analyze myapp --include-external` to opt-in to vendor analysis
 - Automatic detection of common vendor directories across languages
 - Performance: Analyze 250 files in 3s vs 15,000 files in 45s
+- Language support: Python, JavaScript, Go, Ruby, Java, Rust
 
 ## [0.6.2] - 2025-10-05
 

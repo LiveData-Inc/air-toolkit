@@ -3,11 +3,22 @@
 import re
 from pathlib import Path
 
+from air.services.path_filter import should_exclude_path
 from .base import AnalyzerResult, BaseAnalyzer, Finding, FindingSeverity
 
 
 class SecurityAnalyzer(BaseAnalyzer):
     """Analyzes code for common security issues."""
+
+    def __init__(self, repo_path: Path, include_external: bool = False):
+        """Initialize security analyzer.
+
+        Args:
+            repo_path: Path to repository
+            include_external: If True, include external/vendor code in analysis
+        """
+        super().__init__(repo_path)
+        self.include_external = include_external
 
     @property
     def name(self) -> str:
@@ -210,9 +221,9 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
 
         for py_file in self._get_files_by_pattern("**/*.py"):
-            # Skip test files and common directories
-            if any(part in ["test", "tests", "__pycache__", "venv", ".venv"]
-                   for part in py_file.parts):
+            # Use path_filter to exclude external code
+            rel_path = py_file.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
                 continue
 
             content = self._read_file(py_file)
@@ -229,9 +240,9 @@ class SecurityAnalyzer(BaseAnalyzer):
 
         for pattern in ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]:
             for js_file in self._get_files_by_pattern(pattern):
-                # Skip node_modules and dist
-                if any(part in ["node_modules", "dist", "build"]
-                       for part in js_file.parts):
+                # Use path_filter to exclude external code
+                rel_path = js_file.relative_to(self.repo_path)
+                if should_exclude_path(rel_path, self.include_external):
                     continue
 
                 content = self._read_file(js_file)

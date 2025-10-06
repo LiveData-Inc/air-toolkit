@@ -41,6 +41,7 @@ from air.utils.console import error, info, success, warn
 @click.option("--focus", help="Analysis focus area (security, architecture, performance)", shell_complete=complete_analyzer_focus)
 @click.option("--no-cache", is_flag=True, help="Force fresh analysis (skip cache)")
 @click.option("--clear-cache", is_flag=True, help="Clear cache before analysis")
+@click.option("--include-external", is_flag=True, help="Include external/vendor libraries in analysis")
 def analyze(
     resource: str | None,
     analyze_all: bool,
@@ -53,6 +54,7 @@ def analyze(
     focus: str | None,
     no_cache: bool,
     clear_cache: bool,
+    include_external: bool,
 ) -> None:
     """Analyze repositories with intelligent defaults.
 
@@ -106,11 +108,12 @@ def analyze(
             background=background,
             cache_manager=cache_manager,
             no_cache=no_cache,
+            include_external=include_external,
         )
         return
 
     if gap:
-        _analyze_gap(config=config, library_name=gap, focus=focus)
+        _analyze_gap(config=config, library_name=gap, focus=focus, include_external=include_external)
         return
 
     # Single repo analysis - resolve resource name or path
@@ -133,6 +136,7 @@ def analyze(
         config=config if check_deps else None,
         cache_manager=cache_manager,
         no_cache=no_cache,
+        include_external=include_external,
     )
 
 
@@ -174,6 +178,7 @@ def _analyze_single_repo(
     no_cache: bool = False,
     current_index: int | None = None,
     total_count: int | None = None,
+    include_external: bool = False,
 ) -> None:
     """Analyze a single repository.
 
@@ -244,19 +249,19 @@ def _analyze_single_repo(
         analyzers = []
 
         if focus == "security" or not focus:
-            analyzers.append(SecurityAnalyzer(resource_path))
+            analyzers.append(SecurityAnalyzer(resource_path, include_external=include_external))
 
         if focus == "performance" or not focus:
-            analyzers.append(PerformanceAnalyzer(resource_path))
+            analyzers.append(PerformanceAnalyzer(resource_path, include_external=include_external))
 
         if focus == "architecture" or not focus:
-            analyzers.append(ArchitectureAnalyzer(resource_path))
+            analyzers.append(ArchitectureAnalyzer(resource_path, include_external=include_external))
 
         if focus == "quality" or not focus:
-            analyzers.append(QualityAnalyzer(resource_path))
+            analyzers.append(QualityAnalyzer(resource_path, include_external=include_external))
 
         if not focus:  # Always run structure analysis when no focus
-            analyzers.append(CodeStructureAnalyzer(resource_path))
+            analyzers.append(CodeStructureAnalyzer(resource_path, include_external=include_external))
 
         # Run analyzers and collect findings
         for analyzer in analyzers:
@@ -358,6 +363,7 @@ def _analyze_multi_repo(
     background: bool,
     cache_manager: CacheManager | None = None,
     no_cache: bool = False,
+    include_external: bool = False,
 ) -> None:
     """Analyze multiple repos with dependency awareness.
 
@@ -455,6 +461,7 @@ def _analyze_multi_repo(
                     no_cache=no_cache,
                     current_index=current_repo,
                     total_count=total_repos,
+                    include_external=include_external,
                 )
 
         # If background, wait for this level to complete before next
@@ -480,6 +487,7 @@ def _analyze_gap(
     config: AirConfig,
     library_name: str,
     focus: str | None,
+    include_external: bool = False,
 ) -> None:
     """Perform gap analysis for a library vs its dependents.
 
@@ -526,6 +534,7 @@ def _analyze_gap(
         config=None,
         current_index=current_repo,
         total_count=total_repos,
+        include_external=include_external,
     )
 
     # Analyze dependents
@@ -548,6 +557,7 @@ def _analyze_gap(
             config=config,
             current_index=current_repo,
             total_count=total_repos,
+            include_external=include_external,
         )
 
     # Show gaps

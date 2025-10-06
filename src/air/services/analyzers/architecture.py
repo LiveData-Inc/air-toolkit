@@ -3,11 +3,22 @@
 import re
 from pathlib import Path
 
+from air.services.path_filter import should_exclude_path
 from .base import AnalyzerResult, BaseAnalyzer, Finding, FindingSeverity
 
 
 class ArchitectureAnalyzer(BaseAnalyzer):
     """Analyzes architecture and dependencies."""
+
+    def __init__(self, repo_path: Path, include_external: bool = False):
+        """Initialize architecture analyzer.
+
+        Args:
+            repo_path: Path to repository
+            include_external: If True, include external/vendor code in analysis
+        """
+        super().__init__(repo_path)
+        self.include_external = include_external
 
     @property
     def name(self) -> str:

@@ -3,11 +3,22 @@
 import re
 from pathlib import Path
 
+from air.services.path_filter import should_exclude_path
 from .base import AnalyzerResult, BaseAnalyzer, Finding, FindingSeverity
 
 
 class QualityAnalyzer(BaseAnalyzer):
     """Analyzes code quality."""
+
+    def __init__(self, repo_path: Path, include_external: bool = False):
+        """Initialize quality analyzer.
+
+        Args:
+            repo_path: Path to repository
+            include_external: If True, include external/vendor code in analysis
+        """
+        super().__init__(repo_path)
+        self.include_external = include_external
 
     @property
     def name(self) -> str:
@@ -52,6 +63,11 @@ class QualityAnalyzer(BaseAnalyzer):
         findings = []
 
         for py_file in self._get_files_by_pattern("**/*.py"):
+            # Use path_filter to exclude external code
+            rel_path = py_file.relative_to(self.repo_path)
+            if should_exclude_path(rel_path, self.include_external):
+                continue
+
             if any(part in ["test", "tests", "__pycache__", "venv"]
                    for part in py_file.parts):
                 continue
