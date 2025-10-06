@@ -322,6 +322,9 @@ class AnalysisOrchestrator:
         results = defaultdict(list)
 
         if show_progress:
+            from rich.console import Console
+            console = Console()
+
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -343,22 +346,27 @@ class AnalysisOrchestrator:
 
                         if result_json.get("success"):
                             elapsed = result_json.get("elapsed_time", 0)
-                            progress.update(task_id, advance=1, description=f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                            # Print status line above progress bar
+                            progress.console.print(f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
+                            progress.update(task_id, advance=1)
                             if progress_callback:
                                 progress_callback(str(repo_path), analyzer_type, True)
                         else:
                             error_msg = result_json.get("error", "Unknown error")
-                            progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
+                            progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
+                            progress.update(task_id, advance=1)
                             if progress_callback:
                                 progress_callback(str(repo_path), analyzer_type, False)
 
                     except FuturesTimeoutError:
-                        progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
+                        progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
+                        progress.update(task_id, advance=1)
                         if progress_callback:
                             progress_callback(str(repo_path), analyzer_type, False)
 
                     except Exception as e:
-                        progress.update(task_id, advance=1, description=f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
+                        progress.console.print(f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
+                        progress.update(task_id, advance=1)
                         if progress_callback:
                             progress_callback(str(repo_path), analyzer_type, False)
         else:
