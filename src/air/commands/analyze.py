@@ -418,11 +418,16 @@ def _analyze_single_repo(
         if check_deps and config:
             deps_start = time.time()
             info("Checking dependencies...")
+            info("  Building dependency graph from imports and package files...")
             graph = build_dependency_graph(config)
+            info(f"  Found {len(graph)} dependencies to analyze")
+            info("  Detecting dependency gaps and issues...")
             gaps = detect_dependency_gaps(config, graph)
             if gaps:
-                warn(f"Found {len(gaps)} dependency issues")
+                warn(f"  Found {len(gaps)} dependency issues")
                 all_findings.extend(gaps)
+            else:
+                info("  No dependency issues found")
             deps_time = time.time() - deps_start
 
         # Save findings to analysis directory
