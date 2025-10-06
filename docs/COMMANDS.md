@@ -1,6 +1,6 @@
 # AIR Toolkit - Commands Reference
 
-**Version:** 0.6.2.post1
+**Version:** 0.6.2.post2
 **Last Updated:** 2025-10-05
 
 Complete reference for all AIR commands.
@@ -8,6 +8,7 @@ Complete reference for all AIR commands.
 ## Table of Contents
 
 - [Global Options](#global-options)
+- [Claude Code Slash Commands](#claude-code-slash-commands) ⭐ NEW
 - [Assessment Commands](#assessment-commands)
   - [air init](#air-init)
   - [air link](#air-link)
@@ -41,6 +42,49 @@ These options work with all commands:
 air --version        # Show version and exit
 air --help           # Show help message
 ```
+
+---
+
+## Claude Code Slash Commands
+
+AIR provides **9 Claude Code-specific slash commands** for streamlined workflow. These commands are defined in `.claude/commands/` and only work in Claude Code's CLI interface.
+
+**Available Slash Commands:**
+
+| Command | Description | Equivalent Air Command |
+|---------|-------------|------------------------|
+| `/air-task` | Create and start new AIR task | Manual task file creation |
+| `/air-link PATH` | Quickly link a repository | `air link add PATH` |
+| `/air-analyze` | Run comprehensive analysis | `air analyze --all` |
+| `/air-validate` | Validate project and auto-fix | `air validate --fix` |
+| `/air-status` | Get project status for AI | `air status --format=json` |
+| `/air-findings` | Generate HTML findings report | `air findings --all --html` |
+| `/air-summary` | Generate work summary | `air summary --format=json` |
+| `/air-review` | Generate code review context | `air review --format=json` |
+| `/air-done` | Complete current task and commit | Manual task update + git commit |
+
+**Usage Examples:**
+
+```bash
+# Start a new task (Claude Code only)
+/air-task
+
+# Quickly link a repository (Claude Code only)
+/air-link ~/repos/myapp
+
+# Run comprehensive analysis (Claude Code only)
+/air-analyze
+
+# Generate HTML report (Claude Code only)
+/air-findings
+
+# Complete work session (Claude Code only)
+/air-done
+```
+
+**Note:** For other AI assistants or manual CLI use, use the regular `air` commands shown in the "Equivalent Air Command" column.
+
+---
 
 ## Assessment Commands
 

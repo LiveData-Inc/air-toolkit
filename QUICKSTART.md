@@ -244,6 +244,24 @@ air validate                # Check project structure
 
 If you're using **Claude Code** or similar AI assistants:
 
+### Claude Code Slash Commands (v0.6.2)
+
+AIR includes **9 Claude Code-specific slash commands** for streamlined workflow:
+
+```bash
+/air-task          # Create and start new AIR task
+/air-link PATH     # Quickly link repository
+/air-analyze       # Run comprehensive analysis (air analyze --all)
+/air-validate      # Validate project and auto-fix (air validate --fix)
+/air-status        # Get project status (air status --format=json)
+/air-findings      # Generate HTML findings report
+/air-summary       # Generate work summary (air summary --format=json)
+/air-review        # Generate code review context
+/air-done          # Complete current task and commit changes
+```
+
+**Note:** These slash commands only work in Claude Code (`.claude/commands/`). For other AI assistants or manual use, use the regular `air` commands.
+
 ### Check if AIR is available
 ```bash
 which air

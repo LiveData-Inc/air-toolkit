@@ -1,6 +1,6 @@
 # AIR Toolkit - Project Status
 
-**Current Version:** 0.6.1.post1
+**Current Version:** 0.6.2.post2
 **Last Updated:** 2025-10-05
 **Status:** Production-Ready with Advanced Features ✅
 
@@ -10,7 +10,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 
 **Key Metrics:**
 - **410 tests** - All passing ✅
-- **Version:** 0.6.1.post1 (production-ready)
+- **Version:** 0.6.2.post2 (production-ready)
 - **Distribution:** Available on PyPI (`pip install air-toolkit`)
 - **Commands:** 11 command groups, 30+ subcommands
 - **Analysis:** 5 specialized analyzers with pluggable architecture
@@ -102,7 +102,7 @@ AIR (AI Review & Development Toolkit) is a mature Python CLI tool for AI-assiste
 - `air review` - Generate review context from git changes
 - `air review --pr` - Review PR branch
 - `air claude context` - Get project context for AI
-- Claude Code slash commands: `/air-review`, `/air-begin`, `/air-done`
+- **9 Claude Code-specific slash commands:** `/air-task`, `/air-link`, `/air-analyze`, `/air-validate`, `/air-status`, `/air-findings`, `/air-summary`, `/air-review`, `/air-done`
 - JSON output optimized for AI consumption
 
 ### ✅ Pull Request Workflow (v0.3.1)
@@ -357,8 +357,14 @@ air --help
 
 ### v0.5.0 Goals (October 2025) ✅
 - ✅ Code review integration
-- ✅ Claude Code slash commands
+- ✅ Claude Code slash commands (3 initial: `/air-task`, `/air-review`, `/air-done`)
 - ✅ AI-first workflows
+
+### v0.6.2 Goals (October 2025) ✅
+- ✅ Extended Claude Code slash commands (9 total: added `/air-link`, `/air-analyze`, `/air-validate`, `/air-status`, `/air-findings`, `/air-summary`)
+- ✅ Shell completion (bash/zsh/fish)
+- ✅ External library exclusion
+- ✅ HTML findings reports
 
 ### v0.6.0 Goals (October 2025) ✅
 - ✅ Deep code analysis (5 analyzers)

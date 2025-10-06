@@ -202,6 +202,22 @@ air summary
 - Built wheel and source distributions
 - Cross-platform support (macOS, Linux, Windows)
 
+## Claude Code Integration
+
+AIR includes **9 Claude Code-specific slash commands** for streamlined workflow:
+
+- **`/air-task`** - Create and start new AIR task
+- **`/air-link`** - Quickly link a repository (`air link add PATH`)
+- **`/air-analyze`** - Run comprehensive analysis (`air analyze --all`)
+- **`/air-validate`** - Validate project and auto-fix issues (`air validate --fix`)
+- **`/air-status`** - Get project status (`air status --format=json`)
+- **`/air-findings`** - Generate HTML findings report (`air findings --all --html`)
+- **`/air-summary`** - Generate work summary (`air summary --format=json`)
+- **`/air-review`** - Generate code review context
+- **`/air-done`** - Complete current task and commit changes
+
+**Note:** These slash commands are specific to Claude Code and are automatically available when working in an AIR project. They are defined in `.claude/commands/` and work only in Claude Code's CLI interface.
+
 ## Documentation
 
 - [Specification](docs/SPECIFICATION.md) - Complete feature specification
