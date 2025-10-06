@@ -18,6 +18,7 @@ class ArchitectureAnalyzer(BaseAnalyzer):
             include_external: If True, include external/vendor code in analysis
         """
         super().__init__(repo_path)
+        self.repo_path = repo_path
         self.include_external = include_external
 
     @property
