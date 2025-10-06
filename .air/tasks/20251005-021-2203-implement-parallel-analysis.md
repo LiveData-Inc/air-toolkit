@@ -33,10 +33,21 @@ Implement parallel analysis using subprocess agents with JSON communication
    - Findings file written atomically
    - No vendor code in results
 
+5. Enhanced progress display for parallel mode (multiple iterations)
+   - Added startup banner with Rich Panel showing repo count and mode
+   - Added spinner for "Building dependency graph" at startup
+   - Fixed progress bar to show individual analyzer rows
+   - Changed from single progress bar to individual tasks per analyzer
+   - Fixed analyzer rows disappearing after completion
+   - Added overall progress bar at top (shows total % complete)
+   - Individual analyzer rows now stay visible with spinners → ✓/✗
+   - Each row shows: spinner while running → green ✓ with timing on success
+   - Overall bar updates to 100% when all analyzers complete
+
 ## Files Changed
 - `src/air/services/analysis_worker.py` - NEW subprocess worker
-- `src/air/services/agent_manager.py` - Added AnalysisOrchestrator class
-- `src/air/commands/analyze.py` - Added --parallel and --workers flags
+- `src/air/services/agent_manager.py` - Added AnalysisOrchestrator class with enhanced progress display
+- `src/air/commands/analyze.py` - Added --parallel, --workers flags, startup banner, and dependency graph progress
 
 ## Outcome
 ✅ Success
@@ -57,5 +68,8 @@ Test results on ng-anlx:
 ## Notes
 - This is v0.6.3
 - Subprocess approach bypasses Python GIL
-- Ready for multi-repo parallel in future
-- Can add progress bars in next iteration
+- Multi-repo parallel analysis working (`air analyze --all --parallel`)
+- Progress bars show overall completion + individual analyzer status
+- Spinners animate while running, replaced with ✓ (success) or ✗ (failure)
+- All analyzer rows stay visible after completion
+- Overall progress bar shows 100% when all analyzers complete

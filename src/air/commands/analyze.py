@@ -292,28 +292,27 @@ def _analyze_single_repo(
         result = classify_resource(resource_path)
         classification_time = time.time() - classification_start
 
-        info(f"Type: {result.resource_type.value}")
+        info(f"  Type: {result.resource_type.value}")
         if result.technology_stack:
-            info(f"Technology: {result.technology_stack}")
+            info(f"  Technology: {result.technology_stack}")
         if result.detected_languages:
-            info(f"Languages: {', '.join(result.detected_languages)}")
+            info(f"  Languages: {', '.join(result.detected_languages)}")
         if result.detected_frameworks:
-            info(f"Frameworks: {', '.join(result.detected_frameworks)}")
-        info(f"Confidence: {result.confidence:.0%}")
+            info(f"  Frameworks: {', '.join(result.detected_frameworks)}")
+        info(f"  Confidence: {result.confidence:.0%}")
 
-        # Gather findings from classification
-        all_findings = [
-            {
-                "category": "classification",
-                "severity": "info",
-                "type": result.resource_type.value,
-                "technology_stack": result.technology_stack,
-                "confidence": result.confidence,
-                "languages": result.detected_languages,
-                "frameworks": result.detected_frameworks,
-                "reasoning": result.reasoning,
-            }
-        ]
+        # Store classification as metadata (not a finding)
+        classification_metadata = {
+            "type": result.resource_type.value,
+            "technology_stack": result.technology_stack,
+            "confidence": result.confidence,
+            "languages": result.detected_languages,
+            "frameworks": result.detected_frameworks,
+            "reasoning": result.reasoning,
+        }
+
+        # Initialize findings list (no classification entry)
+        all_findings = []
 
         # Run deep analysis based on focus
         analyzer_times = {}
@@ -385,12 +384,12 @@ def _analyze_single_repo(
                     )
 
                     if cached_result:
-                        info(f"{analyzer.name} analysis (cached)...")
+                        info(f"  {analyzer.name} analysis (cached)...")
                         analyzer_result = cached_result
 
                 # Run analysis if not cached
                 if not analyzer_result:
-                    info(f"Running {analyzer.name} analysis...")
+                    info(f"  Running {analyzer.name} analysis...")
                     analyzer_result = analyzer.analyze()
 
                     # Cache the result (unless --no-cache or no cache_manager)
@@ -417,16 +416,17 @@ def _analyze_single_repo(
                 # Show summary
                 if analyzer_result.summary:
                     summary_items = [f"{k}: {v}" for k, v in analyzer_result.summary.items()]
-                    info(f"{analyzer.name}: {', '.join(summary_items[:3])}")
+                    info(f"  {analyzer.name}: {', '.join(summary_items[:3])}")
 
-        # Count findings by severity
+        # Count findings by severity (exclude summary entries)
         severity_counts = {}
-        for finding in all_findings:
+        actual_findings = [f for f in all_findings if f.get("type") != "summary"]
+        for finding in actual_findings:
             sev = finding.get("severity", "info")
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
         info(
-            f"Total findings: {len(all_findings)} "
+            f"Total findings: {len(actual_findings)} "
             f"(critical: {severity_counts.get('critical', 0)}, "
             f"high: {severity_counts.get('high', 0)}, "
             f"medium: {severity_counts.get('medium', 0)})"
@@ -449,12 +449,17 @@ def _analyze_single_repo(
                 info("  No dependency issues found")
             deps_time = time.time() - deps_start
 
-        # Save findings to analysis directory
+        # Save findings to analysis directory with classification metadata
         analysis_dir = project_root / "analysis" / "reviews"
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
         findings_file = analysis_dir / f"{resource_path.name}-findings.json"
-        findings_file.write_text(json.dumps(all_findings, indent=2))
+        analysis_report = {
+            "repository": resource_path.name,
+            "classification": classification_metadata,
+            "findings": all_findings,
+        }
+        findings_file.write_text(json.dumps(analysis_report, indent=2))
 
         # Calculate total time
         total_time = time.time() - analysis_start
@@ -522,8 +527,14 @@ def _analyze_multi_repo(
     from rich.live import Live
 
     console = Console()
+
+    # Build the graph with spinner
     with console.status("[cyan]Building dependency graph from imports and package files...", spinner="dots"):
         graph = build_dependency_graph(config)
+
+    # List repositories being analyzed (after building graph)
+    for repo_name in graph.keys():
+        info(f"  [magenta]{repo_name}[/magenta]")
 
     graph_time = time.time() - graph_start
     info(f"Dependency graph built ({graph_time:.2f}s) - {len(graph)} repositories analyzed")

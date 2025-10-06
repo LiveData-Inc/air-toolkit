@@ -322,66 +322,83 @@ class AnalysisOrchestrator:
         results = defaultdict(list)
 
         if show_progress:
-            from rich.live import Live
-            from rich.console import Group
-            from rich.text import Text
+            import time
+            start_time = time.time()
+
+            # Track completion messages
+            completed_analyzers = []
 
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TaskProgressColumn(),
-                TimeElapsedColumn(),
             ) as progress:
-                task_id = progress.add_task(
-                    f"[cyan]Analyzing {len(repo_paths)} repo(s) with {len(analyzers)} analyzers...",
-                    total=task_count
-                )
+                # Create individual task for each analyzer (these stay visible)
+                task_map = {}
+                for repo_path in repo_paths:
+                    for analyzer_type in analyzers:
+                        task_key = (str(repo_path), analyzer_type)
+                        task_id = progress.add_task(
+                            f"  [dim]{analyzer_type}: {repo_path.name}[/dim]",  # Indent with 2 spaces
+                            total=None  # Spinner, no progress bar
+                        )
+                        task_map[task_key] = task_id
 
-                # List to collect completion messages
-                completion_messages = []
+                # Process results as they complete
+                for future in as_completed(futures, timeout=self.timeout * task_count):
+                    repo_path, analyzer_type = futures[future]
+                    task_key = (str(repo_path), analyzer_type)
+                    task_id = task_map[task_key]
 
-                with Live(Group(progress, *completion_messages), refresh_per_second=10, transient=True) as live:
-                    for future in as_completed(futures, timeout=self.timeout * task_count):
-                        repo_path, analyzer_type = futures[future]
+                    try:
+                        result_json = future.result(timeout=self.timeout)
+                        results[str(repo_path)].append(result_json)
 
-                        try:
-                            result_json = future.result(timeout=self.timeout)
-                            results[str(repo_path)].append(result_json)
-
-                            if result_json.get("success"):
-                                elapsed = result_json.get("elapsed_time", 0)
-                                # Add completion message below progress bar
-                                msg = Text.from_markup(f"[green]✓ {analyzer_type}: {repo_path.name} ({elapsed:.2f}s)")
-                                completion_messages.append(msg)
-                                progress.update(task_id, advance=1)
-                                live.update(Group(progress, *completion_messages))
-                                if progress_callback:
-                                    progress_callback(str(repo_path), analyzer_type, True)
-                            else:
-                                error_msg = result_json.get("error", "Unknown error")
-                                msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - {error_msg}")
-                                completion_messages.append(msg)
-                                progress.update(task_id, advance=1)
-                                live.update(Group(progress, *completion_messages))
-                                if progress_callback:
-                                    progress_callback(str(repo_path), analyzer_type, False)
-
-                        except FuturesTimeoutError:
-                            msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - Timeout")
-                            completion_messages.append(msg)
-                            progress.update(task_id, advance=1)
-                            live.update(Group(progress, *completion_messages))
+                        if result_json.get("success"):
+                            elapsed = result_json.get("elapsed_time", 0)
+                            # Update task with success (remove spinner, keep visible)
+                            progress.stop_task(task_id)
+                            progress.update(
+                                task_id,
+                                description=f"  [green]✓ {analyzer_type}: {repo_path.name}"
+                            )
+                            completed_analyzers.append((analyzer_type, repo_path.name, elapsed, True))
+                            if progress_callback:
+                                progress_callback(str(repo_path), analyzer_type, True)
+                        else:
+                            error_msg = result_json.get("error", "Unknown error")
+                            # Update task with failure
+                            progress.stop_task(task_id)
+                            progress.update(
+                                task_id,
+                                description=f"  [red]✗ {analyzer_type}: {repo_path.name} - {error_msg}"
+                            )
+                            completed_analyzers.append((analyzer_type, repo_path.name, 0, False))
                             if progress_callback:
                                 progress_callback(str(repo_path), analyzer_type, False)
 
-                        except Exception as e:
-                            msg = Text.from_markup(f"[red]✗ {analyzer_type}: {repo_path.name} - {e}")
-                            completion_messages.append(msg)
-                            progress.update(task_id, advance=1)
-                            live.update(Group(progress, *completion_messages))
-                            if progress_callback:
-                                progress_callback(str(repo_path), analyzer_type, False)
+                    except FuturesTimeoutError:
+                        progress.stop_task(task_id)
+                        progress.update(
+                            task_id,
+                            description=f"  [red]✗ {analyzer_type}: {repo_path.name} - Timeout"
+                        )
+                        completed_analyzers.append((analyzer_type, repo_path.name, 0, False))
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, False)
+
+                    except Exception as e:
+                        progress.stop_task(task_id)
+                        progress.update(
+                            task_id,
+                            description=f"  [red]✗ {analyzer_type}: {repo_path.name} - {e}"
+                        )
+                        completed_analyzers.append((analyzer_type, repo_path.name, 0, False))
+                        if progress_callback:
+                            progress_callback(str(repo_path), analyzer_type, False)
+
+            # After progress display exits, show total elapsed time
+            total_elapsed = time.time() - start_time
+            info(f"Analysis complete: {len(completed_analyzers)} tasks in {total_elapsed:.2f}s")
         else:
             # No progress bar - use simple output
             info(f"Submitting {task_count} analysis tasks to {self.max_workers} workers...")

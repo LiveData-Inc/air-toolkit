@@ -163,8 +163,8 @@ def validate(check_type: str, fix: bool, output_format: str) -> None:
             except Exception as e:
                 errors.append(f"Failed to validate resources from config: {e}")
 
-        # Then, check for unexpected/orphaned items in repos/ and contributions/
-        for dir_name in ["repos", "contributions"]:
+        # Then, check for unexpected/orphaned items in repos/
+        for dir_name in ["repos"]:
             resource_path = project_root / dir_name
             if resource_path.exists():
                 for item in resource_path.iterdir():
