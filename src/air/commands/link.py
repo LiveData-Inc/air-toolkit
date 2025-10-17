@@ -608,6 +608,15 @@ def link_list(output_format: str) -> None:
     if not review_resources and not collab_resources:
         info("No resources linked")
         console.print("\n[dim]Use 'air link add' to link resources[/dim]")
+
+        # Show GIT_REPOS_PATH status
+        import os
+        git_repos_path = os.getenv("GIT_REPOS_PATH")
+        if git_repos_path:
+            console.print(f"[dim]GIT_REPOS_PATH: [green]{git_repos_path}[/green][/dim]")
+        else:
+            console.print("[dim]GIT_REPOS_PATH: not set[/dim]")
+        console.print()
         return
 
     if review_resources:
@@ -632,6 +641,15 @@ def link_list(output_format: str) -> None:
 
     total = len(review_resources) + len(collab_resources)
     console.print(f"\n[dim]Total: {total} resources[/dim]")
+
+    # Show GIT_REPOS_PATH status
+    import os
+    git_repos_path = os.getenv("GIT_REPOS_PATH")
+    if git_repos_path:
+        console.print(f"[dim]GIT_REPOS_PATH: [green]{git_repos_path}[/green][/dim]")
+    else:
+        console.print("[dim]GIT_REPOS_PATH: not set[/dim]")
+    console.print()
 
 
 def _remove_resource(

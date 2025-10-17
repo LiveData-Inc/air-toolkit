@@ -3,7 +3,6 @@
 import json
 import sys
 from datetime import datetime
-from pathlib import Path
 
 import click
 from rich.console import Console
@@ -189,10 +188,19 @@ def status(
             console.print()
 
         # Summary
-        console.print(f"[bold]Summary:[/bold]")
+        console.print("[bold]Summary:[/bold]")
         console.print(f"  Resources: {len(review_resources) + len(collaborate_resources)}")
         console.print(f"  Analysis files: {len(analysis_files)}")
         console.print(f"  Task files: {task_count}")
+
+        # Show GIT_REPOS_PATH status
+        import os
+        git_repos_path = os.getenv("GIT_REPOS_PATH")
+        if git_repos_path:
+            console.print(f"  GIT_REPOS_PATH: [green]{git_repos_path}[/green]")
+        else:
+            console.print("  GIT_REPOS_PATH: [dim]not set[/dim]")
+
         console.print()
 
         if len(review_resources) + len(collaborate_resources) == 0:

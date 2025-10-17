@@ -215,7 +215,7 @@ def _check_directories(project_root: Path) -> list[tuple[Path, str]]:
     required_dirs = [
         (project_root / ".air" / "agents", "Background agent metadata"),
         (project_root / ".air" / "shared", "Shared state between agents"),
-        (project_root / "scripts", "Automation scripts"),
+        # scripts directory removed in v0.6.4 - daily-analysis.sh replaced by `air daily` command
         (project_root / "analysis" / "reviews", "Analysis findings"),
     ]
 
@@ -261,24 +261,21 @@ def _needs_claude_commands(project_root: Path) -> bool:
     return False
 
 
-def _check_scripts(project_root: Path) -> list[tuple[Path, str]]:
+def _check_scripts(_project_root: Path) -> list[tuple[Path, str]]:
     """Check for missing scripts.
 
+    Note: Scripts directory removed in v0.6.4 - daily-analysis.sh replaced by `air daily` command.
+    Scripts directory is now optional for user scripts only.
+
+    Args:
+        _project_root: Project root (unused, kept for compatibility)
+
     Returns:
-        List of (path, description) tuples
+        Empty list (scripts no longer auto-created during upgrade)
     """
-    missing = []
-
-    scripts = [
-        # Note: daily-analysis.sh removed - should not be auto-created during upgrade
-        (project_root / "scripts" / "README.md", "Scripts documentation"),
-    ]
-
-    for script_path, description in scripts:
-        if not script_path.exists():
-            missing.append((script_path, description))
-
-    return missing
+    # Scripts directory is now optional - not created during upgrade
+    # Users can create their own scripts manually if needed
+    return []
 
 
 def _check_templates(project_root: Path, force: bool) -> list[tuple[Path, str]]:
@@ -368,8 +365,13 @@ def _create_backup(project_root: Path) -> None:
     success(f"✓ Backup created: {backup_name}")
 
 
-def _create_file(file_path: Path, project_root: Path) -> None:
-    """Create a new file from template or embedded content."""
+def _create_file(file_path: Path, _project_root: Path) -> None:
+    """Create a new file from template or embedded content.
+
+    Args:
+        file_path: Path to file to create
+        _project_root: Project root (unused, kept for compatibility)
+    """
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Special handling for specific files

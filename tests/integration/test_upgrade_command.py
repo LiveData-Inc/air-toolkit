@@ -84,18 +84,17 @@ class TestUpgradeCommand:
         result = runner.invoke(main, ["upgrade"])
 
         assert result.exit_code == 0
-        # Should detect missing .air/agents, .air/shared, scripts, etc.
+        # Should detect missing .air/agents, .air/shared, etc. (scripts removed in v0.6.4)
         assert ".air/agents" in result.output or "agents" in result.output
-        assert "scripts" in result.output
 
     def test_upgrade_detects_missing_scripts(self, runner, old_project):
-        """Test upgrade detects missing scripts."""
+        """Test upgrade no longer detects missing scripts (v0.6.4+)."""
         os.chdir(old_project)
         result = runner.invoke(main, ["upgrade"])
 
         assert result.exit_code == 0
-        # Check for scripts directory or README detection (daily-analysis.sh removed in v0.6.4)
-        assert "scripts" in result.output.lower() or "README.md" in result.output
+        # Scripts no longer auto-created - daily-analysis.sh replaced by `air daily` command
+        # Test just verifies upgrade runs successfully
 
     def test_upgrade_detects_missing_config_fields(self, runner, old_project):
         """Test upgrade detects missing config fields."""
@@ -117,20 +116,21 @@ class TestUpgradeCommand:
         # Verify directories were created
         assert (old_project / ".air" / "agents").exists()
         assert (old_project / ".air" / "shared").exists()
-        assert (old_project / "scripts").exists()
+        # Scripts directory no longer auto-created (v0.6.4+)
         assert (old_project / "analysis" / "reviews").exists()
 
     def test_upgrade_force_creates_scripts(self, runner, old_project):
-        """Test upgrade --force creates scripts."""
+        """Test upgrade --force no longer creates scripts (v0.6.4+)."""
         os.chdir(old_project)
         result = runner.invoke(main, ["upgrade", "--force"])
 
         assert result.exit_code == 0
 
-        # Verify scripts were created
-        # daily-analysis.sh no longer created (replaced by air daily command)
-        readme = old_project / "scripts" / "README.md"
-        assert readme.exists()
+        # Scripts directory no longer auto-created (v0.6.4+)
+        # daily-analysis.sh replaced by `air daily` command
+        # Scripts directory is now optional for user scripts only
+        scripts_dir = old_project / "scripts"
+        assert not scripts_dir.exists()
 
     def test_upgrade_force_updates_config(self, runner, old_project):
         """Test upgrade --force updates config."""
@@ -208,12 +208,12 @@ class TestUpgradeCommand:
         assert task_file.read_text() == task_content
 
     def test_upgrade_preserves_existing_scripts(self, runner, old_project):
-        """Test upgrade doesn't overwrite existing scripts without force."""
+        """Test upgrade preserves existing user scripts (v0.6.4+)."""
         # Create custom script
         scripts_dir = old_project / "scripts"
         scripts_dir.mkdir()
 
-        custom_script = scripts_dir / "daily-analysis.sh"
+        custom_script = scripts_dir / "my-custom-script.sh"
         custom_content = "#!/bin/bash\n# My custom script\n"
         custom_script.write_text(custom_content)
 
@@ -222,11 +222,10 @@ class TestUpgradeCommand:
 
         assert result.exit_code == 0
 
-        # Script should be updated (overwritten) when --force is used
-        # (In production, might want to add --skip-scripts flag to preserve custom scripts)
-        updated_content = custom_script.read_text()
-        # The upgrade should have updated it
-        assert "AIR Daily Analysis" in updated_content or updated_content == custom_content
+        # Upgrade no longer touches scripts directory (v0.6.4+)
+        # User scripts are preserved exactly as-is
+        assert custom_script.exists()
+        assert custom_script.read_text() == custom_content
 
 
 class TestUpgradeEdgeCases:
@@ -303,8 +302,9 @@ class TestUpgradeEdgeCases:
         # Not the ones that already exist
         output_lower = result.output.lower()
 
-        # Should mention scripts (missing)
-        assert "scripts" in output_lower or "daily-analysis" in output_lower
+        # Scripts no longer auto-created (v0.6.4+), check for other upgrades
+        # Should either show "up to date" or mention missing .air/shared
+        assert "up to date" in output_lower or "shared" in output_lower
 
     def test_upgrade_detects_orphaned_repos(self, runner, tmp_path):
         """Test that upgrade detects symlinks in repos/ not in config."""
