@@ -169,7 +169,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
         try:
             if action_type == "migrate_config":
                 _migrate_config(path, new_config_file)
-                success(f"✓ Migrated air-config.json to .air/")
+                success("✓ Migrated air-config.json to .air/")
 
             elif action_type == "create_dir":
                 Path(path).mkdir(parents=True, exist_ok=True)
@@ -185,7 +185,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
 
             elif action_type == "update_config":
                 _update_config(path, config_updates)
-                success(f"✓ Updated air-config.json")
+                success("✓ Updated air-config.json")
 
             elif action_type == "recover_repos":
                 _recover_orphaned_repos(path, orphaned_repos)
@@ -194,7 +194,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
             elif action_type == "create_claude_commands":
                 from air.services.templates import create_claude_commands
                 if create_claude_commands(path):
-                    success(f"✓ Created Claude Code slash commands")
+                    success("✓ Created Claude Code slash commands")
 
         except Exception as e:
             error(f"Failed to {action_type} {path}: {e}")

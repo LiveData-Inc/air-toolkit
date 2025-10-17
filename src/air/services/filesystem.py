@@ -4,9 +4,12 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
-from air.utils.console import error, info, success
+from air.utils.console import error, info
+
+if TYPE_CHECKING:
+    from air.core.models import AirConfig
 
 
 def create_directory(path: Path, exist_ok: bool = True) -> None:
@@ -94,7 +97,7 @@ def create_symlink(source: Path, target: Path, overwrite: bool = False) -> None:
                 import subprocess
 
                 # Use mklink /J for junction (works without admin privileges)
-                result = subprocess.run(
+                subprocess.run(
                     ["cmd", "/c", "mklink", "/J", str(target.absolute()), str(source.absolute())],
                     capture_output=True,
                     text=True,
