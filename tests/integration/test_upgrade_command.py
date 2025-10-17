@@ -94,7 +94,8 @@ class TestUpgradeCommand:
         result = runner.invoke(main, ["upgrade"])
 
         assert result.exit_code == 0
-        assert "daily-analysis.sh" in result.output
+        # Check for scripts directory or README detection (daily-analysis.sh removed in v0.6.4)
+        assert "scripts" in result.output.lower() or "README.md" in result.output
 
     def test_upgrade_detects_missing_config_fields(self, runner, old_project):
         """Test upgrade detects missing config fields."""
