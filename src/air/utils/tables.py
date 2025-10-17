@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.table import Table
 
 from air.core.models import Resource
+from air.utils.paths import resolve_repo_path
 
 console = Console()
 
@@ -20,7 +21,8 @@ def get_resource_status(resource: Resource, project_root: Path) -> str:
     Returns:
         Colored status string (e.g., "[green]✓ valid[/green]")
     """
-    resource_path = Path(resource.path).expanduser()
+    # Resolve path using GIT_REPOS_PATH if it's relative
+    resource_path = resolve_repo_path(resource.path)
     link_path = project_root / "repos" / resource.name
 
     if link_path.exists() and resource_path.exists():
