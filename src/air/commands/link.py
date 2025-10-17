@@ -822,3 +822,171 @@ def link_remove(ctx: click.Context, name: str | None, keep_link: bool, interacti
             ctx.exit(1)
 
         _remove_resource(project_root, config, name, keep_link)
+
+
+@link.command("validate")
+@click.option(
+    "--fix",
+    is_flag=True,
+    help="Apply suggested path normalizations",
+)
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["human", "json"]),
+    default="human",
+    help="Output format",
+)
+def link_validate(fix: bool, output_format: str) -> None:
+    """Validate linked resource paths and suggest optimizations.
+
+    Checks if absolute paths can be normalized to relative paths
+    under GIT_REPOS_PATH for better portability.
+
+    \b
+    Examples:
+      air link validate              # Show validation report
+      air link validate --fix        # Apply suggested fixes
+      air link validate --format=json
+    """
+    import os
+    from air.utils.paths import can_normalize_to_relative
+    from rich.table import Table
+
+    project_root = get_project_root()
+    if not project_root:
+        error(
+            "Not in an AIR project",
+            hint="Run 'air init' to create a project or 'cd' to project directory",
+            exit_code=1,
+        )
+
+    config = load_config(project_root)
+    git_repos_path = os.getenv("GIT_REPOS_PATH")
+
+    # Collect all resources with their paths
+    all_resources = []
+    for category in ["review", "develop"]:
+        for resource in config.resources.get(category, []):
+            all_resources.append((category, resource))
+
+    # Analyze each resource path
+    normalizable = []
+    for category, resource in all_resources:
+        # Check if path is absolute and can be normalized
+        if resource.path.startswith("/"):
+            can_normalize, relative_path = can_normalize_to_relative(resource.path)
+            if can_normalize and relative_path:
+                normalizable.append((category, resource, relative_path))
+
+    # JSON output
+    if output_format == "json":
+        result = {
+            "git_repos_path": git_repos_path,
+            "total_resources": len(all_resources),
+            "normalizable_paths": len(normalizable),
+            "suggestions": [
+                {
+                    "name": resource.name,
+                    "category": category,
+                    "current_path": resource.path,
+                    "suggested_path": relative_path,
+                }
+                for category, resource, relative_path in normalizable
+            ],
+        }
+        print(json.dumps(result, indent=2))
+        return
+
+    # Human-readable output
+    console.print()
+    console.print("[bold cyan]Path Validation Report[/bold cyan]")
+    console.print()
+
+    # Show GIT_REPOS_PATH status
+    if git_repos_path:
+        console.print(f"[bold]GIT_REPOS_PATH:[/bold] [green]{git_repos_path}[/green]")
+    else:
+        console.print("[bold]GIT_REPOS_PATH:[/bold] [red]not set[/red]")
+        console.print()
+        console.print("[yellow]⚠[/yellow]  GIT_REPOS_PATH is not configured.")
+        console.print("[dim]   Set it to enable relative path support:[/dim]")
+        console.print("[dim]   export GIT_REPOS_PATH=/path/to/your/repos[/dim]")
+        console.print()
+
+    console.print(f"[bold]Total resources:[/bold] {len(all_resources)}")
+    console.print()
+
+    # Show normalizable paths
+    if not normalizable:
+        console.print("[green]✓[/green] All resource paths are optimal!")
+        console.print()
+        if all_resources:
+            console.print("[dim]All paths are either:[/dim]")
+            console.print("[dim]  • Relative paths (portable across environments)[/dim]")
+            console.print("[dim]  • Absolute paths outside GIT_REPOS_PATH (as intended)[/dim]")
+        console.print()
+        return
+
+    # Show suggestions
+    console.print(f"[yellow]⚠[/yellow]  Found {len(normalizable)} path(s) that can be optimized:")
+    console.print()
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Resource", style="cyan")
+    table.add_column("Category", style="yellow")
+    table.add_column("Current Path", style="dim")
+    table.add_column("→", style="green")
+    table.add_column("Suggested Path", style="green")
+
+    for category, resource, relative_path in normalizable:
+        cat_display = "review" if category == "review" else "develop"
+        table.add_row(
+            resource.name,
+            cat_display,
+            resource.path,
+            "→",
+            relative_path,
+        )
+
+    console.print(table)
+    console.print()
+
+    console.print("[bold]Benefits of normalization:[/bold]")
+    console.print("  • Portable across different machines")
+    console.print("  • Works with GIT_REPOS_PATH configuration")
+    console.print("  • Shorter, more readable paths in config")
+    console.print()
+
+    if fix:
+        # Apply fixes
+        from rich.prompt import Confirm
+
+        console.print(f"[yellow]⚠[/yellow]  This will update {len(normalizable)} resource path(s) in your config.")
+        console.print()
+
+        if not Confirm.ask("Apply suggested fixes?", default=False):
+            console.print("[yellow]✗[/yellow] Cancelled")
+            return
+
+        # Update config
+        changes_made = 0
+        for category, resource, relative_path in normalizable:
+            # Find and update the resource in config
+            for i, r in enumerate(config.resources[category]):
+                if r.name == resource.name:
+                    config.resources[category][i].path = relative_path
+                    changes_made += 1
+                    break
+
+        # Save updated config
+        save_config(project_root, config)
+
+        console.print()
+        console.print(f"[green]✓[/green] Updated {changes_made} resource path(s)")
+        console.print()
+        console.print("[dim]Run 'air link list' to verify changes[/dim]")
+        console.print()
+    else:
+        console.print("[dim]Run 'air link validate --fix' to apply these changes[/dim]")
+        console.print()
