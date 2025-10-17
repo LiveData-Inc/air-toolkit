@@ -9,6 +9,7 @@ from rich.console import Console
 from air.core.models import AirConfig, Resource, ResourceRelationship, ResourceType
 from air.services.filesystem import create_symlink, get_config_path, get_project_root
 from air.utils.console import error, info, success, warn
+from air.utils.paths import resolve_repo_path
 from air.utils.tables import render_resource_table
 
 console = Console()
@@ -98,17 +99,36 @@ def _interactive_link_add(
     console.print()
 
     # Step 1: Path prompt
+    import os
+    from pathlib import Path as PathLib
+
     if not path:
+        git_repos_path = os.getenv("GIT_REPOS_PATH")
+        if git_repos_path:
+            console.print(f"[dim]💡 GIT_REPOS_PATH is set to: {git_repos_path}[/dim]")
+            console.print("[dim]   You can use relative paths like 'myproject'[/dim]")
+        else:
+            console.print("[dim]💡 Tip: Set GIT_REPOS_PATH to use short relative paths[/dim]")
+
         while True:
             path = Prompt.ask("[cyan]Path to repository[/cyan]")
             if not path:
                 console.print("[red]✗[/red] Path is required")
                 continue
 
-            # Expand and validate
-            source_path = Path(path).expanduser().resolve()
+            # Resolve with GIT_REPOS_PATH support
+            input_path = PathLib(path)
+            source_path = resolve_repo_path(path)
+
+            # Show how path was resolved
+            if not input_path.is_absolute() and not str(path).startswith("~"):
+                if git_repos_path:
+                    console.print(f"[dim]   → Resolving to: {source_path}[/dim]")
+
             if not source_path.exists():
                 console.print(f"[red]✗[/red] Path does not exist: {source_path}")
+                if not git_repos_path and not input_path.is_absolute() and not str(path).startswith("~"):
+                    console.print("[dim]   💡 Set GIT_REPOS_PATH or use an absolute path[/dim]")
                 continue
             if not source_path.is_dir():
                 console.print(f"[red]✗[/red] Not a directory: {source_path}")
@@ -116,14 +136,14 @@ def _interactive_link_add(
 
             break
     else:
-        source_path = Path(path).expanduser().resolve()
+        source_path = resolve_repo_path(path)
 
     # Step 2: Name prompt (with default from folder name)
     suggested_name = source_path.name
     if not name:
         while True:
             resource_name = Prompt.ask(
-                f"[cyan]Resource name[/cyan]",
+                "[cyan]Resource name[/cyan]",
                 default=suggested_name
             )
 
@@ -201,7 +221,7 @@ def _interactive_link_add(
                     console.print(f"  Frameworks: {', '.join(result.detected_frameworks)}")
 
                 use_detected = Confirm.ask(
-                    f"Use detected classification?",
+                    "Use detected classification?",
                     default=True
                 )
 
@@ -273,9 +293,26 @@ def _interactive_link_add(
     create_symlink(source_path, link_path)
 
     # Create resource entry
+    # Determine how to store the path:
+    # - Paths starting with '/' stay absolute
+    # - Paths starting with '~' are expanded, then check if under GIT_REPOS_PATH
+    # - Other paths stay relative (if GIT_REPOS_PATH set) or become absolute
+    if path.startswith("~"):
+        # Expand ~ and check if within GIT_REPOS_PATH
+        from air.utils.paths import can_normalize_to_relative
+        expanded = str(source_path)
+        can_normalize, relative_path = can_normalize_to_relative(expanded)
+        stored_path = relative_path if can_normalize else expanded
+    elif path.startswith("/"):
+        # Explicit absolute - store as-is
+        stored_path = path
+    else:
+        # Relative path - store as-is
+        stored_path = path
+
     resource = Resource(
         name=resource_name,
-        path=str(source_path),
+        path=stored_path,
         type=ResourceType(resource_type),
         technology_stack=tech_stack,
         relationship=relationship,
@@ -352,11 +389,24 @@ def link_add(
     By default, links immediately without prompting. Use -i for interactive mode.
 
     \b
+    Path Resolution & Storage:
+      - Paths starting with '/' → stored as absolute
+      - Paths starting with '~' → expanded, then:
+          * If under $GIT_REPOS_PATH → stored as relative
+          * Otherwise → stored as absolute (expanded)
+      - Other paths → stored as relative (if $GIT_REPOS_PATH set)
+
+    \b
     Examples:
-      air link add ~/repos/service-a                    # Fast: uses folder name, auto-detects type
-      air link add ~/repos/service-a -i                 # Interactive: prompts for all options
-      air link add ~/repos/service-a --name my-service  # Custom name, auto-detects type
-      air link add ~/repos/service-a --name service --review --type library  # Explicit values
+      # With GIT_REPOS_PATH=/home/user/repos:
+      air link add myproject                     # Stored: "myproject"
+      air link add /abs/path                     # Stored: "/abs/path"
+      air link add ~/repos/service-a             # Stored: "service-a"
+      air link add ~/other/location/proj         # Stored: "/home/user/other/location/proj"
+
+      # Options:
+      air link add myproject -i                  # Interactive mode
+      air link add myproject --name my-service   # Custom name
     """
     # Validate project
     project_root = get_project_root()
@@ -383,12 +433,33 @@ def link_add(
         )
 
     # Non-interactive mode: validate path and use defaults/provided values
-    source_path = Path(path).expanduser().resolve()
+    # Use resolve_repo_path to support GIT_REPOS_PATH environment variable
+    import os
+    from pathlib import Path as PathLib
+
+    git_repos_path = os.getenv("GIT_REPOS_PATH")
+    input_path = PathLib(path)
+
+    # Provide helpful feedback about GIT_REPOS_PATH
+    if not input_path.is_absolute() and not str(path).startswith("~"):
+        # User provided a relative path
+        if git_repos_path:
+            info(f"Using GIT_REPOS_PATH: {git_repos_path}")
+            info(f"Resolving to: {git_repos_path}/{path}")
+        else:
+            warn("GIT_REPOS_PATH not set - treating path as relative to current directory")
+            info(f"💡 Tip: Set GIT_REPOS_PATH to use short relative paths like '{path}'")
+
+    source_path = resolve_repo_path(path)
 
     if not source_path.exists():
+        # Enhanced error message with GIT_REPOS_PATH context
+        hint = "Provide a valid directory path"
+        if not input_path.is_absolute() and not str(path).startswith("~") and not git_repos_path:
+            hint = f"Path '{path}' not found. Set GIT_REPOS_PATH env var to use relative paths, or provide an absolute path"
         error(
-            f"Path does not exist: {path}",
-            hint="Provide a valid directory path",
+            f"Path does not exist: {source_path}",
+            hint=hint,
             exit_code=1,
         )
 

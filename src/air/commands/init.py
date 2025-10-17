@@ -13,6 +13,7 @@ from air.services.filesystem import (
     get_project_root,
 )
 from air.services.templates import (
+    create_claude_commands,
     create_config_file,
     get_context_template,
     render_ai_templates,
@@ -191,7 +192,7 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
         create_directory(templates_dir)
 
         # Copy Claude Code slash commands
-        _create_claude_commands(project_dir)
+        create_claude_commands(project_dir)
 
     if creating_new_dir:
         success(f"Project created successfully: {project_dir}")
@@ -220,8 +221,8 @@ def init(name: str | None, mode: str, track: bool, create_dir: bool, interactive
 def _init_interactive() -> None:
     """Interactive project initialization with prompts."""
     from rich.console import Console
-    from rich.prompt import Confirm, Prompt
     from rich.panel import Panel
+    from rich.prompt import Confirm, Prompt
 
     console = Console()
 
@@ -294,7 +295,7 @@ def _init_interactive() -> None:
         f"Mode: {mode_choice}\n"
         f"Tracking: {'Yes' if track else 'No'}\n"
         f"Goals: {len(goals)} goal(s)" +
-        (f"\n  • " + "\n  • ".join(goals) if goals else ""),
+        ("\n  • " + "\n  • ".join(goals) if goals else ""),
         border_style="green",
         title="Review"
     ))
@@ -333,52 +334,3 @@ def _init_interactive() -> None:
         info(f"Added {len(goals)} goal(s) to configuration")
 
 
-def _create_claude_commands(project_dir: Path) -> None:
-    """Copy Claude Code slash command files to .claude/commands/.
-
-    Args:
-        project_dir: Root directory of the project
-    """
-    import importlib.resources
-
-    # Create .claude/commands directory
-    commands_dir = project_dir / ".claude" / "commands"
-    create_directory(commands_dir)
-
-    # List of slash command files to copy
-    command_files = [
-        "air-analyze.md",
-        "air-findings.md",
-        "air-link.md",
-        "air-review.md",
-        "air-status.md",
-        "air-summary.md",
-        "air-task-complete.md",
-        "air-task.md",
-        "air-validate.md",
-    ]
-
-    # Copy each command file from templates
-    try:
-        for command_file in command_files:
-            # Read from embedded templates
-            try:
-                template_content = importlib.resources.read_text(
-                    "air.templates.claude_commands", command_file
-                )
-            except FileNotFoundError:
-                # Fallback: try reading from source directory during development
-                template_path = Path(__file__).parent.parent / "templates" / "claude_commands" / command_file
-                if template_path.exists():
-                    template_content = template_path.read_text()
-                else:
-                    warn(f"Claude command template not found: {command_file}")
-                    continue
-
-            # Write to project
-            command_path = commands_dir / command_file
-            create_file(command_path, template_content, overwrite=True)
-
-        info("Created Claude Code slash commands in .claude/commands/")
-    except Exception as e:
-        warn(f"Could not create Claude commands: {e}")

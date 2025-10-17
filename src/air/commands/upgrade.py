@@ -24,8 +24,8 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
 
     \b
     Safely upgrades your existing AIR project with:
-    - New scripts (scripts/daily-analysis.sh)
     - New directories (.air/agents/, .air/shared/)
+    - Claude Code slash commands (.claude/commands/)
     - Updated templates
     - New configuration fields
     - Recovery of orphaned repos (symlinks not in config)
@@ -107,6 +107,10 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
     for script_path, description in missing_scripts:
         actions.append(("create_file", script_path, description))
 
+    # 3b. Check for missing Claude commands
+    if _needs_claude_commands(project_root):
+        actions.append(("create_claude_commands", project_root, "Add Claude Code slash commands"))
+
     # 4. Check for outdated templates
     outdated_templates = _check_templates(project_root, force)
     for template_path, description in outdated_templates:
@@ -140,6 +144,7 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
             "update_file": "🔄 Update",
             "update_config": "⚙️  Update",
             "recover_repos": "🔗 Recover",
+            "create_claude_commands": "📋 Create",
         }.get(action_type, action_type)
 
         rel_path = str(Path(path).relative_to(project_root)) if project_root in Path(path).parents else str(path)
@@ -186,6 +191,11 @@ def upgrade(dry_run: bool, force: bool, backup: bool) -> None:
                 _recover_orphaned_repos(path, orphaned_repos)
                 success(f"✓ Recovered {len(orphaned_repos)} orphaned repo(s)")
 
+            elif action_type == "create_claude_commands":
+                from air.services.templates import create_claude_commands
+                if create_claude_commands(path):
+                    success(f"✓ Created Claude Code slash commands")
+
         except Exception as e:
             error(f"Failed to {action_type} {path}: {e}")
 
@@ -216,6 +226,41 @@ def _check_directories(project_root: Path) -> list[tuple[Path, str]]:
     return missing
 
 
+def _needs_claude_commands(project_root: Path) -> bool:
+    """Check if Claude Code slash commands are missing.
+
+    Args:
+        project_root: Project root directory
+
+    Returns:
+        True if commands should be created, False otherwise
+    """
+    commands_dir = project_root / ".claude" / "commands"
+
+    # If directory doesn't exist, we need to create commands
+    if not commands_dir.exists():
+        return True
+
+    # Check if any of the required command files are missing
+    required_commands = [
+        "air-analyze.md",
+        "air-findings.md",
+        "air-link.md",
+        "air-review.md",
+        "air-status.md",
+        "air-summary.md",
+        "air-task-complete.md",
+        "air-task.md",
+        "air-validate.md",
+    ]
+
+    for command_file in required_commands:
+        if not (commands_dir / command_file).exists():
+            return True
+
+    return False
+
+
 def _check_scripts(project_root: Path) -> list[tuple[Path, str]]:
     """Check for missing scripts.
 
@@ -225,7 +270,7 @@ def _check_scripts(project_root: Path) -> list[tuple[Path, str]]:
     missing = []
 
     scripts = [
-        (project_root / "scripts" / "daily-analysis.sh", "Daily analysis automation"),
+        # Note: daily-analysis.sh removed - should not be auto-created during upgrade
         (project_root / "scripts" / "README.md", "Scripts documentation"),
     ]
 
@@ -328,27 +373,7 @@ def _create_file(file_path: Path, project_root: Path) -> None:
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Special handling for specific files
-    if file_path.name == "daily-analysis.sh":
-        # Copy from air-toolkit repo if available, otherwise download from GitHub
-        toolkit_script = Path(__file__).parent.parent.parent.parent / "scripts" / "daily-analysis.sh"
-
-        if toolkit_script.exists():
-            # Development mode - copy from repo
-            script_content = toolkit_script.read_text()
-        else:
-            # Packaged mode - download from GitHub
-            import urllib.request
-            url = "https://raw.githubusercontent.com/LiveData-Inc/air-toolkit/main/scripts/daily-analysis.sh"
-            try:
-                with urllib.request.urlopen(url) as response:
-                    script_content = response.read().decode('utf-8')
-            except Exception as e:
-                error(f"Failed to download daily-analysis.sh: {e}", exit_code=1)
-
-        file_path.write_text(script_content)
-        file_path.chmod(0o755)  # Make executable
-
-    elif file_path.name == "README.md" and file_path.parent.name == "scripts":
+    if file_path.name == "README.md" and file_path.parent.name == "scripts":
         toolkit_readme = Path(__file__).parent.parent.parent.parent / "scripts" / "README.md"
 
         if toolkit_readme.exists():

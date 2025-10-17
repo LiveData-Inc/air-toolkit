@@ -53,6 +53,11 @@ def create_file(path: Path, content: str, overwrite: bool = False) -> None:
 def create_symlink(source: Path, target: Path, overwrite: bool = False) -> None:
     """Create a symbolic link.
 
+    On Windows, this requires either:
+    - Developer Mode enabled (Windows 10+)
+    - Administrator privileges
+    - Falls back to directory junction on Windows if symlink fails
+
     Args:
         source: Source path (what to link to)
         target: Target path (where to create the link)
@@ -79,9 +84,32 @@ def create_symlink(source: Path, target: Path, overwrite: bool = False) -> None:
 
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.symlink_to(source.absolute())
+        # On Windows, target_is_directory=True is required for directory symlinks
+        target.symlink_to(source.absolute(), target_is_directory=source.is_dir())
     except OSError as e:
-        error(f"Failed to create symlink {target} -> {source}: {e}", exit_code=2)
+        # Windows-specific handling
+        if os.name == "nt":
+            # Try creating a directory junction as fallback (doesn't require admin)
+            try:
+                import subprocess
+
+                # Use mklink /J for junction (works without admin privileges)
+                result = subprocess.run(
+                    ["cmd", "/c", "mklink", "/J", str(target.absolute()), str(source.absolute())],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                info(f"Created directory junction (Windows fallback): {target} -> {source}")
+                return
+            except subprocess.CalledProcessError:
+                error(
+                    f"Failed to create symlink or junction on Windows: {e}",
+                    hint="Enable Developer Mode in Windows Settings > Update & Security > For developers, or run as Administrator",
+                    exit_code=2,
+                )
+        else:
+            error(f"Failed to create symlink {target} -> {source}: {e}", exit_code=2)
 
 
 def copy_directory(source: Path, target: Path, overwrite: bool = False) -> None:

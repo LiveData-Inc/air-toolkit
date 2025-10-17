@@ -60,6 +60,7 @@ def render_resource_table(
     for resource in resources:
         status = get_resource_status(resource, project_root)
         writable_display = "Y" if resource.writable else "N"
+        # Display path exactly as stored in config (absolute or relative)
         table.add_row(
             status,
             resource.name,

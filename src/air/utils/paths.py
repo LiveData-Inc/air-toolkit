@@ -1,5 +1,6 @@
 """Path utilities for AIR toolkit."""
 
+import os
 from pathlib import Path
 
 
@@ -13,6 +14,90 @@ def expand_path(path: str | Path) -> Path:
         Absolute Path with ~ expanded
     """
     return Path(path).expanduser().resolve()
+
+
+def resolve_repo_path(path: str | Path) -> Path:
+    """Resolve repository path with GIT_REPOS_PATH support.
+
+    Behavior:
+    - Paths starting with '/' are treated as absolute (no GIT_REPOS_PATH resolution)
+    - Paths starting with '~' are expanded and treated as absolute
+    - Other paths use GIT_REPOS_PATH if set, otherwise current directory
+
+    Args:
+        path: Path to resolve
+
+    Returns:
+        Absolute Path to repository
+
+    Examples:
+        # With GIT_REPOS_PATH=/home/user/repos
+        resolve_repo_path("myproject")      # -> /home/user/repos/myproject
+        resolve_repo_path("/abs/path")      # -> /abs/path (explicit absolute)
+        resolve_repo_path("~/other")        # -> /home/user/other (~ expanded)
+
+        # Without GIT_REPOS_PATH
+        resolve_repo_path("myproject")      # -> /current/working/dir/myproject
+    """
+    path_str = str(path)
+
+    # Explicit absolute path (starts with /) - don't use GIT_REPOS_PATH
+    if path_str.startswith("/"):
+        return Path(path).resolve()
+
+    # Tilde expansion - treat as absolute
+    if path_str.startswith("~"):
+        return expand_path(path)
+
+    # Relative path - use GIT_REPOS_PATH if available
+    git_repos_path = os.getenv("GIT_REPOS_PATH")
+
+    if git_repos_path:
+        base_path = expand_path(git_repos_path)
+        return (base_path / path).resolve()
+    else:
+        # No GIT_REPOS_PATH - resolve relative to current directory
+        return Path(path).resolve()
+
+
+def can_normalize_to_relative(absolute_path: str | Path) -> tuple[bool, str | None]:
+    """Check if an absolute path can be normalized to relative under GIT_REPOS_PATH.
+
+    Used for optional path normalization during upgrades (opt-in).
+
+    Args:
+        absolute_path: Absolute path to check
+
+    Returns:
+        Tuple of (can_normalize, relative_path_if_applicable)
+
+    Examples:
+        # With GIT_REPOS_PATH=/home/user/repos
+        can_normalize_to_relative("/home/user/repos/myproject")
+        # -> (True, "myproject")
+
+        can_normalize_to_relative("/other/location/repo")
+        # -> (False, None)
+    """
+    git_repos_path = os.getenv("GIT_REPOS_PATH")
+
+    if not git_repos_path:
+        return (False, None)
+
+    try:
+        abs_path = expand_path(absolute_path)
+        base_path = expand_path(git_repos_path)
+
+        # Check if within GIT_REPOS_PATH
+        relative = abs_path.relative_to(base_path)
+
+        # Verify the path still resolves correctly
+        if resolve_repo_path(str(relative)) == abs_path:
+            return (True, str(relative))
+        else:
+            return (False, None)
+    except (ValueError, FileNotFoundError):
+        return (False, None)
 
 
 def ensure_dir(path: str | Path, parents: bool = True) -> Path:

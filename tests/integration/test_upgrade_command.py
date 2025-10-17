@@ -127,18 +127,9 @@ class TestUpgradeCommand:
         assert result.exit_code == 0
 
         # Verify scripts were created
-        daily_script = old_project / "scripts" / "daily-analysis.sh"
+        # daily-analysis.sh no longer created (replaced by air daily command)
         readme = old_project / "scripts" / "README.md"
-
-        assert daily_script.exists()
         assert readme.exists()
-
-        # Verify script is executable
-        assert os.access(daily_script, os.X_OK)
-
-        # Verify content
-        assert "#!/bin/bash" in daily_script.read_text()
-        assert "AIR Daily Analysis" in daily_script.read_text()
 
     def test_upgrade_force_updates_config(self, runner, old_project):
         """Test upgrade --force updates config."""

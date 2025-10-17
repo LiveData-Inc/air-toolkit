@@ -1,11 +1,10 @@
 """Template rendering service for AIR toolkit."""
 
 from datetime import datetime
-from importlib import resources
 from pathlib import Path
 from typing import Any
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 
 from air.utils.console import error
 
@@ -214,3 +213,61 @@ def get_context_template(context_type: str) -> str:
     }
 
     return templates.get(context_type, "")
+
+
+def create_claude_commands(project_dir: Path) -> bool:
+    """Create Claude Code slash command files in .claude/commands/.
+
+    Args:
+        project_dir: Root directory of the project
+
+    Returns:
+        True if commands were created successfully, False otherwise
+    """
+    import importlib.resources
+    from air.services.filesystem import create_directory, create_file
+    from air.utils.console import info, warn
+
+    # Create .claude/commands directory
+    commands_dir = project_dir / ".claude" / "commands"
+    create_directory(commands_dir)
+
+    # List of slash command files to copy
+    command_files = [
+        "air-analyze.md",
+        "air-findings.md",
+        "air-link.md",
+        "air-review.md",
+        "air-status.md",
+        "air-summary.md",
+        "air-task-complete.md",
+        "air-task.md",
+        "air-validate.md",
+    ]
+
+    # Copy each command file from templates
+    try:
+        for command_file in command_files:
+            # Read from embedded templates
+            try:
+                template_content = importlib.resources.read_text(
+                    "air.templates.claude_commands", command_file
+                )
+            except FileNotFoundError:
+                # Fallback: try reading from source directory during development
+                template_path = get_template_path() / "claude_commands" / command_file
+                if template_path.exists():
+                    template_content = template_path.read_text()
+                else:
+                    warn(f"Claude command template not found: {command_file}")
+                    continue
+
+            # Write to project
+            command_path = commands_dir / command_file
+            create_file(command_path, template_content, overwrite=True)
+
+        info("Created Claude Code slash commands in .claude/commands/")
+        return True
+    except Exception as e:
+        warn(f"Could not create Claude commands: {e}")
+        return False

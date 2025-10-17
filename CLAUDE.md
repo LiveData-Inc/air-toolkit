@@ -1,215 +1,18 @@
 # CLAUDE.md
 
-**CRITICAL: After reading this file, read `.air/README.md` for complete system documentation.**
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This file provides guidance to Claude Code (claude.air/code) when working with code in this repository.
+## Project Overview
 
-## AIR Toolkit Availability
+**AIR (AI Review)** is a Python CLI toolkit for AI-assisted development and multi-project code assessment. It provides:
+1. **Multi-Project Assessment**: Structured review projects to analyze multiple codebases
+2. **AI Task Tracking**: Automatic task file generation and tracking for AI-assisted development
 
-**IMPORTANT**: The `air` command-line tool is OPTIONAL for working with this project.
+**Current Status**: v0.6.3 - Production-ready with deep analysis, dependency-aware multi-repo analysis, and agent coordination
 
-**Before using any `air` commands, check availability:**
-```bash
-which air  # Returns path if installed, empty if not
-```
+## Essential Development Commands
 
-**If `air` is NOT installed:**
-- ✅ Task tracking still works (use Python to create `.air/tasks/*.md` files)
-- ✅ All development can proceed normally
-- ✅ Don't show errors or warnings to the user
-- ✅ Optionally mention once: "💡 Tip: Install `air-toolkit` for enhanced workflow: `pip install air-toolkit`"
-- ❌ Don't block on missing `air` command
-
-**If `air` IS installed:**
-- Use `air status`, `air validate`, `air task`, etc. for streamlined workflow
-- Prefer `--format=json` for machine-readable output
-
-See "Using AIR Commands (When Available)" section below for details.
-
----
-
-## AI Task Tracking Protocol
-
-**CRITICAL**: This project uses AI-assisted development tracking.
-
-### Automatic Task Tracking (Zero Friction)
-
-When a user gives you a prompt to modify code or create files, you MUST automatically:
-
-1. **Immediately create a task file** - Don't ask, just do it
-   - Use Python to create: `.air/tasks/YYYYMMDD-HHMM-description.md`
-   - Derive description from the user's prompt
-   - Pre-populate all known information
-
-2. **Auto-document as you work**
-   - Record the exact user prompt
-   - List each action you take as you take it
-   - Track all files you create or modify
-   - Note any decisions or trade-offs
-
-3. **Auto-finalize when complete**
-   - Mark outcome status (✅ Success, ⏳ In Progress, ⚠️ Partial, ❌ Blocked)
-   - Briefly mention task file location to user
-
-### Task File Format
-
-```markdown
-# Task: [Brief description from user prompt]
-
-## Date
-YYYY-MM-DD HH:MM
-
-## Prompt
-[Exact words the user typed]
-
-## Actions Taken
-1. [First thing you did]
-2. [Second thing you did]
-...
-
-## Files Changed
-- `path/to/file.ext` - [What changed and why]
-- `another/file.ext` - [What changed and why]
-
-## Outcome
-⏳ In Progress / ✅ Success / ⚠️ Partial / ❌ Blocked
-
-[Brief summary of result]
-
-## Notes
-[Optional: Technical decisions, blockers, follow-up needed]
-```
-
-### Important Rules
-
-- **Task files are immutable** - Once created, never edit them (create a new one for corrections)
-- **Every code change needs a task** - No exceptions, even for "small" changes
-- **Be automatic, not disruptive** - Create and update tasks silently, don't make it the focus
-- **Include in commits** - Task files should be committed with the code changes
-- **Archive old tasks** - Use `air task archive` to move completed tasks to `.air/tasks/archive/YYYY-MM/` to reduce AI context window usage (v0.6.3)
-
-### How to Create Task Files
-
-Use Python (works on all platforms):
-```python
-from datetime import datetime
-from pathlib import Path
-
-# IMPORTANT: Use LOCAL time, not UTC, for proper chronological sorting
-# New format: YYYYMMDD-NNN-HHMM-description.md
-
-# Get next ordinal for today
-tasks_dir = Path(".air/tasks")
-date_prefix = datetime.now().strftime("%Y%m%d")
-existing = list(tasks_dir.glob(f"{date_prefix}-*.md"))
-ordinal = len(existing) + 1
-
-# Format with ordinal
-date_str = datetime.now().strftime("%Y%m%d")
-time_str = datetime.now().strftime("%H%M")
-timestamp = f"{date_str}-{ordinal:03d}-{time_str}"
-
-description = "user-task-description"  # kebab-case from user prompt
-filename = f".air/tasks/{timestamp}-{description}.md"
-
-# Create from template and populate
-...
-```
-
-**Legacy format (still valid):**
-```python
-# YYYYMMDD-HHMM-description.md
-timestamp = datetime.now().strftime("%Y%m%d-%H%M")
-```
-
-Or use the helper script:
-```bash
-python .air/scripts/new-task.py "description"
-```
-
-See `.air/README.md` for complete documentation.
-
----
-
-## Using AIR Commands (When Available)
-
-### Common Use Cases
-
-**1. Before starting work:**
-```bash
-# If air is installed:
-air status          # Check project state
-air validate        # Verify structure
-
-# If air is NOT installed:
-# Just start coding - task tracking works via Python (see above)
-```
-
-**2. When user asks for project status:**
-```bash
-# If air is installed:
-air status --format=json  # Get machine-readable output
-
-# If air is NOT installed:
-# Read .air/air-config.json directly and list .air/tasks/ files
-```
-
-**3. When creating a new assessment project:**
-```bash
-# If air is installed:
-air init my-review --mode=review
-
-# If air is NOT installed:
-# User must install air-toolkit first, OR manually create structure
-```
-
-**4. When validating project structure:**
-```bash
-# If air is installed:
-air validate --format=json  # Check for issues
-
-# If air is NOT installed:
-# Manual validation not needed - just ensure .air/tasks/ exists
-```
-
-### AIR Command Output Formats
-
-All AIR commands support `--format=json` for parsing:
-
-```bash
-# Human-readable (default)
-air status
-
-# Machine-readable for AI
-air status --format=json
-# Returns: {"name":"project","mode":"mixed","resources":{...}}
-```
-
-**Use `--format=json` when you need to:**
-- Parse command results
-- Extract specific values
-- Make decisions based on project state
-
----
-
-## Project Context
-
-AIR (AI Review) is a Python CLI toolkit for AI-assisted development and multi-project code assessment.
-
-**Status**: v0.6.0 - Production-ready with deep analysis, dependency-aware multi-repo analysis, and agent coordination
-
-Review these before starting:
-- `.air/context/architecture.md` - System architecture (needs updating)
-- `.air/context/language.md` - Python conventions
-- `.air/tasks/` - Recent work and decisions
-- `docs/ARCHITECTURE.md` - Complete technical design (13KB)
-- `PROJECT-STATUS.md` - Current implementation status
-
----
-
-## Commands for Development
-
-### Setup
+### Setup & Installation
 ```bash
 # Install in editable mode with dev dependencies
 pip install -e ".[dev]"
@@ -218,253 +21,294 @@ pip install -e ".[dev]"
 air --version
 ```
 
+### Pre-Commit Workflow (CRITICAL)
+**ALWAYS run these commands before committing:**
+```bash
+# Required checks
+poetry run pytest          # All tests must pass
+poetry run ruff check      # Linting must pass
+
+# Optional but recommended
+poetry run black src/ tests/           # Format code
+poetry run mypy src/                   # Type checking
+```
+
 ### Testing
 ```bash
-# Run all tests
+# Run all tests (required before commit)
 pytest
 
-# Run with coverage report
+# Run with coverage
 pytest --cov=air --cov-report=html
 
 # Run specific test file
 pytest tests/unit/test_models.py -v
 
 # Run single test
-pytest tests/unit/test_models.py::test_assessment_config -v
+pytest tests/unit/test_models.py::test_air_config -v
+
+# Run only unit or integration tests
+pytest -m unit
+pytest -m integration
 ```
 
-### Code Quality
-```bash
-# Format code (line length: 100)
-black src/ tests/
-
-# Lint and auto-fix
-ruff check src/ tests/ --fix
-
-# Type checking (strict mode)
-mypy src/
-```
-
-### Build
+### Building
 ```bash
 # Build package for distribution
 python -m build
+
+# To publish (internal)
+poetry build && poetry publish -r ld
 ```
 
----
+## Architecture Overview
 
-## High-Level Architecture
-
-### Component Structure
+### Layered Architecture
 ```
-src/air/
-├── cli.py              # Click-based CLI entry point ✅
-├── commands/           # Command implementations (11 command groups) ✅
-│   ├── init.py        # Create assessment projects ✅
-│   ├── link.py        # Link repositories ✅
-│   ├── validate.py    # Validate structure ✅
-│   ├── status.py      # Show project status ✅
-│   ├── classify.py    # Auto-classify resources ✅
-│   ├── pr.py          # Create pull requests ✅
-│   ├── task.py        # Task management (new/list/complete/archive) ✅
-│   ├── summary.py     # Generate summaries ✅
-│   ├── review.py      # Code review context ✅
-│   ├── analyze.py     # Deep code analysis ✅
-│   └── agent.py       # Agent coordination (wait/findings) ✅
-├── core/              # Business logic ✅
-│   ├── models.py      # Pydantic data models ✅
-│   └── enums.py       # StrEnum definitions ✅
-├── services/          # Infrastructure ✅
-│   ├── filesystem.py  # File operations ✅
-│   ├── templates.py   # Jinja2 rendering ✅
-│   ├── validator.py   # Validation logic ✅
-│   ├── git.py         # Git operations ✅
-│   ├── classifier.py  # Resource classification ✅
-│   ├── pr_generator.py # PR creation ✅
-│   ├── task_parser.py # Task parsing ✅
-│   ├── summary_generator.py # Summaries ✅
-│   ├── task_archive.py # Archiving ✅
-│   ├── agent_manager.py # Agent coordination ✅
-│   ├── analyzers/     # Code analyzers (5 types) ✅
-│   └── detectors/     # Dependency detectors ✅
-├── utils/             # Helpers ✅
-│   ├── console.py     # Rich console output ✅
-│   ├── dates.py       # Date/time formatting ✅
-│   ├── paths.py       # Path manipulation ✅
-│   ├── tables.py      # Table rendering ✅
-│   ├── errors.py      # Error handling ✅
-│   └── progress.py    # Progress indicators ✅
-└── templates/         # Jinja2 templates (embedded) ✅
+CLI Layer (Click)
+    ↓
+Command Layer (commands/)
+    ↓
+Core Services (services/)
+    ↓
+Data Models (core/models.py, Pydantic)
 ```
 
-### Data Models (Pydantic)
-Key models in `src/air/core/models.py`:
-- `AirConfig`: Project configuration (.air/air-config.json) - formerly AssessmentConfig
-- `Resource`: Linked repository metadata with technology stack
-- `Contribution`: Proposed code changes
-- `TaskFile`: Parsed task file metadata
-- `ProjectStructure`: Expected directory structure
-- `ClassificationResult`: Resource classification data
-- `AnalysisResult`: Code analysis findings
-- `DependencyResult`: Dependency detection data
+### Key Components
 
-Enums (all use StrEnum in `src/air/core/enums.py`):
-- `ProjectMode`: review, develop, mixed (formerly collaborate → develop)
-- `ResourceType`: library, documentation, service (simplified from implementation → library)
-- `ResourceRelationship`: REVIEW_ONLY, DEVELOPER (formerly CONTRIBUTOR → DEVELOPER)
-- `ContributionStatus`: proposed, draft, submitted, merged
-- `TaskOutcome`: in-progress, success, partial, blocked
-- `AnalysisFocus`: security, performance, architecture, quality, all
-- `Severity`: critical, high, medium, low, info
-- `DependencyType`: PACKAGE, IMPORT, API
+**CLI Entry (`src/air/cli.py`)**
+- Click-based command router
+- 16 command groups registered
 
-### AIR Project Structure
-Created by `air init`:
+**Commands (`src/air/commands/`)**
+- Each file implements one command group (e.g., `init.py`, `link.py`, `task.py`)
+- Commands orchestrate services and handle user interaction
+- Use Rich console for output
+
+**Core Services (`src/air/services/`)**
+- `filesystem.py` - File operations, symlinks
+- `git.py` - Git operations via GitPython
+- `templates.py` - Jinja2 template rendering
+- `validator.py` - Project structure validation
+- `classifier.py` - Technology stack detection
+- `pr_generator.py` - GitHub PR creation
+- `task_parser.py` - Task file parsing
+- `analyzers/` - 5 specialized code analyzers (Security, Performance, Quality, Architecture, Structure)
+- `detectors/` - Dependency detection (Python, JavaScript, Go)
+
+**Data Models (`src/air/core/models.py`)**
+- All models use Pydantic v2 for validation
+- `AirConfig` - Project configuration (.air/air-config.json)
+- `Resource` - Linked repository metadata
+- `TaskFile` - Parsed task file metadata
+- All enums use `StrEnum` (not deprecated `(str, Enum)` pattern)
+
+**Utilities (`src/air/utils/`)**
+- `console.py` - Rich console helpers (`info()`, `success()`, `warn()`, `error()`)
+- `dates.py` - Date/time formatting
+- `paths.py` - Path manipulation
+- `errors.py` - Custom exception classes
+
+### Project Structure Created by AIR
+When `air init` creates a project, it generates:
 ```
 project-name/
-├── .air/air-config.json        # AirConfig (JSON)
-├── README.md              # Project overview
-├── CLAUDE.md              # AI guidance
-├── .gitignore
-├── .air/                   # Task tracking & agent coordination
-│   ├── tasks/            # Active tasks (YYYYMMDD-NNN-HHMM-description.md)
-│   │   └── archive/      # Archived tasks organized by year-month (v0.6.3)
-│   │       ├── ARCHIVE.md   # Auto-generated summary of all archived tasks
-│   │       └── YYYY-MM/  # e.g., 2025-10/
-│   ├── agents/           # Background agent metadata (v0.6.0)
-│   │   └── {agent-id}/   # Per-agent directory with metadata.json, logs
-│   ├── context/          # Architecture, conventions
-│   └── templates/        # Task templates
-├── repos/                # All linked repos (symlinks) - formerly review/collaborate
-├── analysis/             # Analysis outputs
-│   ├── reviews/          # Review analysis (formerly assessments)
-│   ├── improvements/     # Improvement proposals
-│   └── dependency-graph.json # Multi-repo dependency graph (v0.6.0)
-├── contributions/        # Staged contributions
-└── scripts/              # Utility scripts
+├── .air/
+│   ├── air-config.json      # AirConfig model
+│   ├── tasks/               # Task tracking (YYYYMMDD-NNN-HHMM-description.md)
+│   │   └── archive/         # Archived tasks (YYYY-MM/)
+│   ├── agents/              # Background agent metadata
+│   ├── context/             # Architecture, conventions
+│   └── templates/           # Task templates
+├── repos/                   # Linked repositories (symlinks)
+├── analysis/                # Analysis outputs
+└── contributions/           # Staged contributions
 ```
-
----
 
 ## Code Conventions
 
-### Python Style
-- **Python**: 3.10+ (use `str | None`, not `Optional[str]`)
+### Python Style (Enforced)
+- **Python version**: 3.10+ (use `str | None`, not `Optional[str]`)
 - **Line length**: 100 characters
-- **Enums**: Use StrEnum (not `class Enum(str, Enum)`)
-- **Type hints**: Required (mypy strict mode)
-- **Paths**: Use pathlib.Path
-- **Formatting**: black
-- **Linting**: ruff
+- **Type hints**: Required for all functions (mypy strict mode)
+- **Enums**: Use `StrEnum` from `enum` module
+- **Paths**: Use `pathlib.Path`, never string concatenation
+- **Formatting**: Black (run before commit)
+- **Linting**: Ruff (run before commit)
 - **Docstrings**: Google style for public APIs
 
-### Key Dependencies
-**Core:**
-- click >=8.1.0 (CLI framework)
-- rich >=13.0.0 (terminal UI)
-- pydantic >=2.0.0 (data validation)
-- pyyaml >=6.0 (YAML support)
-- gitpython >=3.1.0 (git operations)
-- jinja2 >=3.1.0 (template rendering)
-- psutil >=5.9.0 (cross-platform process management)
+### Key Patterns
 
-**Dev:**
-- pytest >=7.0.0, pytest-cov >=4.0.0
-- black >=23.0.0, ruff >=0.1.0, mypy >=1.0.0
+**Error Handling:**
+```python
+from air.utils.errors import AirError, ConfigError, ValidationError
 
-### Rich Console Helpers
-Use from `src/air/utils/console.py`:
+# Raise custom errors with helpful messages
+raise ConfigError(
+    "Invalid configuration file",
+    hint="Run 'air validate --fix' to repair"
+)
+```
+
+**Console Output:**
 ```python
 from air.utils.console import info, success, warn, error
 
 info("Processing...")
 success("Project created successfully")
 warn("Resource not found")
-error("Failed to validate", exit_code=1)
+error("Failed to validate", exit_code=1)  # Exits process
 ```
 
----
+**Path Handling:**
+```python
+from pathlib import Path
+from air.utils.paths import expand_path
 
-## Implementation Status
+# Always expand ~ in user paths
+path = expand_path("~/repos/project")  # Returns absolute Path
+```
 
-### Completed ✅
+**Template Rendering:**
+```python
+from air.services.templates import TemplateService
 
-**Core Commands (v0.1.0-v0.4.0):**
-- ✅ `air init` - Project initialization (interactive and non-interactive)
-- ✅ `air link` - Repository linking with auto-classification
-- ✅ `air validate` - Structure validation with auto-fix
-- ✅ `air status` - Project status and agent tracking
-- ✅ `air task new/list/status/complete/archive` - Complete task lifecycle
-- ✅ `air summary` - Summary generation (markdown/JSON/text)
+template_service = TemplateService()
+content = template_service.render(
+    "assessment/README.md.j2",
+    {"name": "project", "mode": "review"}
+)
+```
 
-**Advanced Features (v0.3.0-v0.6.0):**
-- ✅ `air classify` - Auto-classify resources with tech stack detection
-- ✅ `air pr` - Pull request creation with GitHub CLI integration
-- ✅ `air review` - Code review context generation
-- ✅ `air analyze` - Deep code analysis (5 specialized analyzers)
-- ✅ `air analyze --all` - Dependency-aware multi-repo analysis
-- ✅ `air wait` - Agent coordination and waiting
-- ✅ `air findings` - Aggregate analysis findings
+## Critical Implementation Details
 
-**Services & Infrastructure:**
-- ✅ Filesystem operations with symlink support
-- ✅ Template system (Jinja2) with embedded templates
-- ✅ Validator with auto-fix capabilities
-- ✅ Git operations (GitPython)
-- ✅ Resource classifier (11+ languages, 10+ frameworks)
-- ✅ PR generator with GitHub CLI integration
-- ✅ Task parser and archiving system
-- ✅ Summary generator (multiple formats)
-- ✅ 5 specialized analyzers (Security, Performance, Quality, Architecture, Structure)
-- ✅ Pluggable dependency detectors (Python, JavaScript, Go)
-- ✅ Agent manager with cross-platform process tracking
+### Configuration Management
+- Configuration stored in `.air/air-config.json`
+- Validates against `AirConfig` Pydantic model
+- Path fields automatically expand `~` via `expand_path()` validator
+- Version field for future migration support
 
-**Testing:**
-- ✅ 372 tests total (all passing)
-- ✅ ~200 unit tests
-- ✅ ~172 integration tests
-- ✅ >80% code coverage achieved
-- ✅ Comprehensive test suite for all features
+### Task File Naming
+Two supported formats:
+- **New format** (v0.6.0+): `YYYYMMDD-NNN-HHMM-description.md` (ordinal for multiple tasks per day)
+- **Legacy format**: `YYYYMMDD-HHMM-description.md`
 
-**Distribution:**
-- ✅ PyPI publishing (v0.6.0 available)
-- ✅ Cross-platform support (macOS, Linux, Windows)
-- ✅ Proper package structure with embedded templates
+Task files track AI-assisted development work and should be committed with code changes.
 
-### Future Enhancements (v0.7.0+)
+### Resource Linking
+- Resources symlinked to `repos/` directory (no copying)
+- Support for review-only (read-only) and developer (writable) modes
+- Technology stack auto-detection via `ClassificationService`
+- All paths support shell expansion (`~`)
 
-**Analysis Improvements:**
-- Additional language support (Java, Ruby, PHP, Rust, C#)
-- Custom analyzer plugins
-- Analysis caching for faster re-runs
-- Incremental analysis (only changed files)
+### Testing CLI Commands
+Use Click's `CliRunner` for testing commands:
+```python
+from click.testing import CliRunner
+from air.cli import main
 
-**Agent Coordination:**
-- Shared findings database (SQLite)
-- Automated spawning with `air spawn` command
-- Parallel execution pipeline with dependencies
-- Resource management (token budgets, rate limits)
+def test_init_command():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(main, ["init", "test-project"])
+        assert result.exit_code == 0
+```
 
-**Integration:**
-- MCP (Model Context Protocol) server implementation
-- GitHub Actions integration
-- VS Code extension
-- Web UI for analysis results
+### Template Embedding
+Templates embedded using `importlib.resources`:
+```python
+from importlib.resources import files
+template_data = files("air.templates").joinpath("path/to/template.j2")
+```
 
----
+## Common Development Workflows
 
-## Important Notes
+### Adding a New Command
+1. Create `src/air/commands/mycommand.py`
+2. Define Click command with `@click.command()`
+3. Add to `src/air/cli.py`: `from air.commands import mycommand` and `main.add_command(mycommand.mycommand)`
+4. Add tests in `tests/unit/test_mycommand.py` and `tests/integration/test_mycommand.py`
+5. Run `poetry run pytest` before committing
 
-1. **StrEnum**: Use `from enum import StrEnum`, not deprecated `(str, Enum)` pattern
-2. **Path expansion**: All paths support `~` (expanded via `expand_path()` validator)
-3. **Configuration**: Stored in `.air/air-config.json`, validates against AssessmentConfig model
-4. **Templates**: Will be embedded using importlib.resources (not external directory)
-5. **Git operations**: Use GitPython, not shell commands
-6. **Error handling**: Create AirError subclasses with helpful messages
-7. **Testing CLI**: Use Click's CliRunner for command tests
+### Adding a New Service
+1. Create `src/air/services/myservice.py`
+2. Define service class with clear public API
+3. Add unit tests in `tests/unit/test_myservice.py`
+4. Use from command layer
 
----
+### Adding a New Pydantic Model
+1. Add to `src/air/core/models.py`
+2. Use `StrEnum` for enum fields
+3. Add validators for path expansion if needed
+4. Add tests in `tests/unit/test_models.py`
 
-**Remember**: The goal is ZERO FRICTION. Create task files automatically as part of your work, not as a separate step the user needs to think about.
-- 4 suggests a re-ordreing of the parseable string format that `air link` originally used (foo:/path/to/foo:branch-name) I think we can drop this clever format and force the use of args (i.e. if we are using a script to run air)
-- an important goal for air is to make the planning steps and implementation tasks explicit, and part of the github history, rather than hidden in teh claude-specific files under the user's $HOME folder.
+## Important Context Files
+
+Before starting work, review:
+- `docs/ARCHITECTURE.md` - Complete technical design (13KB, most comprehensive)
+- `.air/tasks/` - Recent work and decisions (read latest 5-10 tasks)
+- `README.md` - User-facing documentation and command reference
+- This file (CLAUDE.md) - Development guidance
+
+**Note**: `.air/context/architecture.md` and `.air/context/language.md` are templates generated by `air init`, not AIR toolkit architecture docs.
+
+## Key Dependencies
+
+**Core:**
+- click >=8.1.0 - CLI framework
+- rich >=13.0.0 - Terminal UI
+- pydantic >=2.0.0 - Data validation (v2 syntax required)
+- gitpython >=3.1.0 - Git operations (not shell commands)
+- jinja2 >=3.1.0 - Template rendering
+- psutil >=5.9.0 - Process management
+
+**Dev:**
+- pytest >=7.0.0 - Testing framework
+- pytest-cov >=4.0.0 - Coverage reporting
+- black >=23.0.0 - Code formatting
+- ruff >=0.1.0 - Linting
+- mypy >=1.0.0 - Type checking
+
+## Package Distribution
+
+AIR is published to PyPI. Build process:
+```bash
+# Standard build
+python -m build
+
+# Internal publish (LiveData)
+poetry build && poetry publish -r ld
+```
+
+## AI Task Tracking Protocol (For Working in AIR Projects)
+
+When working in a project that **uses** AIR (not the AIR toolkit itself), follow the automatic task tracking protocol documented in `.air/README.md` of that project:
+
+1. Create task files automatically: `.air/tasks/YYYYMMDD-NNN-HHMM-description.md`
+2. Record exact user prompt
+3. Update task file as you work
+4. Mark outcome when complete
+5. Include task file in commits
+
+**This protocol applies when working in AIR-managed projects, not when developing AIR toolkit itself.**
+
+## Development Principles
+
+1. **Use Poetry for dependency management** - Never use pip directly for package management
+2. **Run tests before every commit** - `poetry run pytest && poetry run ruff check`
+3. **Type hints are required** - Mypy strict mode enforced
+4. **Use Pydantic v2 syntax** - Not v1
+5. **Git operations via GitPython** - Not shell commands
+6. **Cross-platform support** - Test on macOS, Linux, Windows
+7. **Templates are embedded** - Use importlib.resources
+8. **Rich console for output** - Use helper functions from `air.utils.console`
+9. **Error messages must be actionable** - Include hints for resolution
+10. **Never use Mermaid for docs** - User preference specified in global CLAUDE.md
+
+## Test Coverage
+
+- **372 tests total** (all passing)
+- ~200 unit tests
+- ~172 integration tests
+- >80% code coverage
+- Markers: `@pytest.mark.unit`, `@pytest.mark.integration`
